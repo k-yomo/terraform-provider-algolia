@@ -7,6 +7,9 @@ VERSION=0.0.1-snapshot
 sideload:
 	go build -o ~/.terraform.d/plugins/registry.terraform.io/k-yomo/algolia/${VERSION}/darwin_amd64/terraform-provider-algolia
 
+.PHONY: generate
+generate:
+	go generate ./...
 
 # Run acceptance tests
 .PHONY: testacc
