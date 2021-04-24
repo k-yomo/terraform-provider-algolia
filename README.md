@@ -1,4 +1,9 @@
 # Terraform Provider Algolia
+![License: MIT](https://img.shields.io/badge/License-MPL2.0-blue.svg)
+![Test Workflow](https://github.com/k-yomo/terraform-provider-algolia/workflows/Tests/badge.svg)
+[![codecov](https://codecov.io/gh/k-yomo/terraform-provider-algolia/branch/main/graph/badge.svg)](https://codecov.io/gh/k-yomo/terraform-provider-algolia)
+[![Go Report Card](https://goreportcard.com/badge/k-yomo/terraform-provider-algolia)](https://goreportcard.com/report/k-yomo/terraform-provider-algolia)
+
 Fully tested Terraform Provider for Algolia.
 
 ## Requirements

@@ -78,4 +78,11 @@ jobs:
         ALGOLIA_API_KEY: ${{ secrets.ALGOLIA_API_KEY }}
 
       run: |
-        go test -v -cover ./internal/provider/
+        go test -v -coverprofile=coverage.out ./internal/provider/
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v1
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        file: ./coverage.out
+        fail_ci_if_error: true
