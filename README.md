@@ -1,4 +1,5 @@
 # Terraform Provider Algolia
+
 ![License: MIT](https://img.shields.io/badge/License-MPL2.0-blue.svg)
 ![Test Workflow](https://github.com/k-yomo/terraform-provider-algolia/workflows/Tests/badge.svg)
 [![codecov](https://codecov.io/gh/k-yomo/terraform-provider-algolia/branch/main/graph/badge.svg)](https://codecov.io/gh/k-yomo/terraform-provider-algolia)
@@ -6,55 +7,48 @@
 
 Fully tested Terraform Provider for Algolia.
 
-## Requirements
+## Documentation
 
--	[Terraform](https://www.terraform.io/downloads.html) >= 0.13.x
--	[Go](https://golang.org/doc/install) >= 1.15
+Full, comprehensive documentation is available on the Terraform website:
 
-## Building The Provider
-
-1. Clone the repository
-1. Enter the repository directory
-1. Build the provider using the Go `install` command: 
-```sh
-$ go install
-```
-
-## Adding Dependencies
-
-This provider uses [Go modules](https://github.com/golang/go/wiki/Modules).
-Please see the Go documentation for the most up to date information about using Go modules.
-
-To add a new dependency `github.com/author/dependency` to your Terraform provider:
-
-```
-go get github.com/author/dependency
-go mod tidy
-```
-
-Then commit the changes to `go.mod` and `go.sum`.
+[https://registry.terraform.io/providers/k-yomo/algolia/latest/docs](https://registry.terraform.io/providers/k-yomo/algolia/latest/docs)
 
 ## Using the provider
-
-Fill this in for each provider
-
-## Developing the Provider
-
-If you wish to work on the provider, you'll first need [Go](http://www.golang.org) installed on your machine (see [Requirements](#requirements) above).
-
-To generate or update documentation, run `make generate`.
-
-### Test
-Set required env variables.
-```
-$ echo ALGOLIA_APP_ID={APP_ID} >> .env
-$ echo ALGOLIA_API_KEY={API_KEY} >> .env
-$ direnv allow
-```
-
-Run `make testacc` to run the full suite of Acceptance tests.
+Set an environment variable `ALGOLIA_API_KEY` to store your Algolia API key.
 ```sh
-$ make testacc
+$ export ALGOLIA_API_KEY=<your api key>
 ```
-*Note:* Acceptance tests create real resources, and often cost money to run.
 
+The example below demonstrates the following operations:
+- create api key
+
+```terraform
+terraform {
+  required_providers {
+    stripe = {
+      source = "k-yomo/algolia"
+      version = "0.0.2" # use the latest released version
+    }
+  }
+}
+
+provider "algolia" {
+  app_id = "XXXXXXXXXX"
+}
+
+resource "algolia_api_key" "example" {
+  acl                         = ["search", "browse"]
+  expires_at                  = 2524608000 # 01 Jan 2050 00:00:00 GMT
+  max_hits_per_query          = 100
+  max_queries_per_ip_per_hour = 10000
+  description                 = "This is a example api key"
+  indexes                     = ["dev_*"]
+  referers                    = ["https://algolia.com/\\*"]
+}
+```
+
+## Contributing
+
+I appreciate your help!
+
+To contribute, please read the [Contributing to Terraform - Algolia Provider](./docs/CONTRIBUTING.md)
