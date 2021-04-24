@@ -22,7 +22,7 @@ Please see the Go documentation for the most up to date information about using 
 To add a new dependency `github.com/author/dependency` to your Terraform provider:
 
 ```
-go get github.com/author/dependency
+go get -u github.com/author/dependency
 go mod tidy
 ```
 
@@ -30,7 +30,7 @@ Then commit the changes to `go.mod` and `go.sum`.
 
 ## Developing the Provider
 
-If you wish to work on the provider, you'll first need [Go](http://www.golang.org) installed on your machine (see [Requirements](#requirements) above).
+If you wish to work on the provider, you'll first need [Go](http://www.golang.org) installed on your machine (see [Prerequisites](#requirements) above).
 
 To generate or update documentation, run `make generate`.
 

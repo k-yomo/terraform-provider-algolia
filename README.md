@@ -5,7 +5,7 @@
 [![codecov](https://codecov.io/gh/k-yomo/terraform-provider-algolia/branch/main/graph/badge.svg)](https://codecov.io/gh/k-yomo/terraform-provider-algolia)
 [![Go Report Card](https://goreportcard.com/badge/k-yomo/terraform-provider-algolia)](https://goreportcard.com/report/k-yomo/terraform-provider-algolia)
 
-Fully tested Terraform Provider for Algolia.
+Terraform Provider for [Algolia](https://www.algolia.com).
 
 ## Documentation
 
