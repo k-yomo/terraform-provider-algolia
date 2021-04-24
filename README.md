@@ -51,4 +51,4 @@ resource "algolia_api_key" "example" {
 
 I appreciate your help!
 
-To contribute, please read the [Contributing to Terraform - Algolia Provider](./docs/CONTRIBUTING.md)
+To contribute, please read the [Contributing to Terraform - Algolia Provider](./CONTRIBUTING.md)
