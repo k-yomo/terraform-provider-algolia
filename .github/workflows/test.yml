@@ -74,11 +74,8 @@ jobs:
       env:
         TF_ACC: "1"
         TF_ACC_TERRAFORM_VERSION: ${{ matrix.terraform }}
-
-        # Set whatever additional acceptance test env vars here. You can
-        # optionally use data from your repository secrets using the
-        # following syntax:
-        # SOME_VAR: ${{ secrets.SOME_VAR }}
+        ALGOLIA_APP_ID: ${{ secrets.ALGOLIA_APP_ID }}
+        ALGOLIA_API_KEY: ${{ secrets.ALGOLIA_API_KEY }}
 
       run: |
         go test -v -cover ./internal/provider/
