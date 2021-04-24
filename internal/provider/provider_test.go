@@ -1,6 +1,7 @@
 package provider
 
 import (
+	"os"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -10,7 +11,7 @@ import (
 // The factory function will be invoked for every Terraform CLI command executed
 // to create a provider server to which the CLI can reattach.
 var providerFactories = map[string]func() (*schema.Provider, error){
-	"scaffolding": func() (*schema.Provider, error) {
+	"algolia": func() (*schema.Provider, error) {
 		return New("dev")(), nil
 	},
 }
@@ -22,7 +23,10 @@ func TestProvider(t *testing.T) {
 }
 
 func testAccPreCheck(t *testing.T) {
-	// You can add code here to run prior to any test case execution, for example assertions
-	// about the appropriate environment variables being set are common to see in a pre-check
-	// function.
+	if os.Getenv("ALGOLIA_APP_ID") == "" {
+		t.Fatal("env variable 'ALGOLIA_APP_ID' is not set")
+	}
+	if os.Getenv("ALGOLIA_API_KEY") == "" {
+		t.Fatal("env variable 'ALGOLIA_API_KEY' is not set")
+	}
 }

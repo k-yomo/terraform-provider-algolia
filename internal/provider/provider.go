@@ -20,14 +20,17 @@ func New(version string) func() *schema.Provider {
 					Type:        schema.TypeString,
 					Optional:    true,
 					DefaultFunc: schema.EnvDefaultFunc("ALGOLIA_APP_ID", nil),
-					Description: "The ID of the application",
+					Description: "The ID of the application.",
 				},
 				"api_key": {
 					Type:        schema.TypeString,
 					Optional:    true,
 					DefaultFunc: schema.EnvDefaultFunc("ALGOLIA_API_KEY", nil),
-					Description: "The API key to access algolia resources",
+					Description: "The API key to access algolia resources.",
 				},
+			},
+			ResourcesMap: map[string]*schema.Resource{
+				"algolia_api_key": resourceAPIKey(),
 			},
 		}
 		p.ConfigureContextFunc = configure(version, p)
@@ -37,7 +40,7 @@ func New(version string) func() *schema.Provider {
 }
 
 type apiClient struct {
-	algoliaClient *search.Client
+	searchClient *search.Client
 }
 
 func configure(version string, p *schema.Provider) func(context.Context, *schema.ResourceData) (interface{}, diag.Diagnostics) {
@@ -49,6 +52,6 @@ func configure(version string, p *schema.Provider) func(context.Context, *schema
 		}
 		algoliaClient := search.NewClientWithConfig(config)
 
-		return &apiClient{algoliaClient: algoliaClient}, nil
+		return &apiClient{searchClient: algoliaClient}, nil
 	}
 }

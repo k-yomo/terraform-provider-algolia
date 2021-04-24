@@ -1,17 +1,5 @@
-# Terraform Provider Scaffolding
-
-This repository is a *template* for a [Terraform](https://www.terraform.io) provider. It is intended as a starting point for creating Terraform providers, containing:
-
- - A resource, and a data source (`internal/provider/`),
- - Examples (`examples/`) and generated documentation (`docs/`),
- - Miscellaneous meta files.
- 
-These files contain boilerplate code that you will need to edit to create your own Terraform provider. A full guide to creating Terraform providers can be found at [Writing Custom Providers](https://www.terraform.io/docs/extend/writing-custom-providers.html).
-
-Please see the [GitHub template repository documentation](https://help.github.com/en/github/creating-cloning-and-archiving-repositories/creating-a-repository-from-a-template) for how to create a new repository from this template on GitHub.
-
-Once you've written your provider, you'll want to [publish it on the Terraform Registry](https://www.terraform.io/docs/registry/providers/publishing.html) so that others can use it.
-
+# Terraform Provider Algolia
+Fully tested Terraform Provider for Algolia.
 
 ## Requirements
 
@@ -49,16 +37,19 @@ Fill this in for each provider
 
 If you wish to work on the provider, you'll first need [Go](http://www.golang.org) installed on your machine (see [Requirements](#requirements) above).
 
-To compile the provider, run `go install`. This will build the provider and put the provider binary in the `$GOPATH/bin` directory.
+To generate or update documentation, run `make generate`.
 
-To generate or update documentation, run `go generate`.
+### Test
+Set required env variables.
+```
+$ echo ALGOLIA_APP_ID={APP_ID} >> .env
+$ echo ALGOLIA_API_KEY={API_KEY} >> .env
+$ direnv allow
+```
 
-To use the provider locally, run `make sideload`.
-
-In order to run the full suite of Acceptance tests, run `make testacc`.
-
-*Note:* Acceptance tests create real resources, and often cost money to run.
-
+Run `make testacc` to run the full suite of Acceptance tests.
 ```sh
 $ make testacc
 ```
+*Note:* Acceptance tests create real resources, and often cost money to run.
+

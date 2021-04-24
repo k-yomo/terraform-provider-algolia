@@ -27,5 +27,5 @@ provider "algolia" {
 
 ### Optional
 
-- **api_key** (String) The API key to access algolia resources
-- **app_id** (String) The ID of the application
+- **api_key** (String) The API key to access algolia resources.
+- **app_id** (String) The ID of the application.
