@@ -38,7 +38,7 @@ func TestAccResourceIndex(t *testing.T) {
 					testCheckResourceListAttr(resourceName, "attributes_config.0.unretrievable_attributes", []string{"author_email"}),
 					testCheckResourceListAttr(resourceName, "attributes_config.0.attributes_to_retrieve", []string{"body", "category", "description", "tag", "title"}),
 					testCheckResourceListAttr(resourceName, "ranking_config.0.ranking", []string{"words", "proximity"}),
-					testCheckResourceListAttr(resourceName, "ranking_config.0.replicas", []string{"replica_test1", "replica_test2"}),
+					resource.TestCheckNoResourceAttr(resourceName, "ranking_config.0.replicas.0"),
 					resource.TestCheckResourceAttr(resourceName, "faceting_config.0.max_values_per_facet", "50"),
 					resource.TestCheckResourceAttr(resourceName, "faceting_config.0.sort_facet_values_by", "alpha"),
 				),
@@ -83,10 +83,6 @@ resource "algolia_index" "%s" {
     ranking = [
       "words",
       "proximity"
-    ]
-    replicas = [
-      "replica_test1",
-      "replica_test2",
     ]
   }
   faceting_config {
