@@ -20,6 +20,7 @@ $ export ALGOLIA_API_KEY=<your api key>
 ```
 
 The example below demonstrates the following operations:
+- create index
 - create api key
 
 ```terraform
@@ -36,13 +37,35 @@ provider "algolia" {
   app_id = "XXXXXXXXXX"
 }
 
+resource "algolia_index" "example" {
+  name = "example"
+  searchable_attributes = [
+    "title",
+    "category,tag",
+    "unordered(description)",
+  ]
+  attributes_for_faceting = [
+    "category"
+  ]
+  unretrievable_attributes = [
+    "author_email"
+  ]
+  attributes_to_retrieve = [
+    "title",
+    "category",
+    "tag",
+    "description",
+    "body"
+  ]
+}
+
 resource "algolia_api_key" "example" {
   acl                         = ["search", "browse"]
   expires_at                  = 2524608000 # 01 Jan 2050 00:00:00 GMT
   max_hits_per_query          = 100
   max_queries_per_ip_per_hour = 10000
   description                 = "This is a example api key"
-  indexes                     = ["dev_*"]
+  indexes                     = [algolia_index.example.name]
   referers                    = ["https://algolia.com/\\*"]
 }
 ```
