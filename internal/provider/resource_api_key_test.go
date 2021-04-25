@@ -7,6 +7,8 @@ import (
 )
 
 func TestAccResourceAPIKey(t *testing.T) {
+	t.Parallel()
+
 	resource.UnitTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,

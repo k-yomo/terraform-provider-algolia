@@ -44,13 +44,13 @@ func resourceAPIKey() *schema.Resource {
 				Description: "Maximum number of hits this API key can retrieve in one call.",
 				Type:        schema.TypeInt,
 				Optional:    true,
-				Computed:    true,
+				Default:     0,
 			},
 			"max_queries_per_ip_per_hour": {
 				Description: "Maximum number of API calls allowed from an IP address per hour.",
 				Type:        schema.TypeInt,
 				Optional:    true,
-				Computed:    true,
+				Default:     0,
 			},
 			"indexes": {
 				Description: "List of targeted indices. You can target all indices starting with a prefix or ending with a suffix using the ‘*’ character.",
@@ -65,7 +65,6 @@ func resourceAPIKey() *schema.Resource {
 				Elem:        &schema.Schema{Type: schema.TypeString},
 				Set:         schema.HashString,
 				Optional:    true,
-				Computed:    true,
 			},
 			"description": {
 				Description: "Description of the API key.",
@@ -173,27 +172,6 @@ func refreshAPIKeyState(ctx context.Context, d *schema.ResourceData, m interface
 }
 
 func mapToAPIKey(d *schema.ResourceData) search.Key {
-	var acl []string
-	if value, ok := d.GetOk("acl"); ok {
-		for _, v := range value.(*schema.Set).List() {
-			acl = append(acl, v.(string))
-		}
-	}
-
-	var indexes []string
-	if value, ok := d.GetOk("indexes"); ok {
-		for _, v := range value.(*schema.Set).List() {
-			indexes = append(indexes, v.(string))
-		}
-	}
-
-	var referers []string
-	if value, ok := d.GetOk("referers"); ok {
-		for _, v := range value.(*schema.Set).List() {
-			referers = append(referers, v.(string))
-		}
-	}
-
 	var validity time.Duration
 	if expiresAt, ok := d.GetOk("expires_at"); ok {
 		validity = time.Duration(expiresAt.(int)-int(time.Now().Unix())) * time.Second
@@ -201,12 +179,12 @@ func mapToAPIKey(d *schema.ResourceData) search.Key {
 
 	return search.Key{
 		Value:                  d.Get("key").(string),
-		ACL:                    acl,
+		ACL:                    castStringSet(d.Get("acl")),
 		Validity:               validity,
 		MaxHitsPerQuery:        d.Get("max_hits_per_query").(int),
 		MaxQueriesPerIPPerHour: d.Get("max_queries_per_ip_per_hour").(int),
-		Indexes:                indexes,
-		Referers:               referers,
+		Indexes:                castStringSet(d.Get("indexes")),
+		Referers:               castStringSet(d.Get("referers")),
 		Description:            d.Get("description").(string),
 	}
 }
