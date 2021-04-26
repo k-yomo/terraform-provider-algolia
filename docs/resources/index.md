@@ -195,4 +195,10 @@ Optional:
 - **separators_to_index** (String) Separators (punctuation characters) to index. By default, separators are not indexed.
 - **typo_tolerance** (String) Whether typo tolerance is enabled and how it is applied
 
+## Import
 
+Import is supported using the following syntax:
+
+```shell
+terraform import algolia_index.default {{index_name}}
+```

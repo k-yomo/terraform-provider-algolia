@@ -1,0 +1,1 @@
+terraform import algolia_api_key.default {{key}}

@@ -46,4 +46,10 @@ resource "algolia_api_key" "example" {
 - **created_at** (Number) The unix time at which the key has been created.
 - **key** (String, Sensitive) The created key.
 
+## Import
 
+Import is supported using the following syntax:
+
+```shell
+terraform import algolia_api_key.default {{key}}
+```
