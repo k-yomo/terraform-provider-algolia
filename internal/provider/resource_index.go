@@ -29,7 +29,7 @@ func resourceIndex() *schema.Resource {
 				ForceNew:    true,
 			},
 			"attributes_config": {
-				Description: `The configuration for attributes.`,
+				Description: "The configuration for attributes.",
 				Type:        schema.TypeList,
 				Optional:    true,
 				Computed:    true,
@@ -70,7 +70,7 @@ func resourceIndex() *schema.Resource {
 				},
 			},
 			"ranking_config": {
-				Description: `The configuration for ranking.`,
+				Description: "The configuration for ranking.",
 				Type:        schema.TypeList,
 				Optional:    true,
 				Computed:    true,
@@ -112,7 +112,7 @@ func resourceIndex() *schema.Resource {
 				},
 			},
 			"faceting_config": {
-				Description: `The configuration for faceting.`,
+				Description: "The configuration for faceting.",
 				Type:        schema.TypeList,
 				Optional:    true,
 				Computed:    true,
@@ -137,7 +137,7 @@ func resourceIndex() *schema.Resource {
 				},
 			},
 			"highlight_and_snippet_config": {
-				Description: `The configuration for highlight / snippet in index setting.`,
+				Description: "The configuration for highlight / snippet in index setting.",
 				Type:        schema.TypeList,
 				Optional:    true,
 				Computed:    true,
@@ -187,7 +187,7 @@ func resourceIndex() *schema.Resource {
 				},
 			},
 			"pagination_config": {
-				Description: `The configuration for pagination in index setting.`,
+				Description: "The configuration for pagination in index setting.",
 				Type:        schema.TypeList,
 				Optional:    true,
 				Computed:    true,
@@ -211,7 +211,7 @@ func resourceIndex() *schema.Resource {
 				},
 			},
 			"typos_config": {
-				Description: `The configuration for typos in index setting.`,
+				Description: "The configuration for typos in index setting.",
 				Type:        schema.TypeList,
 				Optional:    true,
 				Computed:    true,
@@ -267,7 +267,7 @@ func resourceIndex() *schema.Resource {
 				},
 			},
 			"languages_config": {
-				Description: `The configuration for languages in index setting.`,
+				Description: "The configuration for languages in index setting.",
 				Type:        schema.TypeList,
 				Optional:    true,
 				Computed:    true,
@@ -387,7 +387,7 @@ List of supported languages are listed on http://nhttps//www.algolia.com/doc/api
 				Default:     false,
 			},
 			"query_strategy_config": {
-				Description: `The configuration for query strategy in index setting.`,
+				Description: "The configuration for query strategy in index setting.",
 				Type:        schema.TypeList,
 				Optional:    true,
 				Computed:    true,
@@ -468,7 +468,7 @@ List of supported languages are listed on http://nhttps//www.algolia.com/doc/api
 				},
 			},
 			"performance_config": {
-				Description: `The configuration for performance in index setting.`,
+				Description: "The configuration for performance in index setting.",
 				Type:        schema.TypeList,
 				Optional:    true,
 				Computed:    true,
