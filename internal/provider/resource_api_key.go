@@ -23,59 +23,93 @@ func resourceAPIKey() *schema.Resource {
 		// https://www.algolia.com/doc/api-reference/api-methods/add-api-key/
 		Schema: map[string]*schema.Schema{
 			"key": {
-				Description: "The created key.",
 				Type:        schema.TypeString,
 				Computed:    true,
 				Sensitive:   true,
+				Description: "The created key.",
 			},
 			"acl": {
-				Description: "Set of permissions associated with the key.",
-				Type:        schema.TypeSet,
-				Elem:        &schema.Schema{Type: schema.TypeString},
-				Set:         schema.HashString,
-				Required:    true,
+				Type:     schema.TypeSet,
+				Elem:     &schema.Schema{Type: schema.TypeString},
+				Set:      schema.HashString,
+				Required: true,
+				ValidateFunc: validation.StringInSlice([]string{
+					"search",
+					"browse",
+					"addObject",
+					"deleteObject",
+					"listIndexes",
+					"deleteIndex",
+					"settings",
+					"editSettings",
+					"analytics",
+					"recommendation",
+					"usage",
+					"nluReadAnswers",
+					"logs",
+					"seeUnretrievableAttributes",
+				}, false),
+				Description: `Set of permissions associated with the key.
+The possible ACLs are:
+  - ` + "`search`" + `: allowed to perform search operations.
+  - ` + "`browse`" + `: allowed to retrieve all index data with the browse endpoint.
+  - ` + "`addObject`" + `: allowed to add or update a records in the index.
+  - ` + "`deleteObject`" + `: allowed to delete an existing record.
+  - ` + "`listIndexes`" + `: allowed to get a list of all existing indices.
+  - ` + "`deleteIndex`" + `: allowed to delete an index.
+  - ` + "`settings`" + `: allowed to read all index settings.
+  - ` + "`editSettings`" + `: allowed to update all index settings.
+  - ` + "`analytics`" + `: allowed to retrieve data with the Analytics API.
+  - ` + "`recommendation`" + `: allowed to interact with the Recommendation API.
+  - ` + "`usage`" + ` allowed to retrieve data with the Usage API.
+  - ` + "`nluReadAnswers`" + `: allowed to perform semantic search with the Answers API.
+  - ` + "`logs`" + `: allowed to query the logs.
+  - ` + "`seeUnretrievableAttributes`" + `: allowed to retrieve unretrievableAttributes for all operations that return records.
+`,
 			},
 			"expires_at": {
-				Description:  "Unix timestamp of the date at which the key expires. RFC3339 format. Will not expire per default.",
 				Type:         schema.TypeString,
 				Optional:     true,
 				ValidateFunc: validation.IsRFC3339Time,
+				Description:  "Unix timestamp of the date at which the key expires. RFC3339 format. Will not expire per default.",
 			},
 			"max_hits_per_query": {
-				Description: "Maximum number of hits this API key can retrieve in one call.",
 				Type:        schema.TypeInt,
 				Optional:    true,
 				Default:     0,
+				Description: "Maximum number of hits this API key can retrieve in one call. This parameter can be used to protect you from attempts at retrieving your entire index contents by massively querying the index.",
 			},
 			"max_queries_per_ip_per_hour": {
-				Description: "Maximum number of API calls allowed from an IP address per hour.",
-				Type:        schema.TypeInt,
-				Optional:    true,
-				Default:     0,
+				Type:     schema.TypeInt,
+				Optional: true,
+				Default:  0,
+				Description: `Maximum number of API calls allowed from an IP address per hour.Each time an API call is performed with this key, a check is performed. If the IP at the source of the call did more than this number of calls in the last hour, a 429 code is returned.
+
+This parameter can be used to protect you from attempts at retrieving your entire index contents by massively querying the index.`,
 			},
 			"indexes": {
-				Description: "List of targeted indices. You can target all indices starting with a prefix or ending with a suffix using the ‘*’ character.",
 				Type:        schema.TypeSet,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 				Set:         schema.HashString,
 				Optional:    true,
+				Description: "List of targeted indices. You can target all indices starting with a prefix or ending with a suffix using the ‘*’ character. For example, “dev_*” matches all indices starting with “dev_” and “*_dev” matches all indices ending with “_dev”.",
 			},
 			"referers": {
-				Description: "List of referrers that can perform an operation. You can use the “*” (asterisk) character as a wildcard to match subdomains, or all pages of a website.",
 				Type:        schema.TypeSet,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 				Set:         schema.HashString,
 				Optional:    true,
+				Description: "List of referrers that can perform an operation. You can use the “*” (asterisk) character as a wildcard to match subdomains, or all pages of a website. For example, `\"https://algolia.com/\\*\"` matches all referrers starting with `\"https://algolia.com/\"`, and `\"\\*.algolia.com\"` matches all referrers ending with `\".algolia.com\"`. If you want to allow all possible referrers from the `algolia.com` domain, you can use `\"\\*algolia.com/\\*\"`.",
 			},
 			"description": {
-				Description: "Description of the API key.",
 				Type:        schema.TypeString,
 				Optional:    true,
+				Description: "Description of the API key.",
 			},
 			"created_at": {
-				Description: "The unix time at which the key has been created.",
 				Type:        schema.TypeInt,
 				Computed:    true,
+				Description: "The unix time at which the key has been created.",
 			},
 		},
 	}

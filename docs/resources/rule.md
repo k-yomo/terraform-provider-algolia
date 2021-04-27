@@ -108,8 +108,8 @@ Required:
 
 - **delete** (String) Text or patterns to remove from the query string.
 - **type** (String) Type of edit. Must be one of:
-- `remove`: when you want to delete some text and not replace it with anything
-- `replace`: when you want to delete some text and replace it with something else
+	- `remove`: when you want to delete some text and not replace it with anything
+	- `replace`: when you want to delete some text and replace it with something else
 
 Optional:
 

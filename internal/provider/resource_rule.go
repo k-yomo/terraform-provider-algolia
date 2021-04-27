@@ -126,8 +126,8 @@ At least one of the following object must be used:
 													Required:     true,
 													ValidateFunc: validation.StringInSlice([]string{"remove", "replace"}, false),
 													Description: `Type of edit. Must be one of:
-- ` + "`remove`" + `: when you want to delete some text and not replace it with anything
-- ` + "`replace`" + `: when you want to delete some text and replace it with something else
+	- ` + "`remove`" + `: when you want to delete some text and not replace it with anything
+	- ` + "`replace`" + `: when you want to delete some text and replace it with something else
 `,
 												},
 												"delete": {
