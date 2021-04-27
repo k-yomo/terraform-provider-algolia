@@ -10,17 +10,14 @@ import (
 func TestAccResourceRule(t *testing.T) {
 	t.Parallel()
 
-	indexName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
-	objectID := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	indexName := acctest.RandStringFromCharSet(100, acctest.CharSetAlpha)
+	objectID := acctest.RandStringFromCharSet(64, acctest.CharSetAlpha)
 	resourceName := fmt.Sprintf("algolia_rule.%s", objectID)
 
 	resource.UnitTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
 		Steps: []resource.TestStep{
-			{
-				Config: testAccResourceIndex(indexName),
-			},
 			{
 				Config: testAccResourceRule(indexName, objectID),
 				Check: resource.ComposeTestCheckFunc(
@@ -40,10 +37,14 @@ func TestAccResourceRule(t *testing.T) {
 }
 
 func testAccResourceRule(indexName, objectID string) string {
-	return fmt.Sprintf(`
-resource "algolia_rule" "%s" {
-  index_name = "%s"
-  object_id = "%s"
+	return `
+resource "algolia_index" "` + indexName + `" {
+  name = "` + indexName + `"
+}
+
+resource "algolia_rule" "` + objectID + `" {
+  index_name = algolia_index.` + indexName + `.name
+  object_id = "` + objectID + `"
 
   conditions {
     pattern   = "{facet:category}"
@@ -65,5 +66,5 @@ resource "algolia_rule" "%s" {
     //hide = ["hide-12345"]
   }
 }
-`, objectID, indexName, objectID)
+`
 }

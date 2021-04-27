@@ -1,6 +1,8 @@
 package provider
 
 import (
+	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"regexp"
 	"testing"
@@ -9,47 +11,52 @@ import (
 func TestAccResourceAPIKey(t *testing.T) {
 	t.Parallel()
 
+	name := acctest.RandStringFromCharSet(100, acctest.CharSetAlpha)
+	resourceName := fmt.Sprintf("algolia_api_key.%s", name)
+
 	resource.UnitTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccResourceAPIKey,
+				Config: testAccResourceAPIKey(name),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestMatchResourceAttr("algolia_api_key.test", "key", regexp.MustCompile("^.{1,}$")),
-					testCheckResourceListAttr("algolia_api_key.test", "acl", []string{"search"}),
-					resource.TestCheckResourceAttr("algolia_api_key.test", "expires_at", "0"),
-					resource.TestCheckResourceAttr("algolia_api_key.test", "max_hits_per_query", "0"),
-					resource.TestCheckResourceAttr("algolia_api_key.test", "max_queries_per_ip_per_hour", "0"),
-					resource.TestCheckNoResourceAttr("algolia_api_key.test", "indexes.0"),
-					resource.TestCheckResourceAttr("algolia_api_key.test", "description", ""),
+					resource.TestMatchResourceAttr(resourceName, "key", regexp.MustCompile("^.{1,}$")),
+					testCheckResourceListAttr(resourceName, "acl", []string{"search"}),
+					resource.TestCheckResourceAttr(resourceName, "expires_at", "0"),
+					resource.TestCheckResourceAttr(resourceName, "max_hits_per_query", "0"),
+					resource.TestCheckResourceAttr(resourceName, "max_queries_per_ip_per_hour", "0"),
+					resource.TestCheckNoResourceAttr(resourceName, "indexes.0"),
+					resource.TestCheckResourceAttr(resourceName, "description", ""),
 				),
 			},
 			{
-				Config: testAccResourceAPIKeyUpdate,
+				Config: testAccResourceAPIKeyUpdate(name),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestMatchResourceAttr("algolia_api_key.test", "key", regexp.MustCompile("^.{1,}$")),
-					testCheckResourceListAttr("algolia_api_key.test", "acl", []string{"browse", "search"}),
-					resource.TestCheckResourceAttr("algolia_api_key.test", "expires_at", "2524608000"),
-					resource.TestCheckResourceAttr("algolia_api_key.test", "max_hits_per_query", "100"),
-					resource.TestCheckResourceAttr("algolia_api_key.test", "max_queries_per_ip_per_hour", "10000"),
-					testCheckResourceListAttr("algolia_api_key.test", "indexes", []string{"dev_*"}),
-					testCheckResourceListAttr("algolia_api_key.test", "referers", []string{"https://algolia.com/\\*"}),
-					resource.TestCheckResourceAttr("algolia_api_key.test", "description", "This is a test api key"),
+					resource.TestMatchResourceAttr(resourceName, "key", regexp.MustCompile("^.{1,}$")),
+					testCheckResourceListAttr(resourceName, "acl", []string{"browse", "search"}),
+					resource.TestCheckResourceAttr(resourceName, "expires_at", "2524608000"),
+					resource.TestCheckResourceAttr(resourceName, "max_hits_per_query", "100"),
+					resource.TestCheckResourceAttr(resourceName, "max_queries_per_ip_per_hour", "10000"),
+					testCheckResourceListAttr(resourceName, "indexes", []string{"dev_*"}),
+					testCheckResourceListAttr(resourceName, "referers", []string{"https://algolia.com/\\*"}),
+					resource.TestCheckResourceAttr(resourceName, "description", "This is a test api key"),
 				),
 			},
 		},
 	})
 }
 
-const testAccResourceAPIKey = `
-resource "algolia_api_key" "test" {
+func testAccResourceAPIKey(name string) string {
+	return fmt.Sprintf(`
+resource "algolia_api_key" "%s" {
   acl = ["search"]
+}`, name)
 }
-`
 
-const testAccResourceAPIKeyUpdate = `
-resource "algolia_api_key" "test" {
+func testAccResourceAPIKeyUpdate(name string) string {
+	return fmt.Sprintf(`
+resource "algolia_api_key" "%s" {
   acl                         = ["browse", "search"]
   expires_at                  = 2524608000 # 01 Jan 2050 00:00:00 GMT
   max_hits_per_query          = 100
@@ -57,5 +64,5 @@ resource "algolia_api_key" "test" {
   indexes                     = ["dev_*"]
   referers                    = ["https://algolia.com/\\*"]
   description                 = "This is a test api key"
+}`, name)
 }
-`

@@ -8,8 +8,12 @@ generate:
 .PHONY: testacc
 testacc:
 	TF_ACC=1 go test ./... -v $(TESTARGS) -coverprofile=coverage.out -timeout 120m
-	go tool cover -html=coverage.out
+
+# Run acceptance tests and show coverages
+.PHONY: testacc-cover
+testacc-cover: testacc
 	go tool cover -func=coverage.out
+	go tool cover -html=coverage.out
 
 .PHONY: fmt
 fmt:

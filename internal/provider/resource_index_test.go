@@ -11,7 +11,7 @@ import (
 func TestAccResourceIndex(t *testing.T) {
 	t.Parallel()
 
-	indexName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	indexName := acctest.RandStringFromCharSet(100, acctest.CharSetAlpha)
 	resourceName := fmt.Sprintf("algolia_index.%s", indexName)
 
 	resource.UnitTest(t, resource.TestCase{
