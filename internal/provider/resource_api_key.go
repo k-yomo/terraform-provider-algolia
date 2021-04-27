@@ -33,22 +33,6 @@ func resourceAPIKey() *schema.Resource {
 				Elem:     &schema.Schema{Type: schema.TypeString},
 				Set:      schema.HashString,
 				Required: true,
-				ValidateFunc: validation.StringInSlice([]string{
-					"search",
-					"browse",
-					"addObject",
-					"deleteObject",
-					"listIndexes",
-					"deleteIndex",
-					"settings",
-					"editSettings",
-					"analytics",
-					"recommendation",
-					"usage",
-					"nluReadAnswers",
-					"logs",
-					"seeUnretrievableAttributes",
-				}, false),
 				Description: `Set of permissions associated with the key.
 The possible ACLs are:
   - ` + "`search`" + `: allowed to perform search operations.
