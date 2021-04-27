@@ -114,8 +114,6 @@ func resourceAPIKeyCreate(ctx context.Context, d *schema.ResourceData, m interfa
 		return diag.FromErr(err)
 	}
 
-	d.SetId(strconv.FormatInt(res.CreatedAt.Unix(), 10))
-
 	return resourceAPIKeyRead(ctx, d, m)
 }
 
@@ -128,6 +126,7 @@ func resourceAPIKeyRead(ctx context.Context, d *schema.ResourceData, m interface
 
 func resourceAPIKeyUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	apiClient := m.(*apiClient)
+
 	res, err := apiClient.searchClient.UpdateAPIKey(mapToAPIKey(d))
 	if err != nil {
 		return diag.FromErr(err)
@@ -141,6 +140,7 @@ func resourceAPIKeyUpdate(ctx context.Context, d *schema.ResourceData, m interfa
 
 func resourceAPIKeyDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	apiClient := m.(*apiClient)
+
 	res, err := apiClient.searchClient.DeleteAPIKey(d.Get("key").(string), ctx)
 	if err != nil {
 		return diag.FromErr(err)
@@ -166,14 +166,18 @@ func resourceAPIKeyStateContext(ctx context.Context, d *schema.ResourceData, m i
 
 func refreshAPIKeyState(ctx context.Context, d *schema.ResourceData, m interface{}) error {
 	apiClient := m.(*apiClient)
-	key, err := apiClient.searchClient.GetAPIKey(d.Get("key").(string), ctx)
+
+	keyID := d.Get("key").(string)
+	key, err := apiClient.searchClient.GetAPIKey(keyID, ctx)
 	if err != nil {
 		d.SetId("")
 		return err
 	}
 
+	d.SetId(strconv.FormatInt(key.CreatedAt.Unix(), 10))
+
 	values := map[string]interface{}{
-		"key":                         d.Get("key"),
+		"key":                         keyID,
 		"acl":                         key.ACL,
 		"max_hits_per_query":          key.MaxHitsPerQuery,
 		"max_queries_per_ip_per_hour": key.MaxQueriesPerIPPerHour,
@@ -182,7 +186,7 @@ func refreshAPIKeyState(ctx context.Context, d *schema.ResourceData, m interface
 		"indexes":                     key.Indexes,
 		"created_at":                  key.CreatedAt.Unix(),
 	}
-	// we don't set from key.Validity since it is remaining valid time and it's unstable
+	// we can't set from key.Validity since it is remaining valid time and the value changes every second.
 	// TODO: fix to work with import
 	if expiresAtRFC3339, ok := d.GetOk("expires_at"); ok {
 		values["expires_at"] = expiresAtRFC3339

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"regexp"
 	"testing"
 )
@@ -35,13 +36,23 @@ func TestAccResourceAPIKey(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestMatchResourceAttr(resourceName, "key", regexp.MustCompile("^.{1,}$")),
 					testCheckResourceListAttr(resourceName, "acl", []string{"browse", "search"}),
-					resource.TestCheckResourceAttr(resourceName, "expires_at", "2030-01-01T00:00:00.000Z"),
+					resource.TestCheckResourceAttr(resourceName, "expires_at", "2030-01-01T00:00:00Z"),
 					resource.TestCheckResourceAttr(resourceName, "max_hits_per_query", "100"),
 					resource.TestCheckResourceAttr(resourceName, "max_queries_per_ip_per_hour", "10000"),
 					testCheckResourceListAttr(resourceName, "indexes", []string{"dev_*"}),
 					testCheckResourceListAttr(resourceName, "referers", []string{"https://algolia.com/\\*"}),
 					resource.TestCheckResourceAttr(resourceName, "description", "This is a test api key"),
 				),
+			},
+			{
+				Config: testAccResourceAPIKeyUpdate(name),
+				ResourceName: resourceName,
+				ImportStateIdFunc: func(state *terraform.State) (string, error) {
+					return state.Modules[0].Resources[resourceName].Primary.Attributes["key"], nil
+				},
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{"expires_at"},
 			},
 		},
 	})
@@ -58,7 +69,7 @@ func testAccResourceAPIKeyUpdate(name string) string {
 	return fmt.Sprintf(`
 resource "algolia_api_key" "%s" {
   acl                         = ["browse", "search"]
-  expires_at                  = "2030-01-01T00:00:00.000Z"
+  expires_at                  = "2030-01-01T00:00:00Z"
   max_hits_per_query          = 100
   max_queries_per_ip_per_hour = 10000
   indexes                     = ["dev_*"]
