@@ -72,7 +72,7 @@ Optional:
 
 - **automatic_facet_filters** (Block List) Names of facets to which automatic filtering must be applied; they must match the facet name of a facet value placeholder in the query pattern. (see [below for nested schema](#nestedblock--consequence--params--automatic_facet_filters))
 - **automatic_optional_facet_filters** (Block List) Same syntax as `automatic_facet_filters`, but the engine treats the filters as optional. Behaves like [optionalFilters](https://www.algolia.com/doc/api-reference/api-parameters/optionalFilters/). (see [below for nested schema](#nestedblock--consequence--params--automatic_optional_facet_filters))
-- **object_query** (Block List, Max: 1) It describes incremental edits to be made to the query string. Either one of `query` or `object_query` can be set. (see [below for nested schema](#nestedblock--consequence--params--object_query))
+- **object_query** (Block List) It describes incremental edits to be made to the query string. Either one of `query` or `object_query` can be set. (see [below for nested schema](#nestedblock--consequence--params--object_query))
 - **query** (String) It replaces the entire query string. Either one of `query` or `object_query` can be set.
 
 <a id="nestedblock--consequence--params--automatic_facet_filters"></a>

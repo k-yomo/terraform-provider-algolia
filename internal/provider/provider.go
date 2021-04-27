@@ -20,13 +20,13 @@ func New(version string) func() *schema.Provider {
 					Type:        schema.TypeString,
 					Optional:    true,
 					DefaultFunc: schema.EnvDefaultFunc("ALGOLIA_APP_ID", nil),
-					Description: "The ID of the application.",
+					Description: "The ID of the application. Defaults to the env variable `ALGOLIA_APP_ID`.",
 				},
 				"api_key": {
 					Type:        schema.TypeString,
 					Optional:    true,
 					DefaultFunc: schema.EnvDefaultFunc("ALGOLIA_API_KEY", nil),
-					Description: "The API key to access algolia resources.",
+					Description: "The API key to access algolia resources. Defaults to the env variable `ALGOLIA_API_KEY`.",
 				},
 			},
 			ResourcesMap: map[string]*schema.Resource{

@@ -29,7 +29,7 @@ terraform {
   required_providers {
     stripe = {
       source = "k-yomo/algolia"
-      version = "0.0.6" # use the latest released version
+      version = "0.1.1"
     }
   }
 }
@@ -100,7 +100,7 @@ resource "algolia_rule" "example" {
 
 resource "algolia_api_key" "example" {
   acl                         = ["search", "browse"]
-  expires_at                  = "2030-01-01T00:00:00.000Z"
+  expires_at                  = "2030-01-01T00:00:00Z"
   max_hits_per_query          = 100
   max_queries_per_ip_per_hour = 10000
   description                 = "This is a example api key"

@@ -27,5 +27,5 @@ provider "algolia" {
 
 ### Optional
 
-- **api_key** (String) The API key to access algolia resources.
-- **app_id** (String) The ID of the application.
+- **api_key** (String) The API key to access algolia resources. Defaults to the env variable `ALGOLIA_API_KEY`.
+- **app_id** (String) The ID of the application. Defaults to the env variable `ALGOLIA_APP_ID`.
