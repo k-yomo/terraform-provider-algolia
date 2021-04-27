@@ -32,6 +32,7 @@ func New(version string) func() *schema.Provider {
 			ResourcesMap: map[string]*schema.Resource{
 				"algolia_index":   resourceIndex(),
 				"algolia_api_key": resourceAPIKey(),
+				"algolia_rule":    resourceRule(),
 			},
 		}
 		p.ConfigureContextFunc = configure(version, p)
