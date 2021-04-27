@@ -23,7 +23,7 @@ func TestAccResourceAPIKey(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestMatchResourceAttr(resourceName, "key", regexp.MustCompile("^.{1,}$")),
 					testCheckResourceListAttr(resourceName, "acl", []string{"search"}),
-					resource.TestCheckResourceAttr(resourceName, "expires_at", "0"),
+					resource.TestCheckNoResourceAttr(resourceName, "expires_at"),
 					resource.TestCheckResourceAttr(resourceName, "max_hits_per_query", "0"),
 					resource.TestCheckResourceAttr(resourceName, "max_queries_per_ip_per_hour", "0"),
 					resource.TestCheckNoResourceAttr(resourceName, "indexes.0"),
@@ -35,7 +35,7 @@ func TestAccResourceAPIKey(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestMatchResourceAttr(resourceName, "key", regexp.MustCompile("^.{1,}$")),
 					testCheckResourceListAttr(resourceName, "acl", []string{"browse", "search"}),
-					resource.TestCheckResourceAttr(resourceName, "expires_at", "2524608000"),
+					resource.TestCheckResourceAttr(resourceName, "expires_at", "2030-01-01T00:00:00.000Z"),
 					resource.TestCheckResourceAttr(resourceName, "max_hits_per_query", "100"),
 					resource.TestCheckResourceAttr(resourceName, "max_queries_per_ip_per_hour", "10000"),
 					testCheckResourceListAttr(resourceName, "indexes", []string{"dev_*"}),
@@ -58,7 +58,7 @@ func testAccResourceAPIKeyUpdate(name string) string {
 	return fmt.Sprintf(`
 resource "algolia_api_key" "%s" {
   acl                         = ["browse", "search"]
-  expires_at                  = 2524608000 # 01 Jan 2050 00:00:00 GMT
+  expires_at                  = "2030-01-01T00:00:00.000Z"
   max_hits_per_query          = 100
   max_queries_per_ip_per_hour = 10000
   indexes                     = ["dev_*"]

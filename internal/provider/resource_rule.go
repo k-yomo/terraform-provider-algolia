@@ -254,14 +254,16 @@ At least one of the following object must be used:
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"from": {
-							Type:        schema.TypeInt,
-							Required:    true,
-							Description: "Lower bound of the time range (Unix timestamp).",
+							Type:         schema.TypeString,
+							Required:     true,
+							ValidateFunc: validation.IsRFC3339Time,
+							Description:  "Lower bound of the time range. RFC3339 format.",
 						},
 						"until": {
-							Type:        schema.TypeInt,
-							Required:    true,
-							Description: "Upper bound of the time range (Unix timestamp).",
+							Type:         schema.TypeString,
+							Required:     true,
+							ValidateFunc: validation.IsRFC3339Time,
+							Description:  "Upper bound of the time range. RFC3339 format.",
 						},
 					},
 				},
@@ -618,9 +620,11 @@ func unmarshalValidity(configured interface{}) []search.TimeRange {
 	var timeRanges []search.TimeRange
 	for _, timeRangeData := range l {
 		timeRange := timeRangeData.(map[string]interface{})
+		from, _ := time.Parse(time.RFC3339, timeRange["from"].(string))
+		until, _ := time.Parse(time.RFC3339, timeRange["until"].(string))
 		timeRanges = append(timeRanges, search.TimeRange{
-			From:  time.Unix(int64(timeRange["from"].(int)), 0),
-			Until: time.Unix(int64(timeRange["until"].(int)), 0),
+			From:  from,
+			Until: until,
 		})
 	}
 

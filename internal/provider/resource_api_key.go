@@ -5,6 +5,7 @@ import (
 	"github.com/algolia/algoliasearch-client-go/v3/algolia/search"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"strconv"
 	"time"
 )
@@ -35,10 +36,10 @@ func resourceAPIKey() *schema.Resource {
 				Required:    true,
 			},
 			"expires_at": {
-				Description: "Unix timestamp of the date at which the key expires. A value of 0 means the API key doesn’t expire.",
-				Type:        schema.TypeInt,
-				Optional:    true,
-				Computed:    true,
+				Description:  "Unix timestamp of the date at which the key expires. RFC3339 format. Will not expire per default.",
+				Type:         schema.TypeString,
+				Optional:     true,
+				ValidateFunc: validation.IsRFC3339Time,
 			},
 			"max_hits_per_query": {
 				Description: "Maximum number of hits this API key can retrieve in one call.",
@@ -156,13 +157,17 @@ func refreshAPIKeyState(ctx context.Context, d *schema.ResourceData, m interface
 	values := map[string]interface{}{
 		"key":                         d.Get("key"),
 		"acl":                         key.ACL,
-		"expires_at":                  d.Get("expires_at"), // we don't set from key.Validity since it is remaining valid time and it's unstable
 		"max_hits_per_query":          key.MaxHitsPerQuery,
 		"max_queries_per_ip_per_hour": key.MaxQueriesPerIPPerHour,
 		"referers":                    key.Referers,
 		"description":                 key.Description,
 		"indexes":                     key.Indexes,
 		"created_at":                  key.CreatedAt.Unix(),
+	}
+	// we don't set from key.Validity since it is remaining valid time and it's unstable
+	// TODO: fix to work with import
+	if expiresAtRFC3339, ok := d.GetOk("expires_at"); ok {
+		values["expires_at"] = expiresAtRFC3339
 	}
 	if err := setValues(d, values); err != nil {
 		return err
@@ -173,8 +178,9 @@ func refreshAPIKeyState(ctx context.Context, d *schema.ResourceData, m interface
 
 func mapToAPIKey(d *schema.ResourceData) search.Key {
 	var validity time.Duration
-	if expiresAt, ok := d.GetOk("expires_at"); ok {
-		validity = time.Duration(expiresAt.(int)-int(time.Now().Unix())) * time.Second
+	if expiresAtRFC3339, ok := d.GetOk("expires_at"); ok && expiresAtRFC3339 != "" {
+		t, _ := time.Parse(time.RFC3339, expiresAtRFC3339.(string))
+		validity = time.Duration(int(t.Unix())-int(time.Now().Unix())) * time.Second
 	}
 
 	return search.Key{
