@@ -117,7 +117,6 @@ At least one of the following object must be used:
 										Type:          schema.TypeList,
 										Optional:      true,
 										ConflictsWith: []string{"consequence.0.params.0.query"},
-										MaxItems:      1,
 										Description:   "It describes incremental edits to be made to the query string. Either one of `query` or `object_query` can be set.",
 										Elem: &schema.Resource{
 											Schema: map[string]*schema.Schema{
@@ -445,9 +444,9 @@ func refreshRuleState(ctx context.Context, d *schema.ResourceData, m interface{}
 
 	var validty []interface{}
 	for _, timeRange := range rule.Validity {
-		validty = append(validty, map[string]int{
-			"from":  int(timeRange.From.Unix()),
-			"untie": int(timeRange.Until.Unix()),
+		validty = append(validty, map[string]string{
+			"from":  timeRange.From.In(time.UTC).Format(time.RFC3339),
+			"until": timeRange.Until.In(time.UTC).Format(time.RFC3339),
 		})
 	}
 
@@ -574,8 +573,8 @@ func unmarshalConsequenceParams(configured interface{}) *search.RuleParams {
 	}
 	if v, ok := paramsData["object_query"]; ok {
 		var edits []search.QueryEdit
-		for _, v := range v.([]interface{}) {
-			editData := v.(map[string]interface{})
+		for _, e := range v.([]interface{}) {
+			editData := e.(map[string]interface{})
 			edit := search.QueryEdit{
 				Type:   search.QueryEditType(editData["type"].(string)),
 				Delete: editData["delete"].(string),
