@@ -15,7 +15,7 @@ A configuration for an API key
 ```terraform
 resource "algolia_api_key" "example" {
   acl                         = ["search", "browse"]
-  expires_at                  = 2524608000 # 01 Jan 2050 00:00:00 GMT
+  expires_at                  = "2030-01-01T00:00:00.000Z"
   max_hits_per_query          = 100
   max_queries_per_ip_per_hour = 10000
   description                 = "This is a example api key"
@@ -34,7 +34,7 @@ resource "algolia_api_key" "example" {
 ### Optional
 
 - **description** (String) Description of the API key.
-- **expires_at** (Number) Unix timestamp of the date at which the key expires. A value of 0 means the API key doesn’t expire.
+- **expires_at** (String) Unix timestamp of the date at which the key expires. RFC3339 format. Will not expire per default.
 - **id** (String) The ID of this resource.
 - **indexes** (Set of String) List of targeted indices. You can target all indices starting with a prefix or ending with a suffix using the ‘*’ character.
 - **max_hits_per_query** (Number) Maximum number of hits this API key can retrieve in one call.

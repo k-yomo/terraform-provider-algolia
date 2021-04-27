@@ -158,8 +158,8 @@ Otherwise, you can omit both.
 
 Required:
 
-- **from** (Number) Lower bound of the time range (Unix timestamp).
-- **until** (Number) Upper bound of the time range (Unix timestamp).
+- **from** (String) Lower bound of the time range. RFC3339 format.
+- **until** (String) Upper bound of the time range. RFC3339 format.
 
 ## Import
 
