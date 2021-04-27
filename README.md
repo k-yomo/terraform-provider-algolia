@@ -21,14 +21,15 @@ $ export ALGOLIA_API_KEY=<your api key>
 
 The example below demonstrates the following operations:
 - create index
-- create api key
+- create rule for the index
+- create api key to search the index
 
 ```terraform
 terraform {
   required_providers {
     stripe = {
       source = "k-yomo/algolia"
-      version = "0.0.2" # use the latest released version
+      version = "0.0.6" # use the latest released version
     }
   }
 }
@@ -76,6 +77,26 @@ resource "algolia_index" "example" {
     remove_stop_words_for = ["en"]
   }
 }
+
+resource "algolia_rule" "example" {
+  index_name = algolia_index.example.name
+  object_id  = "example-rule"
+
+  conditions {
+    pattern   = "{facet:category}"
+    anchoring = "contains"
+  }
+
+  consequence {
+    params {
+      automatic_facet_filters {
+        facet       = "category"
+        disjunctive = true
+      }
+    }
+  }
+}
+
 
 resource "algolia_api_key" "example" {
   acl                         = ["search", "browse"]
