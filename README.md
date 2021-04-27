@@ -109,6 +109,14 @@ resource "algolia_api_key" "example" {
 }
 ```
 
+## Supported resources
+- [x] [Settings](https://www.algolia.com/doc/api-client/methods/settings/)
+- [x] [Rule](https://www.algolia.com/doc/api-client/methods/rules/)
+- [x] [Api Keys](https://www.algolia.com/doc/api-client/methods/api-keys/)
+- [ ] [Synonym](https://www.algolia.com/doc/api-client/methods/synonyms/)
+- [ ] [A/B Test](https://www.algolia.com/doc/api-client/methods/ab-test/)
+- [ ] [Personalization](https://www.algolia.com/doc/api-client/methods/personalization/)
+
 ## Contributing
 
 I appreciate your help!
