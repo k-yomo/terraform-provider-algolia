@@ -42,7 +42,7 @@ func resourceSynonyms() *schema.Resource {
 							Type:         schema.TypeString,
 							Required:     true,
 							ValidateFunc: validation.StringInSlice([]string{"synonym", "oneWaySynonym", "altCorrection1", "altCorrection2", "placeholder"}, false),
-							Description:  "The type of the synonym. Possible values are ` + \"`synonym`, `oneWaySynonym`, `altCorrection1`, `altCorrection2` and `placeholder`.",
+							Description:  "The type of the synonym. Possible values are `synonym`, `oneWaySynonym`, `altCorrection1`, `altCorrection2` and `placeholder`.",
 						},
 						"synonyms": {
 							Type:        schema.TypeSet,

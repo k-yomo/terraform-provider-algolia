@@ -30,7 +30,7 @@ A configuration for synonyms. To get more information about synonyms, see the [O
 Required:
 
 - **object_id** (String) Unique identifier for the synonym.It can contain any character, and be of unlimited length.
-- **type** (String) The type of the synonym. Possible values are ` + "`synonym`, `oneWaySynonym`, `altCorrection1`, `altCorrection2` and `placeholder`.
+- **type** (String) The type of the synonym. Possible values are `synonym`, `oneWaySynonym`, `altCorrection1`, `altCorrection2` and `placeholder`.
 
 Optional:
 
