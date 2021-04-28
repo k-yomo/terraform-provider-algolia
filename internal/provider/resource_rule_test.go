@@ -79,7 +79,7 @@ resource "algolia_rule" "` + objectID + `" {
         disjunctive = true
       }
     }
-    // specifing id cause 404 error
+    // specifying id cause 404 error
     //promote {
     //  object_ids  = ["promote-12345"]
     //  position = 0

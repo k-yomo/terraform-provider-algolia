@@ -334,7 +334,7 @@ func resourceRuleDelete(ctx context.Context, d *schema.ResourceData, m interface
 func resourceRuleStateContext(ctx context.Context, d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
 	tokens := strings.Split(d.Id(), "/")
 	if len(tokens) != 2 {
-		return nil, errors.New("Import id must be {{index_name}}/{{object_id}}")
+		return nil, errors.New("import id must be {{index_name}}/{{object_id}}")
 	}
 	indexName := tokens[0]
 	objectID := tokens[1]
@@ -407,7 +407,7 @@ func refreshRuleState(ctx context.Context, d *schema.ResourceData, m interface{}
 
 			var automaticOptionalFacetFilters []interface{}
 			for _, aff := range params.AutomaticOptionalFacetFilters {
-				automaticFacetFilters = append(automaticFacetFilters, map[string]interface{}{
+				automaticOptionalFacetFilters = append(automaticOptionalFacetFilters, map[string]interface{}{
 					"facet":       aff.Facet,
 					"score":       aff.Score,
 					"disjunctive": aff.Disjunctive,
@@ -552,9 +552,9 @@ func unmarshalConsequence(configured interface{}) search.RuleConsequence {
 		}
 		consequence.Hide = hide
 	}
-	//if v, ok := config["user_data"]; ok {
-	//	consequence.UserData = v.(string)
-	//}
+	if v, ok := config["user_data"]; ok {
+		consequence.UserData = v.(string)
+	}
 	consequence.UserData = nil
 	return consequence
 }
