@@ -4,11 +4,14 @@ page_title: "algolia_synonyms Resource - terraform-provider-algolia"
 subcategory: ""
 description: |-
   A configuration for synonyms. To get more information about synonyms, see the Official Documentation https://www.algolia.com/doc/guides/managing-results/optimize-search-results/adding-synonyms/.
+  ※ It replaces any existing synonyms set for the index. So you can't have multiple algolia_synonyms resources for the same index.
 ---
 
 # algolia_synonyms (Resource)
 
 A configuration for synonyms. To get more information about synonyms, see the [Official Documentation](https://www.algolia.com/doc/guides/managing-results/optimize-search-results/adding-synonyms/).
+
+※ **It replaces any existing synonyms set for the index.** So you can't have multiple `algolia_synonyms` resources for the same index.
 
 
 
