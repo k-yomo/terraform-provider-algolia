@@ -3,12 +3,12 @@
 page_title: "algolia_rule Resource - terraform-provider-algolia"
 subcategory: ""
 description: |-
-  A configuration for a Rule
+  A configuration for a Rule.  To get more information about rules, see the Official Documentation https://www.algolia.com/doc/guides/managing-results/rules/rules-overview/.
 ---
 
 # algolia_rule (Resource)
 
-A configuration for a Rule
+A configuration for a Rule.  To get more information about rules, see the [Official Documentation](https://www.algolia.com/doc/guides/managing-results/rules/rules-overview/).
 
 ## Example Usage
 

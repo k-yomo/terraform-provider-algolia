@@ -3,12 +3,12 @@
 page_title: "algolia_index Resource - terraform-provider-algolia"
 subcategory: ""
 description: |-
-  A configuration for an index
+  A configuration for an index.
 ---
 
 # algolia_index (Resource)
 
-A configuration for an index
+A configuration for an index.
 
 ## Example Usage
 

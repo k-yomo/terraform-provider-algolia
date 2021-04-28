@@ -18,7 +18,7 @@ func resourceSynonyms() *schema.Resource {
 		Importer: &schema.ResourceImporter{
 			StateContext: resourceSynonymsStateContext,
 		},
-		Description: "A configuration for synonyms. To get more information about synonyms, see the [Official Documentation](https://www.algolia.com/doc/guides/managing-results/optimize-search-results/adding-synonyms/)",
+		Description: "A configuration for synonyms. To get more information about synonyms, see the [Official Documentation](https://www.algolia.com/doc/guides/managing-results/optimize-search-results/adding-synonyms/).",
 		// https://www.algolia.com/doc/api-reference/api-methods/batch-synonyms/
 		Schema: map[string]*schema.Schema{
 			"index_name": {

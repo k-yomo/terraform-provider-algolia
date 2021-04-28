@@ -19,7 +19,7 @@ func resourceIndex() *schema.Resource {
 		Importer: &schema.ResourceImporter{
 			StateContext: resourceIndexStateContext,
 		},
-		Description: "A configuration for an index",
+		Description: "A configuration for an index.",
 		// https://www.algolia.com/doc/api-reference/settings-api-parameters/
 		Schema: map[string]*schema.Schema{
 			"name": {
