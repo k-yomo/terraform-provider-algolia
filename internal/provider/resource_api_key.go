@@ -12,7 +12,6 @@ import (
 
 func resourceAPIKey() *schema.Resource {
 	return &schema.Resource{
-		Description:   "A configuration for an API key",
 		CreateContext: resourceAPIKeyCreate,
 		ReadContext:   resourceAPIKeyRead,
 		UpdateContext: resourceAPIKeyUpdate,
@@ -20,6 +19,7 @@ func resourceAPIKey() *schema.Resource {
 		Importer: &schema.ResourceImporter{
 			StateContext: resourceAPIKeyStateContext,
 		},
+		Description: "A configuration for an API key",
 		// https://www.algolia.com/doc/api-reference/api-methods/add-api-key/
 		Schema: map[string]*schema.Schema{
 			"key": {

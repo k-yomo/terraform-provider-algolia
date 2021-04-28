@@ -15,7 +15,6 @@ import (
 
 func resourceRule() *schema.Resource {
 	return &schema.Resource{
-		Description:   "A configuration for a Rule",
 		CreateContext: resourceRuleCreate,
 		ReadContext:   resourceRuleRead,
 		UpdateContext: resourceRuleUpdate,
@@ -23,6 +22,7 @@ func resourceRule() *schema.Resource {
 		Importer: &schema.ResourceImporter{
 			StateContext: resourceRuleStateContext,
 		},
+		Description: "A configuration for a Rule",
 		// https://www.algolia.com/doc/api-reference/api-methods/save-rule/#parameters
 		Schema: map[string]*schema.Schema{
 			"index_name": {

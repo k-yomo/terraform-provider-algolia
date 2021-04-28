@@ -12,7 +12,6 @@ import (
 
 func resourceIndex() *schema.Resource {
 	return &schema.Resource{
-		Description:   "A configuration for an index",
 		CreateContext: resourceIndexCreate,
 		ReadContext:   resourceIndexRead,
 		UpdateContext: resourceIndexUpdate,
@@ -20,20 +19,21 @@ func resourceIndex() *schema.Resource {
 		Importer: &schema.ResourceImporter{
 			StateContext: resourceIndexStateContext,
 		},
+		Description: "A configuration for an index",
 		// https://www.algolia.com/doc/api-reference/settings-api-parameters/
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Description: "Name of the index.",
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,
+				Description: "Name of the index.",
 			},
 			"attributes_config": {
-				Description: "The configuration for attributes.",
 				Type:        schema.TypeList,
 				Optional:    true,
 				Computed:    true,
 				MaxItems:    1,
+				Description: "The configuration for attributes.",
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"searchable_attributes": {
