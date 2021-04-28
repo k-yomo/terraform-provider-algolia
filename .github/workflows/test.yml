@@ -6,8 +6,8 @@ on:
   push:
     paths-ignore:
       - 'README.md'
-   schedule:
-     - cron: '0 13 * * *'
+ schedule:
+  - cron: '0 13 * * *'
 
 jobs:
   # ensure the code builds...
@@ -68,7 +68,7 @@ jobs:
 
     - name: Docs check
       run: make docs-check
-        
+
     - name: TF acceptance tests
       timeout-minutes: 10
       env:
