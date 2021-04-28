@@ -45,13 +45,13 @@ func TestAccResourceAPIKey(t *testing.T) {
 				),
 			},
 			{
-				Config: testAccResourceAPIKeyUpdate(name),
+				Config:       testAccResourceAPIKeyUpdate(name),
 				ResourceName: resourceName,
 				ImportStateIdFunc: func(state *terraform.State) (string, error) {
 					return state.Modules[0].Resources[resourceName].Primary.Attributes["key"], nil
 				},
-				ImportState:       true,
-				ImportStateVerify: true,
+				ImportState:             true,
+				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"expires_at"},
 			},
 		},

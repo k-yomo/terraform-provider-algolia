@@ -57,10 +57,10 @@ func resourceIndex() *schema.Resource {
 							Description: "List of attributes that cannot be retrieved at query time.",
 						},
 						"attributes_to_retrieve": {
-							Type:        schema.TypeSet,
-							Elem:        &schema.Schema{Type: schema.TypeString},
-							Set:         schema.HashString,
-							Optional:    true,
+							Type:     schema.TypeSet,
+							Elem:     &schema.Schema{Type: schema.TypeString},
+							Set:      schema.HashString,
+							Optional: true,
 							DefaultFunc: func() (interface{}, error) {
 								return []string{"*"}, nil
 							},
@@ -78,9 +78,9 @@ func resourceIndex() *schema.Resource {
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"ranking": {
-							Type:        schema.TypeList,
-							Elem:        &schema.Schema{Type: schema.TypeString},
-							Optional:    true,
+							Type:     schema.TypeList,
+							Elem:     &schema.Schema{Type: schema.TypeString},
+							Optional: true,
 							DefaultFunc: func() (interface{}, error) {
 								return []string{"typo", "geo", "words", "filters", "proximity", "attribute", "exact", "custom"}, nil
 							},
@@ -443,20 +443,20 @@ List of supported languages are listed on http://nhttps//www.algolia.com/doc/api
 							Description:  "Controls how the exact ranking criterion is computed when the query contains only one word.",
 						},
 						"alternatives_as_exact": {
-							Type:        schema.TypeSet,
-							Elem:        &schema.Schema{Type: schema.TypeString},
-							Set:         schema.HashString,
-							Optional:    true,
+							Type:     schema.TypeSet,
+							Elem:     &schema.Schema{Type: schema.TypeString},
+							Set:      schema.HashString,
+							Optional: true,
 							DefaultFunc: func() (interface{}, error) {
 								return []string{"ignorePlurals", "singleWordSynonym"}, nil
 							},
 							Description: "List of alternatives that should be considered an exact match by the exact ranking criterion.",
 						},
 						"advanced_syntax_features": {
-							Type:        schema.TypeSet,
-							Elem:        &schema.Schema{Type: schema.TypeString},
-							Set:         schema.HashString,
-							Optional:    true,
+							Type:     schema.TypeSet,
+							Elem:     &schema.Schema{Type: schema.TypeString},
+							Set:      schema.HashString,
+							Optional: true,
 							DefaultFunc: func() (interface{}, error) {
 								return []string{"exactPhrase", "excludeWords"}, nil
 							},
