@@ -41,4 +41,10 @@ Optional:
 - **synonyms** (Set of String) List of synonyms (up to `20 for type `synonym` and 100 for type `oneWaySynonym`). Required if type=`synonym` or type=`oneWaySynonym`.
 - **word** (String) Single word, used as the basis for the below array of corrections. Required if type=`altCorrection1` or type=`altCorrection2`
 
+## Import
 
+Import is supported using the following syntax:
+
+```shell
+terraform import algolia_synonyms.default {{index_name}}
+```
