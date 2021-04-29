@@ -30,7 +30,7 @@ The example below demonstrates the following operations:
 ```terraform
 terraform {
   required_providers {
-    stripe = {
+    algolia = {
       source = "k-yomo/algolia"
       version = ">= 0.1.0, < 1.0.0"
     }
