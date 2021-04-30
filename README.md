@@ -77,8 +77,7 @@ resource "algolia_index" "example" {
   }
 
   languages_config {
-    remove_stop_words_for = [
-      "en"]
+    remove_stop_words_for = ["en"]
   }
 }
 
@@ -105,15 +104,14 @@ resource "algolia_rule" "example" {
 resource "algolia_api_key" "example" {
   acl = [
     "search",
-    "browse"]
+    "browse"
+  ]
   expires_at = "2030-01-01T00:00:00Z"
   max_hits_per_query = 100
   max_queries_per_ip_per_hour = 10000
   description = "This is a example api key"
-  indexes = [
-    algolia_index.example.name]
-  referers = [
-    "https://algolia.com/\\*"]
+  indexes = [algolia_index.example.name]
+  referers = ["https://algolia.com/\\*"]
 }
 ```
 
