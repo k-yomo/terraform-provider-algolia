@@ -2,7 +2,6 @@ package provider
 
 import (
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"testing"
 )
@@ -11,7 +10,7 @@ import (
 func TestAccResourceIndex(t *testing.T) {
 	t.Parallel()
 
-	indexName := acctest.RandStringFromCharSet(100, acctest.CharSetAlpha)
+	indexName := randStringStartWithAlpha(100)
 	resourceName := fmt.Sprintf("algolia_index.%s", indexName)
 
 	resource.UnitTest(t, resource.TestCase{
