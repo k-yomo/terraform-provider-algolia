@@ -44,6 +44,12 @@ func TestAccResourceIndex(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "faceting_config.0.sort_facet_values_by", "alpha"),
 				),
 			},
+			{
+				ResourceName:      resourceName,
+				ImportStateId:     indexName,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
 		},
 	})
 }
