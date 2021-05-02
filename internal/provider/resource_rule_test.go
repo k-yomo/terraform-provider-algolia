@@ -2,7 +2,6 @@ package provider
 
 import (
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"testing"
 )
@@ -10,8 +9,8 @@ import (
 func TestAccResourceRule(t *testing.T) {
 	t.Parallel()
 
-	indexName := acctest.RandStringFromCharSet(100, acctest.CharSetAlpha)
-	objectID := acctest.RandStringFromCharSet(64, acctest.CharSetAlpha)
+	indexName := randStringStartWithAlpha(100)
+	objectID := randStringStartWithAlpha(64)
 	resourceName := fmt.Sprintf("algolia_rule.%s", objectID)
 
 	resource.UnitTest(t, resource.TestCase{
@@ -46,7 +45,6 @@ func TestAccResourceRule(t *testing.T) {
 				),
 			},
 			{
-				Config:            testAccResourceRule(indexName, objectID),
 				ResourceName:      resourceName,
 				ImportStateId:     fmt.Sprintf("%s/%s", indexName, objectID),
 				ImportState:       true,

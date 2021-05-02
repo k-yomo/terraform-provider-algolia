@@ -2,7 +2,6 @@ package provider
 
 import (
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"regexp"
@@ -12,7 +11,7 @@ import (
 func TestAccResourceAPIKey(t *testing.T) {
 	t.Parallel()
 
-	name := acctest.RandStringFromCharSet(100, acctest.CharSetAlpha)
+	name := randStringStartWithAlpha(100)
 	resourceName := fmt.Sprintf("algolia_api_key.%s", name)
 
 	resource.UnitTest(t, resource.TestCase{
@@ -45,7 +44,6 @@ func TestAccResourceAPIKey(t *testing.T) {
 				),
 			},
 			{
-				Config:       testAccResourceAPIKeyUpdate(name),
 				ResourceName: resourceName,
 				ImportStateIdFunc: func(state *terraform.State) (string, error) {
 					return state.Modules[0].Resources[resourceName].Primary.Attributes["key"], nil

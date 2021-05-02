@@ -551,7 +551,7 @@ func resourceIndexDelete(ctx context.Context, d *schema.ResourceData, m interfac
 }
 
 func resourceIndexStateContext(ctx context.Context, d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
-	if err := refreshAPIKeyState(ctx, d, m); err != nil {
+	if err := refreshIndexState(ctx, d, m); err != nil {
 		return nil, err
 	}
 
