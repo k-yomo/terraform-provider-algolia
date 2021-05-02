@@ -33,7 +33,6 @@ func TestAccResourceSynonyms(t *testing.T) {
 				),
 			},
 			{
-				Config:            testAccResourceSynonyms(indexName),
 				ResourceName:      resourceName,
 				ImportStateId:     indexName,
 				ImportState:       true,

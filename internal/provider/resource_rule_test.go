@@ -46,7 +46,6 @@ func TestAccResourceRule(t *testing.T) {
 				),
 			},
 			{
-				Config:            testAccResourceRule(indexName, objectID),
 				ResourceName:      resourceName,
 				ImportStateId:     fmt.Sprintf("%s/%s", indexName, objectID),
 				ImportState:       true,

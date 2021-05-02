@@ -45,7 +45,6 @@ func TestAccResourceAPIKey(t *testing.T) {
 				),
 			},
 			{
-				Config:       testAccResourceAPIKeyUpdate(name),
 				ResourceName: resourceName,
 				ImportStateIdFunc: func(state *terraform.State) (string, error) {
 					return state.Modules[0].Resources[resourceName].Primary.Attributes["key"], nil
