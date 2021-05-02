@@ -127,7 +127,7 @@ func resourceAPIKeyRead(ctx context.Context, d *schema.ResourceData, m interface
 func resourceAPIKeyUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	apiClient := m.(*apiClient)
 
-	res, err := apiClient.searchClient.UpdateAPIKey(mapToAPIKey(d))
+	res, err := apiClient.searchClient.UpdateAPIKey(mapToAPIKey(d), ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}

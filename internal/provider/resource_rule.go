@@ -277,7 +277,7 @@ func resourceRuleCreate(ctx context.Context, d *schema.ResourceData, m interface
 	rule := mapToRule(d)
 
 	index := apiClient.searchClient.InitIndex(d.Get("index_name").(string))
-	res, err := index.SaveRule(rule)
+	res, err := index.SaveRule(rule, ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -303,7 +303,7 @@ func resourceRuleUpdate(ctx context.Context, d *schema.ResourceData, m interface
 	rule := mapToRule(d)
 
 	index := apiClient.searchClient.InitIndex(d.Get("index_name").(string))
-	res, err := index.SaveRule(rule)
+	res, err := index.SaveRule(rule, ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}
