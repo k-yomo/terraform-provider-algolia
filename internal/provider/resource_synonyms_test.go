@@ -46,7 +46,7 @@ resource "algolia_index" "` + indexName + `" {
 }
 
 resource "algolia_synonyms" "` + indexName + `" {
-  index_name = "` + indexName + `"
+  index_name = algolia_index.` + indexName + `.name
 
   synonyms {
     object_id = "test_1"
