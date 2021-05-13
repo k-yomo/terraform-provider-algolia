@@ -7,13 +7,11 @@ import (
 )
 
 func TestAccResourceRule(t *testing.T) {
-	t.Parallel()
-
 	indexName := randStringStartWithAlpha(100)
 	objectID := randStringStartWithAlpha(64)
 	resourceName := fmt.Sprintf("algolia_rule.%s", objectID)
 
-	resource.UnitTest(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
 		Steps: []resource.TestStep{

@@ -9,12 +9,10 @@ import (
 )
 
 func TestAccResourceAPIKey(t *testing.T) {
-	t.Parallel()
-
 	name := randStringStartWithAlpha(100)
 	resourceName := fmt.Sprintf("algolia_api_key.%s", name)
 
-	resource.UnitTest(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
 		Steps: []resource.TestStep{

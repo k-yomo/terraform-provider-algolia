@@ -7,12 +7,10 @@ import (
 )
 
 func TestAccResourceSynonyms(t *testing.T) {
-	t.Parallel()
-
 	indexName := randStringStartWithAlpha(100)
 	resourceName := fmt.Sprintf("algolia_synonyms.%s", indexName)
 
-	resource.UnitTest(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
 		Steps: []resource.TestStep{
