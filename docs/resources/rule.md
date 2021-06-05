@@ -49,7 +49,6 @@ At least one of the following object must be used:
 
 ### Optional
 
-- **app_id** (String) The ID of the app in which the resource belongs. If it is not provided, the provider app_id is used.
 - **conditions** (Block List) A list of conditions that should apply to activate a Rule. You can use up to 25 conditions per Rule. (see [below for nested schema](#nestedblock--conditions))
 - **description** (String) This field is intended for Rule management purposes, in particular to ease searching for Rules and presenting them to human readers. It is not interpreted by the API.
 - **enabled** (Boolean) Whether the Rule is enabled. Disabled Rules remain in the index, but are not applied at query time.

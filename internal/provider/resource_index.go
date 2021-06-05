@@ -22,12 +22,6 @@ func resourceIndex() *schema.Resource {
 		Description: "A configuration for an index.",
 		// https://www.algolia.com/doc/api-reference/settings-api-parameters/
 		Schema: map[string]*schema.Schema{
-			"app_id": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				ForceNew:    true,
-				Description: "The ID of the app in which the resource belongs. If it is not provided, the provider app_id is used.",
-			},
 			"name": {
 				Type:        schema.TypeString,
 				Required:    true,
@@ -502,10 +496,10 @@ List of supported languages are listed on http://nhttps//www.algolia.com/doc/api
 }
 
 func resourceIndexCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	searchClient := newSearchClient(m.(*apiClient).searchConfig, d)
+	apiClient := m.(*apiClient)
 
 	indexName := d.Get("name").(string)
-	index := searchClient.InitIndex(indexName)
+	index := apiClient.searchClient.InitIndex(indexName)
 	res, err := index.SetSettings(mapToIndexSettings(d))
 	if err != nil {
 		return diag.FromErr(err)
@@ -527,9 +521,9 @@ func resourceIndexRead(ctx context.Context, d *schema.ResourceData, m interface{
 }
 
 func resourceIndexUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	searchClient := newSearchClient(m.(*apiClient).searchConfig, d)
+	apiClient := m.(*apiClient)
 
-	index := searchClient.InitIndex(d.Id())
+	index := apiClient.searchClient.InitIndex(d.Id())
 	res, err := index.SetSettings(mapToIndexSettings(d))
 	if err != nil {
 		return diag.FromErr(err)
@@ -542,9 +536,9 @@ func resourceIndexUpdate(ctx context.Context, d *schema.ResourceData, m interfac
 }
 
 func resourceIndexDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	searchClient := newSearchClient(m.(*apiClient).searchConfig, d)
+	apiClient := m.(*apiClient)
 
-	index := searchClient.InitIndex(d.Id())
+	index := apiClient.searchClient.InitIndex(d.Id())
 	res, err := index.Delete(ctx)
 	if err != nil {
 		return diag.FromErr(err)
@@ -565,9 +559,9 @@ func resourceIndexStateContext(ctx context.Context, d *schema.ResourceData, m in
 }
 
 func refreshIndexState(ctx context.Context, d *schema.ResourceData, m interface{}) error {
-	searchClient := newSearchClient(m.(*apiClient).searchConfig, d)
+	apiClient := m.(*apiClient)
 
-	index := searchClient.InitIndex(d.Id())
+	index := apiClient.searchClient.InitIndex(d.Id())
 	settings, err := index.GetSettings(ctx)
 	if err != nil {
 		d.SetId("")

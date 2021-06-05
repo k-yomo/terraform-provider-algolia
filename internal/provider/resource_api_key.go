@@ -22,12 +22,6 @@ func resourceAPIKey() *schema.Resource {
 		Description: "A configuration for an API key",
 		// https://www.algolia.com/doc/api-reference/api-methods/add-api-key/
 		Schema: map[string]*schema.Schema{
-			"app_id": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				ForceNew:    true,
-				Description: "The ID of the app in which the resource belongs. If it is not provided, the provider app_id is used.",
-			},
 			"key": {
 				Type:        schema.TypeString,
 				Computed:    true,
@@ -106,9 +100,9 @@ This parameter can be used to protect you from attempts at retrieving your entir
 }
 
 func resourceAPIKeyCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	searchClient := newSearchClient(m.(*apiClient).searchConfig, d)
+	apiClient := m.(*apiClient)
 
-	res, err := searchClient.AddAPIKey(mapToAPIKey(d), ctx)
+	res, err := apiClient.searchClient.AddAPIKey(mapToAPIKey(d), ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -131,9 +125,9 @@ func resourceAPIKeyRead(ctx context.Context, d *schema.ResourceData, m interface
 }
 
 func resourceAPIKeyUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	searchClient := newSearchClient(m.(*apiClient).searchConfig, d)
+	apiClient := m.(*apiClient)
 
-	res, err := searchClient.UpdateAPIKey(mapToAPIKey(d), ctx)
+	res, err := apiClient.searchClient.UpdateAPIKey(mapToAPIKey(d), ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -145,9 +139,9 @@ func resourceAPIKeyUpdate(ctx context.Context, d *schema.ResourceData, m interfa
 }
 
 func resourceAPIKeyDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	searchClient := newSearchClient(m.(*apiClient).searchConfig, d)
+	apiClient := m.(*apiClient)
 
-	res, err := searchClient.DeleteAPIKey(d.Get("key").(string), ctx)
+	res, err := apiClient.searchClient.DeleteAPIKey(d.Get("key").(string), ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -171,10 +165,10 @@ func resourceAPIKeyStateContext(ctx context.Context, d *schema.ResourceData, m i
 }
 
 func refreshAPIKeyState(ctx context.Context, d *schema.ResourceData, m interface{}) error {
-	searchClient := newSearchClient(m.(*apiClient).searchConfig, d)
+	apiClient := m.(*apiClient)
 
 	keyID := d.Get("key").(string)
-	key, err := searchClient.GetAPIKey(keyID, ctx)
+	key, err := apiClient.searchClient.GetAPIKey(keyID, ctx)
 	if err != nil {
 		d.SetId("")
 		return err

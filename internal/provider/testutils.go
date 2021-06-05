@@ -18,10 +18,12 @@ func testCheckResourceListAttr(name, key string, values []string) resource.TestC
 
 // The first character must be alphabet for algolia resources
 func randStringStartWithAlpha(length int) string {
+	const uuidLen = 21 // firstChar + xid(20 chars)
 	uuid := acctest.RandStringFromCharSet(1, acctest.CharSetAlpha) + xid.New().String()
-	if length < len(uuid) {
+
+	if length < uuidLen {
 		return uuid[:length]
 	}
 
-	return uuid + acctest.RandStringFromCharSet(length-len(uuid), acctest.CharSetAlphaNum)
+	return uuid + acctest.RandStringFromCharSet(length-uuidLen, acctest.CharSetAlphaNum)
 }
