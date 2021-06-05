@@ -73,7 +73,10 @@ resource "algolia_index" "` + name + `" {
 }
 
 data "algolia_index" "` + name + `" {
-  name = algolia_index.` + name + `.name
+  name = "` + name + `"
+  depends_on = [
+	algolia_index.` + name + `
+  ]
 }
 `
 }
