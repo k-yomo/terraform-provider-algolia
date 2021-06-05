@@ -24,6 +24,12 @@ func resourceSynonyms() *schema.Resource {
 `,
 		// https://www.algolia.com/doc/api-reference/api-methods/batch-synonyms/
 		Schema: map[string]*schema.Schema{
+			"app_id": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				ForceNew:    true,
+				Description: "The ID of the app in which the resource belongs. If it is not provided, the provider app_id is used.",
+			},
 			"index_name": {
 				Type:        schema.TypeString,
 				Required:    true,
@@ -88,10 +94,10 @@ func resourceSynonyms() *schema.Resource {
 }
 
 func resourceSynonymsCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	apiClient := m.(*apiClient)
+	searchClient := newSearchClient(m.(*apiClient).searchConfig, d)
 
 	indexName := d.Get("index_name").(string)
-	res, err := apiClient.searchClient.InitIndex(indexName).ReplaceAllSynonyms(mapToSynonyms(d), ctx)
+	res, err := searchClient.InitIndex(indexName).ReplaceAllSynonyms(mapToSynonyms(d), ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -112,10 +118,10 @@ func resourceSynonymsRead(ctx context.Context, d *schema.ResourceData, m interfa
 }
 
 func resourceSynonymsUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	apiClient := m.(*apiClient)
+	searchClient := newSearchClient(m.(*apiClient).searchConfig, d)
 
 	indexName := d.Get("index_name").(string)
-	res, err := apiClient.searchClient.InitIndex(indexName).ReplaceAllSynonyms(mapToSynonyms(d), ctx)
+	res, err := searchClient.InitIndex(indexName).ReplaceAllSynonyms(mapToSynonyms(d), ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -129,9 +135,9 @@ func resourceSynonymsUpdate(ctx context.Context, d *schema.ResourceData, m inter
 }
 
 func resourceSynonymsDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	apiClient := m.(*apiClient)
+	searchClient := newSearchClient(m.(*apiClient).searchConfig, d)
 
-	res, err := apiClient.searchClient.InitIndex(d.Id()).ClearSynonyms(ctx)
+	res, err := searchClient.InitIndex(d.Id()).ClearSynonyms(ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -154,11 +160,11 @@ func resourceSynonymsStateContext(ctx context.Context, d *schema.ResourceData, m
 }
 
 func refreshSynonymsState(ctx context.Context, d *schema.ResourceData, m interface{}) error {
-	apiClient := m.(*apiClient)
+	searchClient := newSearchClient(m.(*apiClient).searchConfig, d)
 
 	indexName := d.Get("index_name").(string)
 
-	iter, err := apiClient.searchClient.InitIndex(indexName).BrowseSynonyms(ctx)
+	iter, err := searchClient.InitIndex(indexName).BrowseSynonyms(ctx)
 	if err != nil {
 		d.SetId("")
 		return err
