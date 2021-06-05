@@ -12,12 +12,6 @@ func dataSourceIndex() *schema.Resource {
 		ReadContext: dataSourceIndexRead,
 		// https://www.algolia.com/doc/api-reference/settings-api-parameters/
 		Schema: map[string]*schema.Schema{
-			"app_id": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				ForceNew:    true,
-				Description: "The ID of the app in which the resource belongs. If it is not provided, the provider app_id is used.",
-			},
 			"name": {
 				Type:        schema.TypeString,
 				Required:    true,

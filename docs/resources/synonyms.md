@@ -25,7 +25,6 @@ A configuration for synonyms. To get more information about synonyms, see the [O
 
 ### Optional
 
-- **app_id** (String) The ID of the app in which the resource belongs. If it is not provided, the provider app_id is used.
 - **id** (String) The ID of this resource.
 
 <a id="nestedblock--synonyms"></a>

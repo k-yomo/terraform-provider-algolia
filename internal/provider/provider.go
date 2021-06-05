@@ -47,7 +47,7 @@ func New(version string) func() *schema.Provider {
 }
 
 type apiClient struct {
-	searchConfig search.Configuration
+	searchClient *search.Client
 }
 
 func configure(version string, p *schema.Provider) func(context.Context, *schema.ResourceData) (interface{}, diag.Diagnostics) {
@@ -57,16 +57,8 @@ func configure(version string, p *schema.Provider) func(context.Context, *schema
 			APIKey:         d.Get("api_key").(string),
 			ExtraUserAgent: p.UserAgent("terraform-provider-algolia", version),
 		}
+		algoliaClient := search.NewClientWithConfig(config)
 
-		return &apiClient{
-			searchConfig: config,
-		}, nil
+		return &apiClient{searchClient: algoliaClient}, nil
 	}
-}
-
-func newSearchClient(searchConfig search.Configuration, d *schema.ResourceData) *search.Client {
-	if appID, ok := d.GetOk("app_id"); ok {
-		searchConfig.AppID = appID.(string)
-	}
-	return search.NewClientWithConfig(searchConfig)
 }
