@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/algolia/algoliasearch-client-go/v3/algolia/opt"
 	"github.com/algolia/algoliasearch-client-go/v3/algolia/search"
+	"github.com/cenkalti/backoff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -625,7 +626,12 @@ func refreshIndexState(ctx context.Context, d *schema.ResourceData, m interface{
 	apiClient := m.(*apiClient)
 
 	index := apiClient.searchClient.InitIndex(d.Id())
-	settings, err := index.GetSettings(ctx)
+	var settings search.Settings
+	err := backoff.Retry(func() error {
+		var err error
+		settings, err = index.GetSettings(ctx)
+		return err
+	}, backoff.WithMaxRetries(backoff.NewExponentialBackOff(), 3))
 	if err != nil {
 		d.SetId("")
 		return err

@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 	"github.com/algolia/algoliasearch-client-go/v3/algolia/search"
+	"github.com/cenkalti/backoff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -158,7 +159,12 @@ func refreshSynonymsState(ctx context.Context, d *schema.ResourceData, m interfa
 
 	indexName := d.Get("index_name").(string)
 
-	iter, err := apiClient.searchClient.InitIndex(indexName).BrowseSynonyms(ctx)
+	var iter *search.SynonymIterator
+	err := backoff.Retry(func() error {
+		var err error
+		iter, err = apiClient.searchClient.InitIndex(indexName).BrowseSynonyms(ctx)
+		return err
+	}, backoff.WithMaxRetries(backoff.NewExponentialBackOff(), 3))
 	if err != nil {
 		d.SetId("")
 		return err

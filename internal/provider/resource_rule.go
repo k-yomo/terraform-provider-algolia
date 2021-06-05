@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/algolia/algoliasearch-client-go/v3/algolia/opt"
 	"github.com/algolia/algoliasearch-client-go/v3/algolia/search"
+	"github.com/cenkalti/backoff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -357,7 +358,12 @@ func refreshRuleState(ctx context.Context, d *schema.ResourceData, m interface{}
 	indexName := d.Get("index_name").(string)
 	index := apiClient.searchClient.InitIndex(indexName)
 
-	rule, err := index.GetRule(d.Id(), ctx)
+	var rule search.Rule
+	err := backoff.Retry(func() error {
+		var err error
+		rule, err = index.GetRule(d.Id(), ctx)
+		return err
+	}, backoff.WithMaxRetries(backoff.NewExponentialBackOff(), 3))
 	if err != nil {
 		d.SetId("")
 		return err
