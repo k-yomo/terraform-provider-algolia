@@ -25,6 +25,12 @@ func resourceRule() *schema.Resource {
 		Description: "A configuration for a Rule.  To get more information about rules, see the [Official Documentation](https://www.algolia.com/doc/guides/managing-results/rules/rules-overview/).",
 		// https://www.algolia.com/doc/api-reference/api-methods/save-rule/#parameters
 		Schema: map[string]*schema.Schema{
+			"app_id": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				ForceNew:    true,
+				Description: "The ID of the app in which the resource belongs. If it is not provided, the provider app_id is used.",
+			},
 			"index_name": {
 				Type:        schema.TypeString,
 				Required:    true,
@@ -272,11 +278,11 @@ At least one of the following object must be used:
 }
 
 func resourceRuleCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	apiClient := m.(*apiClient)
+	searchClient := newSearchClient(m.(*apiClient).searchConfig, d)
 
 	rule := mapToRule(d)
 
-	index := apiClient.searchClient.InitIndex(d.Get("index_name").(string))
+	index := searchClient.InitIndex(d.Get("index_name").(string))
 	res, err := index.SaveRule(rule, ctx)
 	if err != nil {
 		return diag.FromErr(err)
@@ -298,11 +304,11 @@ func resourceRuleRead(ctx context.Context, d *schema.ResourceData, m interface{}
 }
 
 func resourceRuleUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	apiClient := m.(*apiClient)
+	searchClient := newSearchClient(m.(*apiClient).searchConfig, d)
 
 	rule := mapToRule(d)
 
-	index := apiClient.searchClient.InitIndex(d.Get("index_name").(string))
+	index := searchClient.InitIndex(d.Get("index_name").(string))
 	res, err := index.SaveRule(rule, ctx)
 	if err != nil {
 		return diag.FromErr(err)
@@ -317,9 +323,9 @@ func resourceRuleUpdate(ctx context.Context, d *schema.ResourceData, m interface
 }
 
 func resourceRuleDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	apiClient := m.(*apiClient)
+	searchClient := newSearchClient(m.(*apiClient).searchConfig, d)
 
-	index := apiClient.searchClient.InitIndex(d.Get("index_name").(string))
+	index := searchClient.InitIndex(d.Get("index_name").(string))
 	res, err := index.DeleteRule(d.Get("object_id").(string), ctx)
 	if err != nil {
 		return diag.FromErr(err)
@@ -352,10 +358,10 @@ func resourceRuleStateContext(ctx context.Context, d *schema.ResourceData, m int
 }
 
 func refreshRuleState(ctx context.Context, d *schema.ResourceData, m interface{}) error {
-	apiClient := m.(*apiClient)
+	searchClient := newSearchClient(m.(*apiClient).searchConfig, d)
 
 	indexName := d.Get("index_name").(string)
-	index := apiClient.searchClient.InitIndex(indexName)
+	index := searchClient.InitIndex(indexName)
 
 	rule, err := index.GetRule(d.Id(), ctx)
 	if err != nil {

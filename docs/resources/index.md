@@ -63,6 +63,7 @@ resource "algolia_index" "example" {
 
 ### Optional
 
+- **app_id** (String) The ID of the app in which the resource belongs. If it is not provided, the provider app_id is used.
 - **attributes_config** (Block List, Max: 1) The configuration for attributes. (see [below for nested schema](#nestedblock--attributes_config))
 - **enable_personalization** (Boolean) Weather to enable the Personalization feature.
 - **enable_rules** (Boolean) Whether Rules should be globally enabled.

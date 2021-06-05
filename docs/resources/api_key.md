@@ -48,6 +48,7 @@ The possible ACLs are:
 
 ### Optional
 
+- **app_id** (String) The ID of the app in which the resource belongs. If it is not provided, the provider app_id is used.
 - **description** (String) Description of the API key.
 - **expires_at** (String) Unix timestamp of the date at which the key expires. RFC3339 format. Will not expire per default.
 - **id** (String) The ID of this resource.
