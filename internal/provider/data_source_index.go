@@ -411,6 +411,59 @@ List of supported languages are listed on http://nhttps//www.algolia.com/doc/api
 					},
 				},
 			},
+			"advanced_config": {
+				Type:        schema.TypeList,
+				Computed:    true,
+				Description: "The configuration for advanced features in index setting.",
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"attribute_for_distinct": {
+							Type:        schema.TypeString,
+							Computed:    true,
+							Description: "Name of the de-duplication attribute to be used with the `distinct` feature.",
+						},
+						"distinct": {
+							Type:     schema.TypeInt,
+							Computed: true,
+							Description: `Weather to enable de-duplication or grouping of results.
+- When set to ` + "`0`" + `, you disable de-duplication and grouping.
+- When set to ` + "`1`" + `, you enable **de-duplication**, in which only the most relevant result is returned for all records that have the same value in the distinct attribute. This is similar to the SQL ` + "`distinct`" + ` keyword.
+if ` + "`distinct`" + ` is set to 1 (de-duplication):
+- When set to ` + "`N (where N > 1)`" + `, you enable grouping, in which most N hits will be returned with the same value for the distinct attribute.
+then the N most relevant episodes for every show are kept, with similar consequences.
+`,
+						},
+						"replace_synonyms_in_highlight": {
+							Type:        schema.TypeBool,
+							Computed:    true,
+							Description: "Whether to highlight and snippet the original word that matches the synonym or the synonym itself.",
+						},
+						"min_proximity": {
+							Type:        schema.TypeInt,
+							Computed:    true,
+							Description: "Precision of the `proximity` ranking criterion.",
+						},
+						"response_fields": {
+							Type:     schema.TypeSet,
+							Elem:     &schema.Schema{Type: schema.TypeString},
+							Set:      schema.HashString,
+							Computed: true,
+							Description: `The fields the response will contain. Applies to search and browse queries.
+This parameter is mainly intended to **limit the response size.** For example, in complex queries, echoing of request parameters in the response’s params field can be undesirable.`,
+						},
+						"max_facet_hits": {
+							Type:        schema.TypeInt,
+							Computed:    true,
+							Description: "Maximum number of facet hits to return during a search for facet values.",
+						},
+						"attribute_criteria_computed_by_min_proximity": {
+							Type:        schema.TypeBool,
+							Computed:    true,
+							Description: "When attribute is ranked above proximity in your ranking formula, proximity is used to select which searchable attribute is matched in the **attribute ranking stage**.",
+						},
+					},
+				},
+			},
 		},
 	}
 }

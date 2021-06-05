@@ -31,6 +31,7 @@ data "algolia_index" "example" {
 
 ### Read-Only
 
+- **advanced_config** (List of Object) The configuration for advanced features in index setting. (see [below for nested schema](#nestedatt--advanced_config))
 - **attributes_config** (List of Object) The configuration for attributes. (see [below for nested schema](#nestedatt--attributes_config))
 - **enable_personalization** (Boolean) Weather to enable the Personalization feature.
 - **enable_rules** (Boolean) Whether Rules should be globally enabled.
@@ -42,6 +43,20 @@ data "algolia_index" "example" {
 - **query_strategy_config** (List of Object) The configuration for query strategy in index setting. (see [below for nested schema](#nestedatt--query_strategy_config))
 - **ranking_config** (List of Object) The configuration for ranking. (see [below for nested schema](#nestedatt--ranking_config))
 - **typos_config** (List of Object) The configuration for typos in index setting. (see [below for nested schema](#nestedatt--typos_config))
+
+<a id="nestedatt--advanced_config"></a>
+### Nested Schema for `advanced_config`
+
+Read-Only:
+
+- **attribute_criteria_computed_by_min_proximity** (Boolean)
+- **attribute_for_distinct** (String)
+- **distinct** (Number)
+- **max_facet_hits** (Number)
+- **min_proximity** (Number)
+- **replace_synonyms_in_highlight** (Boolean)
+- **response_fields** (Set of String)
+
 
 <a id="nestedatt--attributes_config"></a>
 ### Nested Schema for `attributes_config`

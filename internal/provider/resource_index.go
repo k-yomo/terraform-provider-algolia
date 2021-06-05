@@ -462,8 +462,6 @@ List of supported languages are listed on http://nhttps//www.algolia.com/doc/api
 							},
 							Description: "Advanced syntax features to be activated when ‘advancedSyntax’ is enabled",
 						},
-						// TODO: Add params for advanced setting
-						//  https://www.algolia.com/doc/api-reference/settings-api-parameters/
 					},
 				},
 			},
@@ -487,6 +485,71 @@ List of supported languages are listed on http://nhttps//www.algolia.com/doc/api
 							Optional:    true,
 							Default:     false,
 							Description: "Weather to enable compression of large integer arrays.",
+						},
+					},
+				},
+			},
+			"advanced_config": {
+				Type:        schema.TypeList,
+				Optional:    true,
+				Computed:    true,
+				MaxItems:    1,
+				Description: "The configuration for advanced features in index setting.",
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"attribute_for_distinct": {
+							Type:         schema.TypeString,
+							Optional:     true,
+							RequiredWith: []string{"advanced_config.0.distinct"},
+							Description:  "Name of the de-duplication attribute to be used with the `distinct` feature.",
+						},
+						"distinct": {
+							Type:         schema.TypeInt,
+							Optional:     true,
+							Default:      0,
+							RequiredWith: []string{"advanced_config.0.attribute_for_distinct"},
+							Description: `Weather to enable de-duplication or grouping of results.
+- When set to ` + "`0`" + `, you disable de-duplication and grouping.
+- When set to ` + "`1`" + `, you enable **de-duplication**, in which only the most relevant result is returned for all records that have the same value in the distinct attribute. This is similar to the SQL ` + "`distinct`" + ` keyword.
+if ` + "`distinct`" + ` is set to 1 (de-duplication):
+- When set to ` + "`N (where N > 1)`" + `, you enable grouping, in which most N hits will be returned with the same value for the distinct attribute.
+then the N most relevant episodes for every show are kept, with similar consequences.
+`,
+						},
+						"replace_synonyms_in_highlight": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Default:     false,
+							Description: "Whether to highlight and snippet the original word that matches the synonym or the synonym itself.",
+						},
+						"min_proximity": {
+							Type:        schema.TypeInt,
+							Optional:    true,
+							Default:     1,
+							Description: "Precision of the `proximity` ranking criterion.",
+						},
+						"response_fields": {
+							Type:     schema.TypeSet,
+							Elem:     &schema.Schema{Type: schema.TypeString},
+							Set:      schema.HashString,
+							Optional: true,
+							DefaultFunc: func() (interface{}, error) {
+								return []string{"*"}, nil
+							},
+							Description: `The fields the response will contain. Applies to search and browse queries.
+This parameter is mainly intended to **limit the response size.** For example, in complex queries, echoing of request parameters in the response’s params field can be undesirable.`,
+						},
+						"max_facet_hits": {
+							Type:        schema.TypeInt,
+							Optional:    true,
+							Default:     10,
+							Description: "Maximum number of facet hits to return during a search for facet values.",
+						},
+						"attribute_criteria_computed_by_min_proximity": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Default:     false,
+							Description: "When attribute is ranked above proximity in your ranking formula, proximity is used to select which searchable attribute is matched in the **attribute ranking stage**.",
 						},
 					},
 				},
@@ -658,6 +721,15 @@ func refreshIndexState(ctx context.Context, d *schema.ResourceData, m interface{
 			"numeric_attributes_for_filtering":   settings.NumericAttributesForFiltering.Get(),
 			"allow_compression_of_integer_array": settings.AllowCompressionOfIntegerArray.Get(),
 		}},
+		"advanced_config": []interface{}{map[string]interface{}{
+			"attribute_for_distinct":        settings.AttributeForDistinct.Get(),
+			"distinct":                      func() int { _, i := settings.Distinct.Get(); return i }(),
+			"replace_synonyms_in_highlight": settings.ReplaceSynonymsInHighlight.Get(),
+			"min_proximity":                 settings.MinProximity.Get(),
+			"response_fields":               settings.ResponseFields.Get(),
+			"max_facet_hits":                settings.MaxFacetHits.Get(),
+			"attribute_criteria_computed_by_min_proximity": settings.AttributeCriteriaComputedByMinProximity.Get(),
+		}},
 	}
 	if err := setValues(d, values); err != nil {
 		return err
@@ -697,6 +769,9 @@ func mapToIndexSettings(d *schema.ResourceData) search.Settings {
 	}
 	if v, ok := d.GetOk("performance_config"); ok {
 		unmarshalPerformanceConfig(v, &settings)
+	}
+	if v, ok := d.GetOk("advanced_config"); ok {
+		unmarshalAdvancedConfig(v, &settings)
 	}
 
 	return settings
@@ -913,5 +988,36 @@ func unmarshalPerformanceConfig(configured interface{}, settings *search.Setting
 	}
 	if v, ok := config["allow_compression_of_integer_array"]; ok {
 		settings.AllowCompressionOfIntegerArray = opt.AllowCompressionOfIntegerArray(v.(bool))
+	}
+}
+
+func unmarshalAdvancedConfig(configured interface{}, settings *search.Settings) {
+	l := configured.([]interface{})
+	if len(l) == 0 || l[0] == nil {
+		return
+	}
+
+	config := l[0].(map[string]interface{})
+
+	if v, ok := config["attribute_for_distinct"]; ok {
+		settings.AttributeForDistinct = opt.AttributeForDistinct(v.(string))
+	}
+	if v, ok := config["distinct"]; ok {
+		settings.Distinct = opt.DistinctOf(v.(int))
+	}
+	if v, ok := config["replace_synonyms_in_highlight"]; ok {
+		settings.ReplaceSynonymsInHighlight = opt.ReplaceSynonymsInHighlight(v.(bool))
+	}
+	if v, ok := config["min_proximity"]; ok {
+		settings.MinProximity = opt.MinProximity(v.(int))
+	}
+	if v, ok := config["response_fields"]; ok {
+		settings.ResponseFields = opt.ResponseFields(castStringSet(v)...)
+	}
+	if v, ok := config["max_facet_hits"]; ok {
+		settings.MaxFacetHits = opt.MaxFacetHits(v.(int))
+	}
+	if v, ok := config["attribute_criteria_computed_by_min_proximity"]; ok {
+		settings.AttributeCriteriaComputedByMinProximity = opt.AttributeCriteriaComputedByMinProximity(v.(bool))
 	}
 }

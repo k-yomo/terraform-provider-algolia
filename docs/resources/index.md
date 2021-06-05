@@ -63,6 +63,7 @@ resource "algolia_index" "example" {
 
 ### Optional
 
+- **advanced_config** (Block List, Max: 1) The configuration for advanced features in index setting. (see [below for nested schema](#nestedblock--advanced_config))
 - **attributes_config** (Block List, Max: 1) The configuration for attributes. (see [below for nested schema](#nestedblock--attributes_config))
 - **enable_personalization** (Boolean) Weather to enable the Personalization feature.
 - **enable_rules** (Boolean) Whether Rules should be globally enabled.
@@ -75,6 +76,26 @@ resource "algolia_index" "example" {
 - **query_strategy_config** (Block List, Max: 1) The configuration for query strategy in index setting. (see [below for nested schema](#nestedblock--query_strategy_config))
 - **ranking_config** (Block List, Max: 1) The configuration for ranking. (see [below for nested schema](#nestedblock--ranking_config))
 - **typos_config** (Block List, Max: 1) The configuration for typos in index setting. (see [below for nested schema](#nestedblock--typos_config))
+
+<a id="nestedblock--advanced_config"></a>
+### Nested Schema for `advanced_config`
+
+Optional:
+
+- **attribute_criteria_computed_by_min_proximity** (Boolean) When attribute is ranked above proximity in your ranking formula, proximity is used to select which searchable attribute is matched in the **attribute ranking stage**.
+- **attribute_for_distinct** (String) Name of the de-duplication attribute to be used with the `distinct` feature.
+- **distinct** (Number) Weather to enable de-duplication or grouping of results.
+- When set to `0`, you disable de-duplication and grouping.
+- When set to `1`, you enable **de-duplication**, in which only the most relevant result is returned for all records that have the same value in the distinct attribute. This is similar to the SQL `distinct` keyword.
+if `distinct` is set to 1 (de-duplication):
+- When set to `N (where N > 1)`, you enable grouping, in which most N hits will be returned with the same value for the distinct attribute.
+then the N most relevant episodes for every show are kept, with similar consequences.
+- **max_facet_hits** (Number) Maximum number of facet hits to return during a search for facet values.
+- **min_proximity** (Number) Precision of the `proximity` ranking criterion.
+- **replace_synonyms_in_highlight** (Boolean) Whether to highlight and snippet the original word that matches the synonym or the synonym itself.
+- **response_fields** (Set of String) The fields the response will contain. Applies to search and browse queries.
+This parameter is mainly intended to **limit the response size.** For example, in complex queries, echoing of request parameters in the response’s params field can be undesirable.
+
 
 <a id="nestedblock--attributes_config"></a>
 ### Nested Schema for `attributes_config`
