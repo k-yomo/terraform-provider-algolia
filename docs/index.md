@@ -1,4 +1,4 @@
-# algolia Provider
+# Algolia Provider
 The Algolia provider is used to configure your Algolia settings.
 
 ## Setting API Key
