@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 	"github.com/algolia/algoliasearch-client-go/v3/algolia/search"
+	"github.com/algolia/algoliasearch-client-go/v3/algolia/suggestions"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -31,10 +32,11 @@ func New(version string) func() *schema.Provider {
 				},
 			},
 			ResourcesMap: map[string]*schema.Resource{
-				"algolia_index":    resourceIndex(),
-				"algolia_api_key":  resourceAPIKey(),
-				"algolia_rule":     resourceRule(),
-				"algolia_synonyms": resourceSynonyms(),
+				"algolia_index":             resourceIndex(),
+				"algolia_api_key":           resourceAPIKey(),
+				"algolia_rule":              resourceRule(),
+				"algolia_synonyms":          resourceSynonyms(),
+				"algolia_query_suggestions": resourceQuerySuggestions(),
 			},
 			DataSourcesMap: map[string]*schema.Resource{
 				"algolia_index": dataSourceIndex(),
@@ -47,18 +49,29 @@ func New(version string) func() *schema.Provider {
 }
 
 type apiClient struct {
-	searchClient *search.Client
+	searchClient      *search.Client
+	suggestionsClient *suggestions.Client
 }
 
 func configure(version string, p *schema.Provider) func(context.Context, *schema.ResourceData) (interface{}, diag.Diagnostics) {
 	return func(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
-		config := search.Configuration{
+		searchConfig := search.Configuration{
 			AppID:          d.Get("app_id").(string),
 			APIKey:         d.Get("api_key").(string),
 			ExtraUserAgent: p.UserAgent("terraform-provider-algolia", version),
 		}
-		algoliaClient := search.NewClientWithConfig(config)
+		searchClient := search.NewClientWithConfig(searchConfig)
 
-		return &apiClient{searchClient: algoliaClient}, nil
+		suggestionsConfig := suggestions.Configuration{
+			AppID:          d.Get("app_id").(string),
+			APIKey:         d.Get("api_key").(string),
+			ExtraUserAgent: p.UserAgent("terraform-provider-algolia", version),
+		}
+		suggestionsClient := suggestions.NewClientWithConfig(suggestionsConfig)
+
+		return &apiClient{
+			searchClient:      searchClient,
+			suggestionsClient: suggestionsClient,
+		}, nil
 	}
 }

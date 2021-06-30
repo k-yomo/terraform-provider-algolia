@@ -36,3 +36,11 @@ func castStringMap(m interface{}) map[string]string {
 	}
 	return strMap
 }
+
+func castInterfaceMap(m interface{}) map[string]interface{} {
+	strMap := map[string]interface{}{}
+	for k, v := range m.(map[string]interface{}) {
+		strMap[k] = v
+	}
+	return strMap
+}
