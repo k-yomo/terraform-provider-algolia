@@ -9,12 +9,12 @@
 
 1. Clone the repository
 2. Enter the repository directory
-3. Build the provider using the Go `install` command:
+3. Build the provider using the command below:
 ```sh
 $ make install
-```
+```terraform
 4. Use the installed provider as following
-```
+```terraform
 terraform {
   required_providers {
     algolia = {
@@ -32,7 +32,7 @@ Please see the Go documentation for the most up to date information about using 
 
 To add a new dependency `github.com/author/dependency` to your Terraform provider:
 
-```
+```sh
 go get -u github.com/author/dependency
 go mod tidy
 ```
@@ -47,7 +47,7 @@ To generate or update documentation, run `make generate`.
 
 ### Test
 Set required env variables.
-```
+```sh
 $ echo ALGOLIA_APP_ID={APP_ID} >> .env
 $ echo ALGOLIA_API_KEY={API_KEY} >> .env
 $ direnv allow
