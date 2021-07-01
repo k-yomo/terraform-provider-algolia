@@ -8,10 +8,21 @@
 ## Building The Provider
 
 1. Clone the repository
-1. Enter the repository directory
-1. Build the provider using the Go `install` command:
+2. Enter the repository directory
+3. Build the provider using the Go `install` command:
 ```sh
-$ go install
+$ make install
+```
+4. Use the installed provider as following
+```
+terraform {
+  required_providers {
+    algolia = {
+      source  = "k-yomo/algolia"
+      version = "999.999.999"
+    }
+  }
+}
 ```
 
 ## Adding Dependencies
