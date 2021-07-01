@@ -3,6 +3,7 @@ package provider
 import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"testing"
 )
 
@@ -48,6 +49,7 @@ func TestAccResourceIndex(t *testing.T) {
 				ImportStateVerify: true,
 			},
 		},
+		CheckDestroy: testAccCheckIndexDestroy,
 	})
 }
 
@@ -99,4 +101,23 @@ resource "algolia_index" "%s" {
   }
 }
 `, name, name)
+}
+
+func testAccCheckIndexDestroy(s *terraform.State) error {
+	apiClient := newTestAPIClient()
+	for _, rs := range s.RootModule().Resources {
+		if rs.Type != "algolia_index" {
+			continue
+		}
+
+		exists, err := apiClient.searchClient.InitIndex(rs.Primary.ID).Exists()
+		if err != nil {
+			return err
+		}
+		if exists {
+			return fmt.Errorf("index '%s' still exists", rs.Primary.ID)
+		}
+	}
+
+	return nil
 }
