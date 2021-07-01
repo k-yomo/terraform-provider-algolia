@@ -2,7 +2,10 @@ package provider
 
 import (
 	"fmt"
+	"github.com/algolia/algoliasearch-client-go/v3/algolia/errs"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"net/http"
 	"testing"
 )
 
@@ -24,9 +27,9 @@ func TestAccResourceRule(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "conditions.0.anchoring", "contains"),
 					resource.TestCheckResourceAttr(resourceName, "consequence.0.params.0.automatic_facet_filters.0.facet", "category"),
 					resource.TestCheckResourceAttr(resourceName, "consequence.0.params.0.automatic_facet_filters.0.disjunctive", "true"),
-					//testCheckResourceListAttr(resourceName, "consequence.0.promote.0.object_ids", []string{"promote-12345"}),
-					//resource.TestCheckResourceAttr(resourceName, "consequence.0.promote.0.position", "0"),
-					//testCheckResourceListAttr(resourceName, "consequence.0.hide", []string{"hide-12345"}),
+					// testCheckResourceListAttr(resourceName, "consequence.0.promote.0.object_ids", []string{"promote-12345"}),
+					// resource.TestCheckResourceAttr(resourceName, "consequence.0.promote.0.position", "0"),
+					// testCheckResourceListAttr(resourceName, "consequence.0.hide", []string{"hide-12345"}),
 				),
 			},
 			{
@@ -49,6 +52,7 @@ func TestAccResourceRule(t *testing.T) {
 				ImportStateVerify: true,
 			},
 		},
+		CheckDestroy: testAccCheckRuleDestroy,
 	})
 }
 
@@ -117,4 +121,23 @@ resource "algolia_rule" "` + objectID + `" {
   }
 }
 `
+}
+
+func testAccCheckRuleDestroy(s *terraform.State) error {
+	apiClient := newTestAPIClient()
+	for _, rs := range s.RootModule().Resources {
+		if rs.Type != "algolia_rule" {
+			continue
+		}
+
+		_, err := apiClient.searchClient.InitIndex(rs.Primary.Attributes["index_name"]).GetRule(rs.Primary.ID)
+		if err == nil {
+			return fmt.Errorf("rule '%s' still exists", rs.Primary.ID)
+		}
+		if _, ok := errs.IsAlgoliaErrWithCode(err, http.StatusNotFound); !ok {
+			return err
+		}
+	}
+
+	return nil
 }

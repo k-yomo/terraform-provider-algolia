@@ -55,23 +55,28 @@ type apiClient struct {
 
 func configure(version string, p *schema.Provider) func(context.Context, *schema.ResourceData) (interface{}, diag.Diagnostics) {
 	return func(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
-		searchConfig := search.Configuration{
-			AppID:          d.Get("app_id").(string),
-			APIKey:         d.Get("api_key").(string),
-			ExtraUserAgent: p.UserAgent("terraform-provider-algolia", version),
-		}
-		searchClient := search.NewClientWithConfig(searchConfig)
+		userAgent := p.UserAgent("terraform-provider-algolia", version)
+		return newAPIClient(d.Get("app_id").(string), d.Get("api_key").(string), userAgent), nil
+	}
+}
 
-		suggestionsConfig := suggestions.Configuration{
-			AppID:          d.Get("app_id").(string),
-			APIKey:         d.Get("api_key").(string),
-			ExtraUserAgent: p.UserAgent("terraform-provider-algolia", version),
-		}
-		suggestionsClient := suggestions.NewClientWithConfig(suggestionsConfig)
+func newAPIClient(appID, apiKey, userAgent string) *apiClient {
+	searchConfig := search.Configuration{
+		AppID:          appID,
+		APIKey:         apiKey,
+		ExtraUserAgent: userAgent,
+	}
+	searchClient := search.NewClientWithConfig(searchConfig)
 
-		return &apiClient{
-			searchClient:      searchClient,
-			suggestionsClient: suggestionsClient,
-		}, nil
+	suggestionsConfig := suggestions.Configuration{
+		AppID:          appID,
+		APIKey:         apiKey,
+		ExtraUserAgent: userAgent,
+	}
+	suggestionsClient := suggestions.NewClientWithConfig(suggestionsConfig)
+
+	return &apiClient{
+		searchClient:      searchClient,
+		suggestionsClient: suggestionsClient,
 	}
 }

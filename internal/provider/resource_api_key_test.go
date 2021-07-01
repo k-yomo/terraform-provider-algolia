@@ -2,8 +2,10 @@ package provider
 
 import (
 	"fmt"
+	"github.com/algolia/algoliasearch-client-go/v3/algolia/errs"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"net/http"
 	"regexp"
 	"testing"
 )
@@ -51,6 +53,7 @@ func TestAccResourceAPIKey(t *testing.T) {
 				ImportStateVerifyIgnore: []string{"expires_at"},
 			},
 		},
+		CheckDestroy: testAccCheckApiKeyDestroy,
 	})
 }
 
@@ -72,4 +75,23 @@ resource "algolia_api_key" "%s" {
   referers                    = ["https://algolia.com/\\*"]
   description                 = "This is a test api key"
 }`, name)
+}
+
+func testAccCheckApiKeyDestroy(s *terraform.State) error {
+	apiClient := newTestAPIClient()
+	for _, rs := range s.RootModule().Resources {
+		if rs.Type != "algolia_api_key" {
+			continue
+		}
+
+		_, err := apiClient.searchClient.GetAPIKey(rs.Primary.ID)
+		if err == nil {
+			return fmt.Errorf("api key '%s' still exists", rs.Primary.ID)
+		}
+		if _, ok := errs.IsAlgoliaErrWithCode(err, http.StatusNotFound); !ok {
+			return err
+		}
+	}
+
+	return nil
 }

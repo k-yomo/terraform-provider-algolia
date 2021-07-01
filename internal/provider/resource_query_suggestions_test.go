@@ -2,7 +2,10 @@ package provider
 
 import (
 	"fmt"
+	"github.com/algolia/algoliasearch-client-go/v3/algolia/errs"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"net/http"
 	"testing"
 )
 
@@ -53,6 +56,7 @@ func TestAccResourceQuerySuggestions(t *testing.T) {
 				ImportStateVerify: true,
 			},
 		},
+		CheckDestroy: testAccCheckQuerySuggestionsDestroy,
 	})
 }
 
@@ -98,4 +102,23 @@ resource "algolia_query_suggestions" "` + indexName + `" {
   languages = ["en", "ja"]
 }
 `
+}
+
+func testAccCheckQuerySuggestionsDestroy(s *terraform.State) error {
+	apiClient := newTestAPIClient()
+	for _, rs := range s.RootModule().Resources {
+		if rs.Type != "algolia_query_suggestions" {
+			continue
+		}
+
+		_, err := apiClient.suggestionsClient.GetConfig(rs.Primary.ID)
+		if err == nil {
+			return fmt.Errorf("query suggestions '%s' still exists", rs.Primary.ID)
+		}
+		if _, ok := errs.IsAlgoliaErrWithCode(err, http.StatusNotFound); !ok {
+			return err
+		}
+	}
+
+	return nil
 }

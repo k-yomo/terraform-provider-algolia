@@ -3,6 +3,8 @@ package provider
 import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"io"
 	"testing"
 )
 
@@ -36,6 +38,7 @@ func TestAccResourceSynonyms(t *testing.T) {
 				ImportStateVerify: true,
 			},
 		},
+		CheckDestroy: testAccCheckSynonymsDestroy,
 	})
 }
 
@@ -93,4 +96,23 @@ resource "algolia_synonyms" "` + indexName + `" {
   }
 }
 `
+}
+
+func testAccCheckSynonymsDestroy(s *terraform.State) error {
+	apiClient := newTestAPIClient()
+	for _, rs := range s.RootModule().Resources {
+		if rs.Type != "algolia_synonyms" {
+			continue
+		}
+
+		synonymsIter, err := apiClient.searchClient.InitIndex(rs.Primary.ID).BrowseSynonyms()
+		if err != nil {
+			return err
+		}
+		if _, err := synonymsIter.Next(); err != io.EOF {
+			return fmt.Errorf("synonyms for index '%s' still exists", rs.Primary.ID)
+		}
+	}
+
+	return nil
 }
