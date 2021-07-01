@@ -12,7 +12,7 @@
 3. Build the provider using the command below:
 ```sh
 $ make install
-```terraform
+```
 4. Use the installed provider as following
 ```terraform
 terraform {
