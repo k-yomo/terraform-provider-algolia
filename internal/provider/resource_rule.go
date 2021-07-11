@@ -3,14 +3,15 @@ package provider
 import (
 	"context"
 	"errors"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/algolia/algoliasearch-client-go/v3/algolia/opt"
 	"github.com/algolia/algoliasearch-client-go/v3/algolia/search"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"strconv"
-	"strings"
-	"time"
 )
 
 func resourceRule() *schema.Resource {
@@ -90,7 +91,7 @@ This parameter goes hand in hand with the ` + "`pattern` " + ` parameter. If the
 				Type:     schema.TypeList,
 				Required: true,
 				MaxItems: 1,
-				Description: `Consequence of the Rule. 
+				Description: `Consequence of the Rule.
 At least one of the following object must be used:
 - params
 - promote
@@ -277,7 +278,9 @@ func resourceRuleCreate(ctx context.Context, d *schema.ResourceData, m interface
 	rule := mapToRule(d)
 
 	index := apiClient.searchClient.InitIndex(d.Get("index_name").(string))
-	res, err := index.SaveRule(rule, ctx)
+	res, err := index.SaveRules([]search.Rule{
+		rule,
+	}, ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -356,6 +359,8 @@ func refreshRuleState(ctx context.Context, d *schema.ResourceData, m interface{}
 
 	indexName := d.Get("index_name").(string)
 	index := apiClient.searchClient.InitIndex(indexName)
+
+	<-time.After(10 * time.Second)
 
 	rule, err := index.GetRule(d.Id(), ctx)
 	if err != nil {
