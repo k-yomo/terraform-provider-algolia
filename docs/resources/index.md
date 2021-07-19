@@ -65,7 +65,7 @@ resource "algolia_index" "example" {
 
 - **advanced_config** (Block List, Max: 1) The configuration for advanced features in index setting. (see [below for nested schema](#nestedblock--advanced_config))
 - **attributes_config** (Block List, Max: 1) The configuration for attributes. (see [below for nested schema](#nestedblock--attributes_config))
-- **enable_personalization** (Boolean) Weather to enable the Personalization feature.
+- **enable_personalization** (Boolean) Whether to enable the Personalization feature.
 - **enable_rules** (Boolean) Whether Rules should be globally enabled.
 - **faceting_config** (Block List, Max: 1) The configuration for faceting. (see [below for nested schema](#nestedblock--faceting_config))
 - **highlight_and_snippet_config** (Block List, Max: 1) The configuration for highlight / snippet in index setting. (see [below for nested schema](#nestedblock--highlight_and_snippet_config))
@@ -84,7 +84,7 @@ Optional:
 
 - **attribute_criteria_computed_by_min_proximity** (Boolean) When attribute is ranked above proximity in your ranking formula, proximity is used to select which searchable attribute is matched in the **attribute ranking stage**.
 - **attribute_for_distinct** (String) Name of the de-duplication attribute to be used with the `distinct` feature.
-- **distinct** (Number) Weather to enable de-duplication or grouping of results.
+- **distinct** (Number) Whether to enable de-duplication or grouping of results.
 - When set to `0`, you disable de-duplication and grouping.
 - When set to `1`, you enable **de-duplication**, in which only the most relevant result is returned for all records that have the same value in the distinct attribute. This is similar to the SQL `distinct` keyword.
 if `distinct` is set to 1 (de-duplication):
@@ -138,15 +138,15 @@ Optional:
 - **attributes_to_transliterate** (Set of String) List of attributes to apply transliteration
 - **camel_case_attributes** (Set of String) List of attributes on which to do a decomposition of camel case words.
 - **custom_normalization** (Map of String) Custom normalization which overrides the engine’s default normalization
-- **decompound_query** (Boolean) Weather to split compound words into their composing atoms in the query.
+- **decompound_query** (Boolean) Whether to split compound words into their composing atoms in the query.
 - **decompounded_attributes** (Block List) List of attributes to apply word segmentation, also known as decompounding. (see [below for nested schema](#nestedblock--languages_config--decompounded_attributes))
-- **ignore_plurals** (Boolean) Weather to treat singular, plurals, and other forms of declensions as matching terms.
-- **ignore_plurals_for** (Set of String) Weather to treat singular, plurals, and other forms of declensions as matching terms in target languages.
+- **ignore_plurals** (Boolean) Whether to treat singular, plurals, and other forms of declensions as matching terms.
+- **ignore_plurals_for** (Set of String) Whether to treat singular, plurals, and other forms of declensions as matching terms in target languages.
 List of supported languages are listed on http://nhttps//www.algolia.com/doc/api-reference/api-parameters/ignorePlurals/#usage-notes
 - **index_languages** (Set of String) List of languages at the index level for language-specific processing such as tokenization and normalization.
 - **keep_diacritics_on_characters** (String) List of characters that the engine shouldn’t automatically normalize.
 - **query_languages** (Set of String) List of languages to be used by language-specific settings and functionalities such as ignorePlurals, removeStopWords, and CJK word-detection.
-- **remove_stop_words** (Boolean) Weather to removes stop (common) words from the query before executing it.
+- **remove_stop_words** (Boolean) Whether to removes stop (common) words from the query before executing it.
 - **remove_stop_words_for** (Set of String) List of languages to removes stop (common) words from the query before executing it.
 
 <a id="nestedblock--languages_config--decompounded_attributes"></a>
@@ -173,7 +173,7 @@ Optional:
 
 Optional:
 
-- **allow_compression_of_integer_array** (Boolean) Weather to enable compression of large integer arrays.
+- **allow_compression_of_integer_array** (Boolean) Whether to enable compression of large integer arrays.
 - **numeric_attributes_for_filtering** (Set of String) List of numeric attributes that can be used as numerical filters.
 
 
@@ -182,7 +182,7 @@ Optional:
 
 Optional:
 
-- **advanced_syntax** (Boolean) Weather to enable the advanced query syntax.
+- **advanced_syntax** (Boolean) Whether to enable the advanced query syntax.
 - **advanced_syntax_features** (Set of String) Advanced syntax features to be activated when ‘advancedSyntax’ is enabled
 - **alternatives_as_exact** (Set of String) List of alternatives that should be considered an exact match by the exact ranking criterion.
 - **disable_exact_on_attributes** (Set of String) List of attributes on which you want to disable the exact ranking criterion.
