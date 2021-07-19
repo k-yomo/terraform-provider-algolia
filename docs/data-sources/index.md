@@ -33,7 +33,7 @@ data "algolia_index" "example" {
 
 - **advanced_config** (List of Object) The configuration for advanced features in index setting. (see [below for nested schema](#nestedatt--advanced_config))
 - **attributes_config** (List of Object) The configuration for attributes. (see [below for nested schema](#nestedatt--attributes_config))
-- **enable_personalization** (Boolean) Weather to enable the Personalization feature.
+- **enable_personalization** (Boolean) Whether to enable the Personalization feature.
 - **enable_rules** (Boolean) Whether Rules should be globally enabled.
 - **faceting_config** (List of Object) The configuration for faceting. (see [below for nested schema](#nestedatt--faceting_config))
 - **highlight_and_snippet_config** (List of Object) The configuration for highlight / snippet in index setting. (see [below for nested schema](#nestedatt--highlight_and_snippet_config))

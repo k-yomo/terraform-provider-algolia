@@ -279,7 +279,7 @@ func resourceIndex() *schema.Resource {
 							Optional:      true,
 							Default:       false,
 							ConflictsWith: []string{"languages_config.0.ignore_plurals_for"},
-							Description:   "Weather to treat singular, plurals, and other forms of declensions as matching terms.",
+							Description:   "Whether to treat singular, plurals, and other forms of declensions as matching terms.",
 						},
 						"ignore_plurals_for": {
 							Type:          schema.TypeSet,
@@ -287,7 +287,7 @@ func resourceIndex() *schema.Resource {
 							Set:           schema.HashString,
 							Optional:      true,
 							ConflictsWith: []string{"languages_config.0.ignore_plurals"},
-							Description: `Weather to treat singular, plurals, and other forms of declensions as matching terms in target languages.
+							Description: `Whether to treat singular, plurals, and other forms of declensions as matching terms in target languages.
 List of supported languages are listed on http://nhttps//www.algolia.com/doc/api-reference/api-parameters/ignorePlurals/#usage-notes`,
 						},
 						"attributes_to_transliterate": {
@@ -303,7 +303,7 @@ List of supported languages are listed on http://nhttps//www.algolia.com/doc/api
 							Optional:      true,
 							Default:       false,
 							ConflictsWith: []string{"languages_config.0.remove_stop_words_for"},
-							Description:   "Weather to removes stop (common) words from the query before executing it.",
+							Description:   "Whether to removes stop (common) words from the query before executing it.",
 						},
 						"remove_stop_words_for": {
 							Type:          schema.TypeSet,
@@ -369,7 +369,7 @@ List of supported languages are listed on http://nhttps//www.algolia.com/doc/api
 							Type:        schema.TypeBool,
 							Optional:    true,
 							Default:     true,
-							Description: "Weather to split compound words into their composing atoms in the query.",
+							Description: "Whether to split compound words into their composing atoms in the query.",
 						},
 					},
 				},
@@ -384,7 +384,7 @@ List of supported languages are listed on http://nhttps//www.algolia.com/doc/api
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     false,
-				Description: "Weather to enable the Personalization feature.",
+				Description: "Whether to enable the Personalization feature.",
 			},
 			"query_strategy_config": {
 				Type:        schema.TypeList,
@@ -412,7 +412,7 @@ List of supported languages are listed on http://nhttps//www.algolia.com/doc/api
 							Type:        schema.TypeBool,
 							Optional:    true,
 							Default:     false,
-							Description: "Weather to enable the advanced query syntax.",
+							Description: "Whether to enable the advanced query syntax.",
 						},
 						"optional_words": {
 							Type:        schema.TypeSet,
@@ -484,7 +484,7 @@ List of supported languages are listed on http://nhttps//www.algolia.com/doc/api
 							Type:        schema.TypeBool,
 							Optional:    true,
 							Default:     false,
-							Description: "Weather to enable compression of large integer arrays.",
+							Description: "Whether to enable compression of large integer arrays.",
 						},
 					},
 				},
@@ -508,7 +508,7 @@ List of supported languages are listed on http://nhttps//www.algolia.com/doc/api
 							Optional:     true,
 							Default:      0,
 							RequiredWith: []string{"advanced_config.0.attribute_for_distinct"},
-							Description: `Weather to enable de-duplication or grouping of results.
+							Description: `Whether to enable de-duplication or grouping of results.
 - When set to ` + "`0`" + `, you disable de-duplication and grouping.
 - When set to ` + "`1`" + `, you enable **de-duplication**, in which only the most relevant result is returned for all records that have the same value in the distinct attribute. This is similar to the SQL ` + "`distinct`" + ` keyword.
 if ` + "`distinct`" + ` is set to 1 (de-duplication):
