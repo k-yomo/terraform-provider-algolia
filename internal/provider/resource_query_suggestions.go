@@ -57,14 +57,14 @@ func resourceQuerySuggestions() *schema.Resource {
 						},
 						"min_hits": {
 							Type:        schema.TypeInt,
+							Computed:    true,
 							Optional:    true,
-							Default:     5, // This is the API's behaviour which is different from the doc https://www.algolia.com/doc/rest-api/query-suggestions/#method-param-minhits.
 							Description: "Minimum number of hits (e.g., matching records in the source index) to generate a suggestions.",
 						},
 						"min_letters": {
 							Type:        schema.TypeInt,
+							Computed:    true,
 							Optional:    true,
-							Default:     4, // This is the API's behaviour which is different from the doc https://www.algolia.com/doc/rest-api/query-suggestions/#method-param-minletters
 							Description: "Minimum number of required letters for a suggestion to remain.",
 						},
 						"generate": {
