@@ -122,6 +122,8 @@ resource "algolia_api_key" "example" {
 - [x] [Api Keys](https://www.algolia.com/doc/api-client/methods/api-keys/)
 - [x] [Synonym](https://www.algolia.com/doc/api-client/methods/synonyms/)
 - [x] [Query Suggestions](https://www.algolia.com/doc/rest-api/query-suggestions/)
+- [ ] [A/B Test](https://www.algolia.com/doc/api-client/methods/ab-test/)
+- [ ] [Dictionaries](https://www.algolia.com/doc/api-client/methods/dictionaries/)
 - [ ] [Personalization](https://www.algolia.com/doc/api-client/methods/personalization/)
 
 ## Contributing
