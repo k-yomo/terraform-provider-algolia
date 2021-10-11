@@ -157,6 +157,7 @@ func resourceIndex() *schema.Resource {
 							Elem:        &schema.Schema{Type: schema.TypeString},
 							Set:         schema.HashString,
 							Optional:    true,
+							Computed:    true,
 							Description: "List of attributes to snippet, with an optional maximum number of words to snippet.",
 						},
 						"highlight_pre_tag": {
@@ -174,7 +175,6 @@ func resourceIndex() *schema.Resource {
 						"snippet_ellipsis_text": {
 							Type:        schema.TypeString,
 							Optional:    true,
-							Default:     "…",
 							Description: "String used as an ellipsis indicator when a snippet is truncated.",
 						},
 						"restrict_highlight_and_snippet_arrays": {
