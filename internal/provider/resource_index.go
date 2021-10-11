@@ -677,6 +677,14 @@ func refreshIndexState(ctx context.Context, d *schema.ResourceData, m interface{
 			"max_values_per_facet": settings.MaxValuesPerFacet.Get(),
 			"sort_facet_values_by": settings.SortFacetValuesBy.Get(),
 		}},
+		"highlight_and_snippet_config": []interface{}{map[string]interface{}{
+			"attributes_to_highlight":               settings.AttributesToHighlight.Get(),
+			"attributes_to_snippet":                 settings.AttributesToSnippet.Get(),
+			"highlight_pre_tag":                     settings.HighlightPreTag.Get(),
+			"highlight_post_tag":                    settings.HighlightPostTag.Get(),
+			"snippet_ellipsis_text":                 settings.SnippetEllipsisText.Get(),
+			"restrict_highlight_and_snippet_arrays": settings.RestrictHighlightAndSnippetArrays.Get(),
+		}},
 		"pagination_config": []interface{}{map[string]interface{}{
 			"hits_per_page":         settings.HitsPerPage.Get(),
 			"pagination_limited_to": settings.PaginationLimitedTo.Get(),
@@ -749,6 +757,9 @@ func mapToIndexSettings(d *schema.ResourceData) search.Settings {
 	if v, ok := d.GetOk("faceting_config"); ok {
 		unmarshalFacetingConfig(v, &settings)
 	}
+	if v, ok := d.GetOk("highlight_and_snippet_config"); ok {
+		unmarshalHighlightAndSnippetConfig(v, &settings)
+	}
 	if v, ok := d.GetOk("pagination_config"); ok {
 		unmarshalPaginationConfig(v, &settings)
 	}
@@ -813,6 +824,34 @@ func unmarshalFacetingConfig(configured interface{}, settings *search.Settings) 
 	}
 	if v, ok := config["sort_facet_values_by"]; ok {
 		settings.SortFacetValuesBy = opt.SortFacetValuesBy(v.(string))
+	}
+}
+
+func unmarshalHighlightAndSnippetConfig(configured interface{}, settings *search.Settings) {
+	l := configured.([]interface{})
+	if len(l) == 0 || l[0] == nil {
+		return
+	}
+
+	config := l[0].(map[string]interface{})
+
+	if v, ok := config["attributes_to_highlight"]; ok {
+		settings.AttributesToHighlight = opt.AttributesToHighlight(castStringSet(v)...)
+	}
+	if v, ok := config["attributes_to_snippet"]; ok {
+		settings.AttributesToSnippet = opt.AttributesToSnippet(castStringSet(v)...)
+	}
+	if v, ok := config["highlight_pre_tag"]; ok {
+		settings.HighlightPreTag = opt.HighlightPreTag(v.(string))
+	}
+	if v, ok := config["highlight_post_tag"]; ok {
+		settings.HighlightPostTag = opt.HighlightPostTag(v.(string))
+	}
+	if v, ok := config["snippet_ellipsis_text"]; ok {
+		settings.SnippetEllipsisText = opt.SnippetEllipsisText(v.(string))
+	}
+	if v, ok := config["restrict_highlight_and_snippet_arrays"]; ok {
+		settings.RestrictHighlightAndSnippetArrays = opt.RestrictHighlightAndSnippetArrays(v.(bool))
 	}
 }
 
