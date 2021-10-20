@@ -172,7 +172,7 @@ func refreshAPIKeyState(ctx context.Context, d *schema.ResourceData, m interface
 	keyID := d.Get("key").(string)
 	key, err := apiClient.searchClient.GetAPIKey(keyID, ctx)
 	if err != nil {
-		if algoliautil.IsAlgoliaNotFoundError(err) {
+		if algoliautil.IsNotFoundError(err) {
 			log.Printf("[WARN] api key (%s) not found, removing from state", d.Id())
 			d.SetId("")
 			return nil
