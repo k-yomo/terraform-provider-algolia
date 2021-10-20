@@ -6,6 +6,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"github.com/hashicorp/terraform-provider-algolia/internal/algoliautil"
+	"log"
 	"strconv"
 	"time"
 )
@@ -170,7 +172,11 @@ func refreshAPIKeyState(ctx context.Context, d *schema.ResourceData, m interface
 	keyID := d.Get("key").(string)
 	key, err := apiClient.searchClient.GetAPIKey(keyID, ctx)
 	if err != nil {
-		d.SetId("")
+		if algoliautil.IsAlgoliaNotFoundError(err) {
+			log.Printf("[WARN] api key (%s) not found, removing from state", d.Id())
+			d.SetId("")
+			return nil
+		}
 		return err
 	}
 

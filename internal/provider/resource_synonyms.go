@@ -6,7 +6,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"github.com/hashicorp/terraform-provider-algolia/internal/algoliautil"
 	"io"
+	"log"
 )
 
 func resourceSynonyms() *schema.Resource {
@@ -156,11 +158,14 @@ func resourceSynonymsStateContext(ctx context.Context, d *schema.ResourceData, m
 func refreshSynonymsState(ctx context.Context, d *schema.ResourceData, m interface{}) error {
 	apiClient := m.(*apiClient)
 
-	indexName := d.Get("index_name").(string)
-
+	indexName := d.Id()
 	iter, err := apiClient.searchClient.InitIndex(indexName).BrowseSynonyms(ctx)
 	if err != nil {
-		d.SetId("")
+		if algoliautil.IsAlgoliaNotFoundError(err) {
+			log.Printf("[WARN] synonyms for (%s) not found, removing from state", d.Id())
+			d.SetId("")
+			return nil
+		}
 		return err
 	}
 
