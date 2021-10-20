@@ -8,6 +8,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"github.com/hashicorp/terraform-provider-algolia/internal/algoliautil"
+	"log"
 	"strconv"
 	"strings"
 	"time"
@@ -359,7 +361,11 @@ func refreshRuleState(ctx context.Context, d *schema.ResourceData, m interface{}
 
 	rule, err := index.GetRule(d.Id(), ctx)
 	if err != nil {
-		d.SetId("")
+		if algoliautil.IsAlgoliaNotFoundError(err) {
+			log.Printf("[WARN] rule (%s) not found, removing from state", d.Id())
+			d.SetId("")
+			return nil
+		}
 		return err
 	}
 

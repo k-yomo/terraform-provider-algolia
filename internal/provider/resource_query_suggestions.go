@@ -5,6 +5,8 @@ import (
 	"github.com/algolia/algoliasearch-client-go/v3/algolia/suggestions"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-provider-algolia/internal/algoliautil"
+	"log"
 )
 
 func resourceQuerySuggestions() *schema.Resource {
@@ -164,9 +166,6 @@ func resourceQuerySuggestionsDelete(ctx context.Context, d *schema.ResourceData,
 }
 
 func resourceQuerySuggestionsStateContext(ctx context.Context, d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
-	if err := d.Set("index_name", d.Id()); err != nil {
-		return nil, err
-	}
 	if err := refreshQuerySuggestionsState(ctx, d, m); err != nil {
 		return nil, err
 	}
@@ -177,11 +176,14 @@ func resourceQuerySuggestionsStateContext(ctx context.Context, d *schema.Resourc
 func refreshQuerySuggestionsState(ctx context.Context, d *schema.ResourceData, m interface{}) error {
 	apiClient := m.(*apiClient)
 
-	indexName := d.Get("index_name").(string)
-
+	indexName := d.Id()
 	querySuggestionsIndexConfig, err := apiClient.suggestionsClient.GetConfig(indexName, ctx)
 	if err != nil {
-		d.SetId("")
+		if algoliautil.IsAlgoliaNotFoundError(err) {
+			log.Printf("[WARN] query suggestions index (%s) not found, removing from state", d.Id())
+			d.SetId("")
+			return nil
+		}
 		return err
 	}
 
