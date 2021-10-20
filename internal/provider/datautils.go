@@ -38,9 +38,9 @@ func castStringMap(m interface{}) map[string]string {
 }
 
 func castInterfaceMap(m interface{}) map[string]interface{} {
-	strMap := map[string]interface{}{}
+	interfaceMap := map[string]interface{}{}
 	for k, v := range m.(map[string]interface{}) {
-		strMap[k] = v
+		interfaceMap[k] = v
 	}
-	return strMap
+	return interfaceMap
 }

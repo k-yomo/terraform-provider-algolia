@@ -53,7 +53,20 @@ func resourceQuerySuggestions() *schema.Resource {
 						"facets": {
 							Type:     schema.TypeList,
 							Optional: true,
-							Elem:     &schema.Schema{Type: schema.TypeMap},
+							Elem: &schema.Resource{
+								Schema: map[string]*schema.Schema{
+									"attribute": {
+										Type:        schema.TypeString,
+										Required:    true,
+										Description: "Category attribute in your index",
+									},
+									"amount": {
+										Type:        schema.TypeInt,
+										Required:    true,
+										Description: "How many of the top categories to show",
+									},
+								},
+							},
 							DefaultFunc: func() (interface{}, error) {
 								return []map[string]interface{}{}, nil
 							},
@@ -205,10 +218,17 @@ func refreshQuerySuggestionsState(ctx context.Context, d *schema.ResourceData, m
 
 	var sourceIndices []interface{}
 	for _, sourceIndex := range querySuggestionsIndexConfig.SourceIndices {
+		var facets []map[string]interface{}
+		for _, f := range sourceIndex.Facets {
+			facets = append(facets, map[string]interface{}{
+				"attribute": f["attribute"],
+				"amount":    f["amount"],
+			})
+		}
 		sourceIndices = append(sourceIndices, map[string]interface{}{
 			"index_name":     sourceIndex.IndexName,
 			"analytics_tags": sourceIndex.AnalyticsTags,
-			"facets":         sourceIndex.Facets,
+			"facets":         facets,
 			"min_hits":       sourceIndex.MinHits,
 			"min_letters":    sourceIndex.MinLetters,
 			"generate":       sourceIndex.Generate,
