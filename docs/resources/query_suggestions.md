@@ -60,7 +60,7 @@ Optional:
 
 - **analytics_tags** (Set of String) A list of analytics tags to filter the popular searches per tag.
 - **external** (Set of String) A list of external indices to use to generate custom Query Suggestions.
-- **facets** (List of Map of String) A list of facets to define as categories for the query suggestions.
+- **facets** (Block List) A list of facets to define as categories for the query suggestions. (see [below for nested schema](#nestedblock--source_indices--facets))
 - **generate** (List of List of String) List of facet attributes used to generate Query Suggestions. The resulting suggestions are every combination of the facets in the nested list 
 (e.g., (facetA and facetB) and facetC).
 ```
@@ -71,6 +71,14 @@ Optional:
 ```
 - **min_hits** (Number) Minimum number of hits (e.g., matching records in the source index) to generate a suggestions.
 - **min_letters** (Number) Minimum number of required letters for a suggestion to remain.
+
+<a id="nestedblock--source_indices--facets"></a>
+### Nested Schema for `source_indices.facets`
+
+Required:
+
+- **amount** (Number) How many of the top categories to show
+- **attribute** (String) Category attribute in your index
 
 ## Import
 
