@@ -629,7 +629,7 @@ func refreshIndexState(ctx context.Context, d *schema.ResourceData, m interface{
 	index := apiClient.searchClient.InitIndex(d.Id())
 	settings, err := index.GetSettings(ctx)
 	if err != nil {
-		if algoliautil.IsAlgoliaNotFoundError(err) {
+		if algoliautil.IsNotFoundError(err) {
 			log.Printf("[WARN] index (%s) not found, removing from state", d.Id())
 			d.SetId("")
 			return nil

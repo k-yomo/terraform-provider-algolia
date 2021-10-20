@@ -6,6 +6,7 @@ import (
 	"github.com/algolia/algoliasearch-client-go/v3/algolia/opt"
 	"github.com/algolia/algoliasearch-client-go/v3/algolia/search"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/hashicorp/terraform-provider-algolia/internal/algoliautil"
@@ -359,9 +360,22 @@ func refreshRuleState(ctx context.Context, d *schema.ResourceData, m interface{}
 	indexName := d.Get("index_name").(string)
 	index := apiClient.searchClient.InitIndex(indexName)
 
-	rule, err := index.GetRule(d.Id(), ctx)
+	var rule search.Rule
+	err := resource.RetryContext(ctx, 1*time.Minute, func() *resource.RetryError {
+		var err error
+		rule, err = index.GetRule(d.Id(), ctx)
+
+		if d.IsNewResource() && algoliautil.IsRetryableError(err) {
+			return resource.RetryableError(err)
+		}
+		if err != nil {
+			return resource.NonRetryableError(err)
+		}
+
+		return nil
+	})
 	if err != nil {
-		if algoliautil.IsAlgoliaNotFoundError(err) {
+		if algoliautil.IsNotFoundError(err) {
 			log.Printf("[WARN] rule (%s) not found, removing from state", d.Id())
 			d.SetId("")
 			return nil

@@ -161,7 +161,7 @@ func refreshSynonymsState(ctx context.Context, d *schema.ResourceData, m interfa
 	indexName := d.Id()
 	iter, err := apiClient.searchClient.InitIndex(indexName).BrowseSynonyms(ctx)
 	if err != nil {
-		if algoliautil.IsAlgoliaNotFoundError(err) {
+		if algoliautil.IsNotFoundError(err) {
 			log.Printf("[WARN] synonyms for (%s) not found, removing from state", d.Id())
 			d.SetId("")
 			return nil
