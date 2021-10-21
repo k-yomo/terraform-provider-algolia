@@ -3,6 +3,11 @@ package provider
 import (
 	"context"
 	"errors"
+	"log"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/algolia/algoliasearch-client-go/v3/algolia/opt"
 	"github.com/algolia/algoliasearch-client-go/v3/algolia/search"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -10,10 +15,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/hashicorp/terraform-provider-algolia/internal/algoliautil"
-	"log"
-	"strconv"
-	"strings"
-	"time"
 )
 
 func resourceRule() *schema.Resource {

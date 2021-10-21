@@ -33,7 +33,7 @@ lint:
 
 .PHONY: fmt
 fmt:
-	go fmt ./...
+	goimports -w .
 	terraform fmt --recursive
 
 .PHONY: fmt-check

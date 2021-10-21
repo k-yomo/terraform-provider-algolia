@@ -2,9 +2,10 @@ package algoliautil
 
 import (
 	"errors"
-	"github.com/algolia/algoliasearch-client-go/v3/algolia/errs"
 	"net/http"
 	"testing"
+
+	"github.com/algolia/algoliasearch-client-go/v3/algolia/errs"
 )
 
 func TestIsRetryableError(t *testing.T) {

@@ -2,12 +2,13 @@ package provider
 
 import (
 	"fmt"
-	"github.com/algolia/algoliasearch-client-go/v3/algolia/errs"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"net/http"
 	"regexp"
 	"testing"
+
+	"github.com/algolia/algoliasearch-client-go/v3/algolia/errs"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 func TestAccResourceAPIKey(t *testing.T) {

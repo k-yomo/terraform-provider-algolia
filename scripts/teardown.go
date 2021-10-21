@@ -2,10 +2,11 @@ package main
 
 import (
 	"fmt"
-	"github.com/algolia/algoliasearch-client-go/v3/algolia/search"
-	"golang.org/x/sync/errgroup"
 	"log"
 	"os"
+
+	"github.com/algolia/algoliasearch-client-go/v3/algolia/search"
+	"golang.org/x/sync/errgroup"
 )
 
 func main() {

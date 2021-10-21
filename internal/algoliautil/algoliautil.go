@@ -1,8 +1,9 @@
 package algoliautil
 
 import (
-	"github.com/algolia/algoliasearch-client-go/v3/algolia/errs"
 	"net/http"
+
+	"github.com/algolia/algoliasearch-client-go/v3/algolia/errs"
 )
 
 func IsRetryableError(err error) bool {

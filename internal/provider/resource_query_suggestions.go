@@ -2,13 +2,14 @@ package provider
 
 import (
 	"context"
+	"log"
+	"time"
+
 	"github.com/algolia/algoliasearch-client-go/v3/algolia/suggestions"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-provider-algolia/internal/algoliautil"
-	"log"
-	"time"
 )
 
 func resourceQuerySuggestions() *schema.Resource {

@@ -2,11 +2,12 @@ package provider
 
 import (
 	"fmt"
+	"net/http"
+	"testing"
+
 	"github.com/algolia/algoliasearch-client-go/v3/algolia/errs"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"net/http"
-	"testing"
 )
 
 func TestAccResourceQuerySuggestions(t *testing.T) {
