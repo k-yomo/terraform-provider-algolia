@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"strconv"
+	"time"
 
 	"github.com/algolia/algoliasearch-client-go/v3/algolia/opt"
 	"github.com/algolia/algoliasearch-client-go/v3/algolia/search"
@@ -23,6 +24,9 @@ func resourceIndex() *schema.Resource {
 			StateContext: resourceIndexStateContext,
 		},
 		Description: "A configuration for an index.",
+		Timeouts: &schema.ResourceTimeout{
+			Default: schema.DefaultTimeout(1 * time.Hour),
+		},
 		// https://www.algolia.com/doc/api-reference/settings-api-parameters/
 		Schema: map[string]*schema.Schema{
 			"name": {
