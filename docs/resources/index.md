@@ -75,6 +75,7 @@ resource "algolia_index" "example" {
 - **performance_config** (Block List, Max: 1) The configuration for performance in index setting. (see [below for nested schema](#nestedblock--performance_config))
 - **query_strategy_config** (Block List, Max: 1) The configuration for query strategy in index setting. (see [below for nested schema](#nestedblock--query_strategy_config))
 - **ranking_config** (Block List, Max: 1) The configuration for ranking. (see [below for nested schema](#nestedblock--ranking_config))
+- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - **typos_config** (Block List, Max: 1) The configuration for typos in index setting. (see [below for nested schema](#nestedblock--typos_config))
 
 <a id="nestedblock--advanced_config"></a>
@@ -201,6 +202,14 @@ Optional:
 - **custom_ranking** (List of String) List of attributes for custom ranking criterion.
 - **ranking** (List of String) List of ranking criteria.
 - **replicas** (Set of String) List of replica names.
+
+
+<a id="nestedblock--timeouts"></a>
+### Nested Schema for `timeouts`
+
+Optional:
+
+- **default** (String)
 
 
 <a id="nestedblock--typos_config"></a>
