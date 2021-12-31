@@ -16,10 +16,10 @@ import (
 
 func resourceIndex() *schema.Resource {
 	return &schema.Resource{
-		CreateContext: resourceIndexCreate,
-		ReadContext:   resourceIndexRead,
-		UpdateContext: resourceIndexUpdate,
-		DeleteContext: resourceIndexDelete,
+		CreateWithoutTimeout: resourceIndexCreate,
+		ReadContext:          resourceIndexRead,
+		UpdateWithoutTimeout: resourceIndexUpdate,
+		DeleteContext:        resourceIndexDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: resourceIndexStateContext,
 		},
