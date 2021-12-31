@@ -67,10 +67,12 @@ func testAccResourceQuerySuggestions(indexName, sourceIndexName string) string {
 	return `
 resource "algolia_index" "` + indexName + `" {
   name = "` + indexName + `"
+  deletion_protection = false
 }
 
 resource "algolia_index" "` + sourceIndexName + `" {
   name = "` + sourceIndexName + `"
+  deletion_protection = false
 }
 
 resource "algolia_query_suggestions" "` + indexName + `" {
@@ -90,6 +92,7 @@ func testAccResourceQuerySuggestionsUpdate(indexName, sourceIndexName string) st
 	return `
 resource "algolia_index" "` + sourceIndexName + `" {
   name = "` + sourceIndexName + `"
+  deletion_protection = false
 }
 
 resource "algolia_query_suggestions" "` + indexName + `" {

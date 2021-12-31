@@ -15,7 +15,6 @@ generate:
 .PHONY: testacc
 testacc:
 	TF_ACC=1 go test ./... -v $(TESTARGS) -coverprofile=coverage.out -timeout 120m
-	make teardown
 
 # Run acceptance tests and show coverages
 .PHONY: testacc-cover

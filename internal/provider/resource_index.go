@@ -561,6 +561,12 @@ This parameter is mainly intended to **limit the response size.** For example, i
 					},
 				},
 			},
+			"deletion_protection": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     true,
+				Description: "Whether to allow Terraform to destroy the index.  Unless this field is set to false in Terraform state, a terraform destroy or terraform apply command that deletes the instance will fail.",
+			},
 		},
 	}
 }
@@ -607,6 +613,10 @@ func resourceIndexUpdate(ctx context.Context, d *schema.ResourceData, m interfac
 
 func resourceIndexDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	apiClient := m.(*apiClient)
+
+	if d.Get("deletion_protection").(bool) {
+		return diag.Errorf("cannot destroy index without setting deletion_protection=false and running `terraform apply`")
+	}
 
 	index := apiClient.searchClient.InitIndex(d.Id())
 	res, err := index.Delete(ctx)

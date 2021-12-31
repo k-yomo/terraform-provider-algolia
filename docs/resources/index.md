@@ -65,6 +65,7 @@ resource "algolia_index" "example" {
 
 - **advanced_config** (Block List, Max: 1) The configuration for advanced features in index setting. (see [below for nested schema](#nestedblock--advanced_config))
 - **attributes_config** (Block List, Max: 1) The configuration for attributes. (see [below for nested schema](#nestedblock--attributes_config))
+- **deletion_protection** (Boolean) Whether to allow Terraform to destroy the index.  Unless this field is set to false in Terraform state, a terraform destroy or terraform apply command that deletes the instance will fail.
 - **enable_personalization** (Boolean) Whether to enable the Personalization feature.
 - **enable_rules** (Boolean) Whether Rules should be globally enabled.
 - **faceting_config** (Block List, Max: 1) The configuration for faceting. (see [below for nested schema](#nestedblock--faceting_config))

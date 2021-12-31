@@ -61,6 +61,7 @@ func testAccResourceRule(indexName, objectID string) string {
 	return `
 resource "algolia_index" "` + indexName + `" {
   name = "` + indexName + `"
+  deletion_protection = false
 }
 
 resource "algolia_rule" "` + objectID + `" {

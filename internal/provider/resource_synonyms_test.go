@@ -47,6 +47,7 @@ func testAccResourceSynonyms(indexName string) string {
 	return `
 resource "algolia_index" "` + indexName + `" {
   name = "` + indexName + `"
+  deletion_protection = false
 }
 
 resource "algolia_synonyms" "` + indexName + `" {
