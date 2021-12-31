@@ -2,6 +2,7 @@ package provider
 
 import (
 	"fmt"
+	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -33,7 +34,14 @@ func TestAccResourceIndex(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "highlight_and_snippet_config.0.highlight_post_tag", "</em>"),
 					resource.TestCheckResourceAttr(resourceName, "highlight_and_snippet_config.0.snippet_ellipsis_text", ""),
 					resource.TestCheckResourceAttr(resourceName, "highlight_and_snippet_config.0.restrict_highlight_and_snippet_arrays", "false"),
+					resource.TestCheckResourceAttr(resourceName, "deletion_protection", "true"),
 				),
+			},
+			{
+				Config:       testAccResourceIndex(indexName),
+				ResourceName: resourceName,
+				Destroy:      true,
+				ExpectError:  regexp.MustCompile("cannot destroy index without setting deletion_protection=false and running `terraform apply`"),
 			},
 			{
 				Config: testAccResourceIndexUpdate(indexName),
@@ -53,13 +61,15 @@ func TestAccResourceIndex(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "highlight_and_snippet_config.0.highlight_post_tag", "</b>"),
 					resource.TestCheckResourceAttr(resourceName, "highlight_and_snippet_config.0.snippet_ellipsis_text", "..."),
 					resource.TestCheckResourceAttr(resourceName, "highlight_and_snippet_config.0.restrict_highlight_and_snippet_arrays", "true"),
+					resource.TestCheckResourceAttr(resourceName, "deletion_protection", "false"),
 				),
 			},
 			{
-				ResourceName:      resourceName,
-				ImportStateId:     indexName,
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            resourceName,
+				ImportStateId:           indexName,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"deletion_protection"},
 			},
 		},
 		CheckDestroy: testAccCheckIndexDestroy,
@@ -124,6 +134,8 @@ resource "algolia_index" "%s" {
   languages_config {
     remove_stop_words_for = ["en"]
   }
+
+  deletion_protection = false
 }
 `, name, name)
 }

@@ -29,7 +29,7 @@ func main() {
 				return fmt.Errorf("failed to delete %s", index.Name)
 			}
 			if err := res.Wait(); err != nil {
-				return fmt.Errorf("failed to delete %s", index.Name)
+				return fmt.Errorf("failed to delete %s: %w", index.Name, err)
 			}
 
 			log.Printf("[INFO] Index '%s' is deleted", index.Name)

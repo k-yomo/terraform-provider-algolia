@@ -71,6 +71,7 @@ resource "algolia_index" "` + name + `" {
   languages_config {
     remove_stop_words_for = ["en"]
   }
+  deletion_protection = false
 }
 
 data "algolia_index" "` + name + `" {
