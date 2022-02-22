@@ -3,6 +3,8 @@ package provider
 import (
 	"context"
 
+	"github.com/algolia/algoliasearch-client-go/v3/algolia/region"
+
 	"github.com/algolia/algoliasearch-client-go/v3/algolia/search"
 	"github.com/algolia/algoliasearch-client-go/v3/algolia/suggestions"
 
@@ -50,8 +52,20 @@ func New(version string) func() *schema.Provider {
 }
 
 type apiClient struct {
-	searchClient      *search.Client
-	suggestionsClient *suggestions.Client
+	userAgent string
+	appID     string
+	apiKey    string
+
+	searchClient *search.Client
+}
+
+func (a *apiClient) newSuggestionsClient(region region.Region) *suggestions.Client {
+	return suggestions.NewClientWithConfig(suggestions.Configuration{
+		AppID:          a.appID,
+		APIKey:         a.apiKey,
+		Region:         region,
+		ExtraUserAgent: a.userAgent,
+	})
 }
 
 func configure(version string, p *schema.Provider) func(context.Context, *schema.ResourceData) (interface{}, diag.Diagnostics) {
@@ -69,15 +83,10 @@ func newAPIClient(appID, apiKey, userAgent string) *apiClient {
 	}
 	searchClient := search.NewClientWithConfig(searchConfig)
 
-	suggestionsConfig := suggestions.Configuration{
-		AppID:          appID,
-		APIKey:         apiKey,
-		ExtraUserAgent: userAgent,
-	}
-	suggestionsClient := suggestions.NewClientWithConfig(suggestionsConfig)
-
 	return &apiClient{
-		searchClient:      searchClient,
-		suggestionsClient: suggestionsClient,
+		appID:        appID,
+		apiKey:       apiKey,
+		userAgent:    userAgent,
+		searchClient: searchClient,
 	}
 }

@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/algolia/algoliasearch-client-go/v3/algolia/errs"
+	"github.com/algolia/algoliasearch-client-go/v3/algolia/region"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
@@ -23,6 +24,7 @@ func TestAccResourceQuerySuggestions(t *testing.T) {
 				Config: testAccResourceQuerySuggestions(indexName, sourceIndexName),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "index_name", indexName),
+					resource.TestCheckResourceAttr(resourceName, "region", "us"),
 					resource.TestCheckResourceAttr(resourceName, "source_indices.0.index_name", sourceIndexName),
 					testCheckResourceListAttr(resourceName, "source_indices.0.analytics_tags", []string{}),
 					testCheckResourceListAttr(resourceName, "source_indices.0.facets", []string{}),
@@ -38,6 +40,7 @@ func TestAccResourceQuerySuggestions(t *testing.T) {
 				Config: testAccResourceQuerySuggestionsUpdate(indexName, sourceIndexName),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "index_name", indexName),
+					resource.TestCheckResourceAttr(resourceName, "region", "us"),
 					resource.TestCheckResourceAttr(resourceName, "source_indices.0.index_name", sourceIndexName),
 					testCheckResourceListAttr(resourceName, "source_indices.0.analytics_tags", []string{}),
 					testCheckResourceListAttr(resourceName, "source_indices.0.facets", []string{}),
@@ -54,7 +57,7 @@ func TestAccResourceQuerySuggestions(t *testing.T) {
 			},
 			{
 				ResourceName:      resourceName,
-				ImportStateId:     indexName,
+				ImportStateId:     fmt.Sprintf("us/%s", indexName),
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -121,7 +124,7 @@ func testAccCheckQuerySuggestionsDestroy(s *terraform.State) error {
 			continue
 		}
 
-		_, err := apiClient.suggestionsClient.GetConfig(rs.Primary.ID)
+		_, err := apiClient.newSuggestionsClient(region.US).GetConfig(rs.Primary.ID)
 		if err == nil {
 			return fmt.Errorf("query suggestions '%s' still exists", rs.Primary.ID)
 		}

@@ -48,6 +48,7 @@ resource "algolia_query_suggestions" "example" {
 - **exclude** (Set of String) A list of words and patterns to exclude from the Query Suggestions index.
 - **id** (String) The ID of this resource.
 - **languages** (Set of String) A list of languages used to de-duplicate singular and plural suggestions.
+- **region** (String) Region to create the index in. "us", "eu", "de" are supported. Defaults to "us" when not specified.
 
 <a id="nestedblock--source_indices"></a>
 ### Nested Schema for `source_indices`
@@ -85,5 +86,5 @@ Required:
 Import is supported using the following syntax:
 
 ```shell
-terraform import algolia_query_suggestions.default {{index_name}}
+terraform import algolia_query_suggestions.default {{region}}/{{index_name}}
 ```

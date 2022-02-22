@@ -5,10 +5,12 @@ import (
 	"log"
 	"time"
 
+	"github.com/algolia/algoliasearch-client-go/v3/algolia/region"
 	"github.com/algolia/algoliasearch-client-go/v3/algolia/suggestions"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/hashicorp/terraform-provider-algolia/internal/algoliautil"
 )
 
@@ -29,6 +31,14 @@ func resourceQuerySuggestions() *schema.Resource {
 				Required:    true,
 				ForceNew:    true,
 				Description: "Index name to target.",
+			},
+			"region": {
+				Type:         schema.TypeString,
+				Optional:     true,
+				ForceNew:     true,
+				Default:      region.US,
+				ValidateFunc: validation.StringInSlice(algoliautil.ValidRegionStrings, false),
+				Description:  `Region to create the index in. "us", "eu", "de" are supported. Defaults to "us" when not specified.`,
 			},
 			"source_indices": {
 				Type:        schema.TypeList,
@@ -135,10 +145,10 @@ func resourceQuerySuggestions() *schema.Resource {
 }
 
 func resourceQuerySuggestionsCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	apiClient := m.(*apiClient)
+	suggestionsClient := newSuggestionsClient(d, m)
 
 	indexName := d.Get("index_name").(string)
-	err := apiClient.suggestionsClient.CreateConfig(mapToQuerySuggestionsIndexConfig(d), ctx)
+	err := suggestionsClient.CreateConfig(mapToQuerySuggestionsIndexConfig(d), ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -156,10 +166,10 @@ func resourceQuerySuggestionsRead(ctx context.Context, d *schema.ResourceData, m
 }
 
 func resourceQuerySuggestionsUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	apiClient := m.(*apiClient)
+	suggestionsClient := newSuggestionsClient(d, m)
 
 	indexName := d.Get("index_name").(string)
-	err := apiClient.suggestionsClient.UpdateConfig(mapToQuerySuggestionsIndexConfig(d), ctx)
+	err := suggestionsClient.UpdateConfig(mapToQuerySuggestionsIndexConfig(d), ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -170,10 +180,10 @@ func resourceQuerySuggestionsUpdate(ctx context.Context, d *schema.ResourceData,
 }
 
 func resourceQuerySuggestionsDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	apiClient := m.(*apiClient)
+	suggestionsClient := newSuggestionsClient(d, m)
 
 	indexName := d.Get("index_name").(string)
-	err := apiClient.suggestionsClient.DeleteConfig(indexName, ctx)
+	err := suggestionsClient.DeleteConfig(indexName, ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -182,6 +192,16 @@ func resourceQuerySuggestionsDelete(ctx context.Context, d *schema.ResourceData,
 }
 
 func resourceQuerySuggestionsStateContext(ctx context.Context, d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
+	r, id, err := parseImportRegionAndId(d.Id())
+	if err != nil {
+		return nil, err
+	}
+	if r != "" {
+		if err := d.Set("region", string(r)); err != nil {
+			return nil, err
+		}
+	}
+	d.SetId(id)
 	if err := refreshQuerySuggestionsState(ctx, d, m); err != nil {
 		return nil, err
 	}
@@ -190,14 +210,14 @@ func resourceQuerySuggestionsStateContext(ctx context.Context, d *schema.Resourc
 }
 
 func refreshQuerySuggestionsState(ctx context.Context, d *schema.ResourceData, m interface{}) error {
-	apiClient := m.(*apiClient)
+	suggestionsClient := newSuggestionsClient(d, m)
 
 	indexName := d.Id()
 
 	var querySuggestionsIndexConfig *suggestions.IndexConfiguration
 	err := resource.RetryContext(ctx, 1*time.Minute, func() *resource.RetryError {
 		var err error
-		querySuggestionsIndexConfig, err = apiClient.suggestionsClient.GetConfig(indexName, ctx)
+		querySuggestionsIndexConfig, err = suggestionsClient.GetConfig(indexName, ctx)
 
 		if d.IsNewResource() && algoliautil.IsRetryableError(err) {
 			return resource.RetryableError(err)
@@ -313,4 +333,10 @@ func unmarshalSourceIndices(configured interface{}, indexConfig *suggestions.Ind
 		sourceIndices = append(sourceIndices, sourceIndex)
 	}
 	indexConfig.SourceIndices = sourceIndices
+}
+
+func newSuggestionsClient(d *schema.ResourceData, m interface{}) *suggestions.Client {
+	apiClient := m.(*apiClient)
+	r := region.Region(d.Get("region").(string))
+	return apiClient.newSuggestionsClient(r)
 }
