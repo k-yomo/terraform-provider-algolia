@@ -192,6 +192,16 @@ func resourceQuerySuggestionsDelete(ctx context.Context, d *schema.ResourceData,
 }
 
 func resourceQuerySuggestionsStateContext(ctx context.Context, d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
+	r, id, err := parseImportRegionAndId(d.Id())
+	if err != nil {
+		return nil, err
+	}
+	if r != "" {
+		if err := d.Set("region", string(r)); err != nil {
+			return nil, err
+		}
+	}
+	d.SetId(id)
 	if err := refreshQuerySuggestionsState(ctx, d, m); err != nil {
 		return nil, err
 	}
