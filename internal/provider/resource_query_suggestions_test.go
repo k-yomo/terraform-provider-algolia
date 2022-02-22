@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/algolia/algoliasearch-client-go/v3/algolia/errs"
+	"github.com/algolia/algoliasearch-client-go/v3/algolia/region"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
@@ -121,7 +122,7 @@ func testAccCheckQuerySuggestionsDestroy(s *terraform.State) error {
 			continue
 		}
 
-		_, err := apiClient.suggestionsClient.GetConfig(rs.Primary.ID)
+		_, err := apiClient.newSuggestionsClient(region.US).GetConfig(rs.Primary.ID)
 		if err == nil {
 			return fmt.Errorf("query suggestions '%s' still exists", rs.Primary.ID)
 		}
