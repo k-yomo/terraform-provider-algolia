@@ -37,7 +37,7 @@ func resourceQuerySuggestions() *schema.Resource {
 				Optional:     true,
 				ForceNew:     true,
 				Default:      region.US,
-				ValidateFunc: validation.StringInSlice([]string{string(region.US), string(region.EU), string(region.DE)}, false),
+				ValidateFunc: validation.StringInSlice(algoliautil.ValidRegionStrings, false),
 				Description:  `Region to create the index in. "us", "eu", "de" are supported. Defaults to "us" when not specified.`,
 			},
 			"source_indices": {
