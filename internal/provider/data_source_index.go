@@ -19,6 +19,11 @@ func dataSourceIndex() *schema.Resource {
 				ForceNew:    true,
 				Description: "Name of the index.",
 			},
+			"virtual": {
+				Type:        schema.TypeBool,
+				Computed:    true,
+				Description: "Whether the index is virtual index.",
+			},
 			"attributes_config": {
 				Type:        schema.TypeList,
 				Computed:    true,

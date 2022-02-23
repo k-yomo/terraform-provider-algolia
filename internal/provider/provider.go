@@ -4,10 +4,8 @@ import (
 	"context"
 
 	"github.com/algolia/algoliasearch-client-go/v3/algolia/region"
-
 	"github.com/algolia/algoliasearch-client-go/v3/algolia/search"
 	"github.com/algolia/algoliasearch-client-go/v3/algolia/suggestions"
-
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
