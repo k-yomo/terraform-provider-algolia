@@ -10,6 +10,7 @@ import (
 )
 
 // TODO: Cover all params
+// TODO: Add a test for virtual index (virtual index can't be created on current Free plan)
 func TestAccResourceIndex(t *testing.T) {
 	indexName := randStringStartWithAlpha(100)
 	resourceName := fmt.Sprintf("algolia_index.%s", indexName)
@@ -22,6 +23,7 @@ func TestAccResourceIndex(t *testing.T) {
 				Config: testAccResourceIndex(indexName),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "name", indexName),
+					resource.TestCheckResourceAttr(resourceName, "virtual", "false"),
 					resource.TestCheckNoResourceAttr(resourceName, "attributes_config.0.searchable_attributes.0"),
 					resource.TestCheckNoResourceAttr(resourceName, "attributes_config.0.attributes_for_faceting.0"),
 					resource.TestCheckNoResourceAttr(resourceName, "attributes_config.0.unretrievable_attributes.0"),
@@ -47,6 +49,7 @@ func TestAccResourceIndex(t *testing.T) {
 				Config: testAccResourceIndexUpdate(indexName),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "name", indexName),
+					resource.TestCheckResourceAttr(resourceName, "virtual", "false"),
 					testCheckResourceListAttr(resourceName, "attributes_config.0.searchable_attributes", []string{"title", "category,tag", "unordered(description)"}),
 					testCheckResourceListAttr(resourceName, "attributes_config.0.attributes_for_faceting", []string{"category"}),
 					testCheckResourceListAttr(resourceName, "attributes_config.0.unretrievable_attributes", []string{"author_email"}),

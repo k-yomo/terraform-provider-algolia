@@ -19,6 +19,7 @@ func TestAccDataSourceIndex(t *testing.T) {
 				Config: testAccDatasourceIndex(indexName),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(dataSourceName, "name", indexName),
+					resource.TestCheckResourceAttr(dataSourceName, "virtual", "false"),
 					testCheckResourceListAttr(dataSourceName, "attributes_config.0.searchable_attributes", []string{"title", "category,tag", "unordered(description)"}),
 					testCheckResourceListAttr(dataSourceName, "attributes_config.0.attributes_for_faceting", []string{"category"}),
 					testCheckResourceListAttr(dataSourceName, "attributes_config.0.unretrievable_attributes", []string{"author_email"}),

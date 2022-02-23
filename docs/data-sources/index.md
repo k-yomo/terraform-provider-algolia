@@ -43,6 +43,7 @@ data "algolia_index" "example" {
 - **query_strategy_config** (List of Object) The configuration for query strategy in index setting. (see [below for nested schema](#nestedatt--query_strategy_config))
 - **ranking_config** (List of Object) The configuration for ranking. (see [below for nested schema](#nestedatt--ranking_config))
 - **typos_config** (List of Object) The configuration for typos in index setting. (see [below for nested schema](#nestedatt--typos_config))
+- **virtual** (Boolean) Whether the index is virtual index.
 
 <a id="nestedatt--advanced_config"></a>
 ### Nested Schema for `advanced_config`
