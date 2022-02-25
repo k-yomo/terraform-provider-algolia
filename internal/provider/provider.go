@@ -81,9 +81,7 @@ func configure(version string, p *schema.Provider) func(context.Context, *schema
 func newAPIClient(appID, apiKey, userAgent string) *apiClient {
 	var algoliaRequester transport.Requester
 	if logging.IsDebugOrHigher() {
-		debugRequester := algoliautil.NewDebugRequester()
-		debugRequester.Client.Transport = logging.NewTransport("Algolia", debugRequester.Client.Transport)
-		algoliaRequester = debugRequester
+		algoliaRequester = algoliautil.NewDebugRequester()
 	}
 
 	searchConfig := search.Configuration{
