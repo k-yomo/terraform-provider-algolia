@@ -6,8 +6,11 @@ import (
 	"github.com/algolia/algoliasearch-client-go/v3/algolia/region"
 	"github.com/algolia/algoliasearch-client-go/v3/algolia/search"
 	"github.com/algolia/algoliasearch-client-go/v3/algolia/suggestions"
+	"github.com/algolia/algoliasearch-client-go/v3/algolia/transport"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/logging"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-provider-algolia/internal/algoliautil"
 )
 
 // nolint: gochecknoinits
@@ -53,6 +56,7 @@ type apiClient struct {
 	userAgent string
 	appID     string
 	apiKey    string
+	requester transport.Requester
 
 	searchClient *search.Client
 }
@@ -63,6 +67,7 @@ func (a *apiClient) newSuggestionsClient(region region.Region) *suggestions.Clie
 		APIKey:         a.apiKey,
 		Region:         region,
 		ExtraUserAgent: a.userAgent,
+		Requester:      a.requester,
 	})
 }
 
@@ -74,10 +79,16 @@ func configure(version string, p *schema.Provider) func(context.Context, *schema
 }
 
 func newAPIClient(appID, apiKey, userAgent string) *apiClient {
+	var algoliaRequester transport.Requester
+	if logging.IsDebugOrHigher() {
+		algoliaRequester = algoliautil.NewDebugRequester()
+	}
+
 	searchConfig := search.Configuration{
 		AppID:          appID,
 		APIKey:         apiKey,
 		ExtraUserAgent: userAgent,
+		Requester:      algoliaRequester,
 	}
 	searchClient := search.NewClientWithConfig(searchConfig)
 
@@ -85,6 +96,7 @@ func newAPIClient(appID, apiKey, userAgent string) *apiClient {
 		appID:        appID,
 		apiKey:       apiKey,
 		userAgent:    userAgent,
+		requester:    algoliaRequester,
 		searchClient: searchClient,
 	}
 }
