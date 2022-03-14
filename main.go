@@ -34,10 +34,13 @@ func main() {
 	flag.BoolVar(&debugMode, "debug", false, "set to true to run the provider with support for debuggers like delve")
 	flag.Parse()
 
-	opts := &plugin.ServeOpts{ProviderFunc: provider.New(version)}
+	opts := &plugin.ServeOpts{
+		ProviderFunc: provider.New(version),
+		ProviderAddr: "registry.terraform.io/k-yomo/algolia",
+	}
 
 	if debugMode {
-		err := plugin.Debug(context.Background(), "registry.terraform.io/k-yomo/algolia", opts)
+		_, _, err := plugin.DebugServe(context.Background(), opts)
 		if err != nil {
 			log.Fatal(err.Error())
 		}
