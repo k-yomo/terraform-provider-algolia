@@ -38,54 +38,54 @@ resource "algolia_rule" "example" {
 
 ### Required
 
-- **consequence** (Block List, Min: 1, Max: 1) Consequence of the Rule. 
+- `consequence` (Block List, Min: 1, Max: 1) Consequence of the Rule. 
 At least one of the following object must be used:
 - params
 - promote
 - hide
 - user_data (see [below for nested schema](#nestedblock--consequence))
-- **index_name** (String) Name of the index to apply rule.
-- **object_id** (String) Unique identifier for the Rule (format: `[A-Za-z0-9_-]+`).
+- `index_name` (String) Name of the index to apply rule.
+- `object_id` (String) Unique identifier for the Rule (format: `[A-Za-z0-9_-]+`).
 
 ### Optional
 
-- **conditions** (Block List) A list of conditions that should apply to activate a Rule. You can use up to 25 conditions per Rule. (see [below for nested schema](#nestedblock--conditions))
-- **description** (String) This field is intended for Rule management purposes, in particular to ease searching for Rules and presenting them to human readers. It is not interpreted by the API.
-- **enabled** (Boolean) Whether the Rule is enabled. Disabled Rules remain in the index, but are not applied at query time.
-- **id** (String) The ID of this resource.
-- **validity** (Block List) Objects to promote as hits. (see [below for nested schema](#nestedblock--validity))
+- `conditions` (Block List) A list of conditions that should apply to activate a Rule. You can use up to 25 conditions per Rule. (see [below for nested schema](#nestedblock--conditions))
+- `description` (String) This field is intended for Rule management purposes, in particular to ease searching for Rules and presenting them to human readers. It is not interpreted by the API.
+- `enabled` (Boolean) Whether the Rule is enabled. Disabled Rules remain in the index, but are not applied at query time.
+- `id` (String) The ID of this resource.
+- `validity` (Block List) Objects to promote as hits. (see [below for nested schema](#nestedblock--validity))
 
 <a id="nestedblock--consequence"></a>
 ### Nested Schema for `consequence`
 
 Optional:
 
-- **hide** (Set of String) List of object IDs to hide from hits.
-- **params** (Block List, Max: 1) Additional search parameters. Any valid search parameter is allowed. Specific treatment is applied to these fields: `query`, `automaticFacetFilters`, `automaticOptionalFacetFilters`. (see [below for nested schema](#nestedblock--consequence--params))
-- **promote** (Block List) Objects to promote as hits. (see [below for nested schema](#nestedblock--consequence--promote))
-- **user_data** (String) Custom JSON formatted string that will be appended to the userData array in the response. This object is not interpreted by the API. It is limited to 1kB of minified JSON.
+- `hide` (Set of String) List of object IDs to hide from hits.
+- `params` (Block List, Max: 1) Additional search parameters. Any valid search parameter is allowed. Specific treatment is applied to these fields: `query`, `automaticFacetFilters`, `automaticOptionalFacetFilters`. (see [below for nested schema](#nestedblock--consequence--params))
+- `promote` (Block List) Objects to promote as hits. (see [below for nested schema](#nestedblock--consequence--promote))
+- `user_data` (String) Custom JSON formatted string that will be appended to the userData array in the response. This object is not interpreted by the API. It is limited to 1kB of minified JSON.
 
 <a id="nestedblock--consequence--params"></a>
 ### Nested Schema for `consequence.params`
 
 Optional:
 
-- **automatic_facet_filters** (Block List) Names of facets to which automatic filtering must be applied; they must match the facet name of a facet value placeholder in the query pattern. (see [below for nested schema](#nestedblock--consequence--params--automatic_facet_filters))
-- **automatic_optional_facet_filters** (Block List) Same syntax as `automatic_facet_filters`, but the engine treats the filters as optional. Behaves like [optionalFilters](https://www.algolia.com/doc/api-reference/api-parameters/optionalFilters/). (see [below for nested schema](#nestedblock--consequence--params--automatic_optional_facet_filters))
-- **object_query** (Block List) It describes incremental edits to be made to the query string. Either one of `query` or `object_query` can be set. (see [below for nested schema](#nestedblock--consequence--params--object_query))
-- **query** (String) It replaces the entire query string. Either one of `query` or `object_query` can be set.
+- `automatic_facet_filters` (Block List) Names of facets to which automatic filtering must be applied; they must match the facet name of a facet value placeholder in the query pattern. (see [below for nested schema](#nestedblock--consequence--params--automatic_facet_filters))
+- `automatic_optional_facet_filters` (Block List) Same syntax as `automatic_facet_filters`, but the engine treats the filters as optional. Behaves like [optionalFilters](https://www.algolia.com/doc/api-reference/api-parameters/optionalFilters/). (see [below for nested schema](#nestedblock--consequence--params--automatic_optional_facet_filters))
+- `object_query` (Block List) It describes incremental edits to be made to the query string. Either one of `query` or `object_query` can be set. (see [below for nested schema](#nestedblock--consequence--params--object_query))
+- `query` (String) It replaces the entire query string. Either one of `query` or `object_query` can be set.
 
 <a id="nestedblock--consequence--params--automatic_facet_filters"></a>
 ### Nested Schema for `consequence.params.automatic_facet_filters`
 
 Required:
 
-- **facet** (String) Attribute to filter on. This must match a facet placeholder in the Rule’s pattern.
+- `facet` (String) Attribute to filter on. This must match a facet placeholder in the Rule’s pattern.
 
 Optional:
 
-- **disjunctive** (Boolean) Whether the filter is disjunctive (true) or conjunctive (false). If the filter applies multiple times, e.g. because the query string contains multiple values of the same facet, the multiple occurrences are combined with an `AND` operator by default (conjunctive mode). If the filter is specified as disjunctive, however, multiple occurrences are combined with an `OR` operator instead.
-- **score** (Number) Score for the filter. Typically used for optional or disjunctive filters.
+- `disjunctive` (Boolean) Whether the filter is disjunctive (true) or conjunctive (false). If the filter applies multiple times, e.g. because the query string contains multiple values of the same facet, the multiple occurrences are combined with an `AND` operator by default (conjunctive mode). If the filter is specified as disjunctive, however, multiple occurrences are combined with an `OR` operator instead.
+- `score` (Number) Score for the filter. Typically used for optional or disjunctive filters.
 
 
 <a id="nestedblock--consequence--params--automatic_optional_facet_filters"></a>
@@ -93,12 +93,12 @@ Optional:
 
 Required:
 
-- **facet** (String) Attribute to filter on. This must match a facet placeholder in the Rule’s pattern.
+- `facet` (String) Attribute to filter on. This must match a facet placeholder in the Rule’s pattern.
 
 Optional:
 
-- **disjunctive** (Boolean) Whether the filter is disjunctive (true) or conjunctive (false). If the filter applies multiple times, e.g. because the query string contains multiple values of the same facet, the multiple occurrences are combined with an `AND` operator by default (conjunctive mode). If the filter is specified as disjunctive, however, multiple occurrences are combined with an `OR` operator instead.
-- **score** (Number) Score for the filter. Typically used for optional or disjunctive filters.
+- `disjunctive` (Boolean) Whether the filter is disjunctive (true) or conjunctive (false). If the filter applies multiple times, e.g. because the query string contains multiple values of the same facet, the multiple occurrences are combined with an `AND` operator by default (conjunctive mode). If the filter is specified as disjunctive, however, multiple occurrences are combined with an `OR` operator instead.
+- `score` (Number) Score for the filter. Typically used for optional or disjunctive filters.
 
 
 <a id="nestedblock--consequence--params--object_query"></a>
@@ -106,14 +106,14 @@ Optional:
 
 Required:
 
-- **delete** (String) Text or patterns to remove from the query string.
-- **type** (String) Type of edit. Must be one of:
+- `delete` (String) Text or patterns to remove from the query string.
+- `type` (String) Type of edit. Must be one of:
 	- `remove`: when you want to delete some text and not replace it with anything
 	- `replace`: when you want to delete some text and replace it with something else
 
 Optional:
 
-- **insert** (String) Text that should be inserted in place of the removed text inside the query string.
+- `insert` (String) Text that should be inserted in place of the removed text inside the query string.
 
 
 
@@ -122,8 +122,8 @@ Optional:
 
 Required:
 
-- **object_ids** (Set of String)
-- **position** (Number) The position to promote the object(s) to (zero-based). If you pass `object_ids`, we place the objects at this position as a group. For example, if you pass four `object_ids` to position `0`, the objects take the first four positions.
+- `object_ids` (Set of String)
+- `position` (Number) The position to promote the object(s) to (zero-based). If you pass `object_ids`, we place the objects at this position as a group. For example, if you pass four `object_ids` to position `0`, the objects take the first four positions.
 
 
 
@@ -132,16 +132,16 @@ Required:
 
 Optional:
 
-- **alternatives** (Boolean) Whether the `pattern` matches on plurals, synonyms, and typos.
+- `alternatives` (Boolean) Whether the `pattern` matches on plurals, synonyms, and typos.
 
 This parameter goes hand in hand with the `pattern`  parameter. If the `pattern` is “shoe” and `alternatives` is `true`, the `pattern` matches on “shoes”, as well as synonyms and typos of “shoe”.
-- **anchoring** (String) Whether the pattern parameter must match the beginning or the end of the query string, or both, or none.
+- `anchoring` (String) Whether the pattern parameter must match the beginning or the end of the query string, or both, or none.
 Possible values are `is`, `startsWith`, `endsWith` and `contains`.
 This parameter goes hand in hand with the `pattern` parameter. If you’re creating a Rule that depends on a specific query, you must specify the `pattern` and `anchoring`.
 
 Otherwise, you can omit both.
-- **context** (String) Rule context (format: `[A-Za-z0-9_-]+`). When specified, the Rule is only applied when the same context is specified at query time (using the `ruleContexts` parameter). When absent, the Rule is generic and always applies (provided that its other conditions are met, of course).
-- **pattern** (String) Query pattern syntax.
+- `context` (String) Rule context (format: `[A-Za-z0-9_-]+`). When specified, the Rule is only applied when the same context is specified at query time (using the `ruleContexts` parameter). When absent, the Rule is generic and always applies (provided that its other conditions are met, of course).
+- `pattern` (String) Query pattern syntax.
 Query patterns are expressed as a string with a specific syntax. A pattern is a sequence of tokens, which can be either:
 
 - Facet value placeholder: `{facet:$facet_name}`. Example: `{facet:brand}`.
@@ -158,8 +158,8 @@ Otherwise, you can omit both.
 
 Required:
 
-- **from** (String) Lower bound of the time range. RFC3339 format.
-- **until** (String) Upper bound of the time range. RFC3339 format.
+- `from` (String) Lower bound of the time range. RFC3339 format.
+- `until` (String) Upper bound of the time range. RFC3339 format.
 
 ## Import
 
