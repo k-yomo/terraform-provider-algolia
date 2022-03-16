@@ -59,47 +59,47 @@ resource "algolia_index" "example" {
 
 ### Required
 
-- **name** (String) Name of the index.
+- `name` (String) Name of the index.
 
 ### Optional
 
-- **advanced_config** (Block List, Max: 1) The configuration for advanced features in index setting. (see [below for nested schema](#nestedblock--advanced_config))
-- **attributes_config** (Block List, Max: 1) The configuration for attributes. (see [below for nested schema](#nestedblock--attributes_config))
-- **deletion_protection** (Boolean) Whether to allow Terraform to destroy the index.  Unless this field is set to false in Terraform state, a terraform destroy or terraform apply command that deletes the instance will fail.
-- **enable_personalization** (Boolean) Whether to enable the Personalization feature.
-- **enable_rules** (Boolean) Whether Rules should be globally enabled.
-- **faceting_config** (Block List, Max: 1) The configuration for faceting. (see [below for nested schema](#nestedblock--faceting_config))
-- **highlight_and_snippet_config** (Block List, Max: 1) The configuration for highlight / snippet in index setting. (see [below for nested schema](#nestedblock--highlight_and_snippet_config))
-- **id** (String) The ID of this resource.
-- **languages_config** (Block List, Max: 1) The configuration for languages in index setting. (see [below for nested schema](#nestedblock--languages_config))
-- **pagination_config** (Block List, Max: 1) The configuration for pagination in index setting. (see [below for nested schema](#nestedblock--pagination_config))
-- **performance_config** (Block List, Max: 1) The configuration for performance in index setting. (see [below for nested schema](#nestedblock--performance_config))
-- **query_strategy_config** (Block List, Max: 1) The configuration for query strategy in index setting. (see [below for nested schema](#nestedblock--query_strategy_config))
-- **ranking_config** (Block List, Max: 1) The configuration for ranking. (see [below for nested schema](#nestedblock--ranking_config))
-- **timeouts** (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-- **typos_config** (Block List, Max: 1) The configuration for typos in index setting. (see [below for nested schema](#nestedblock--typos_config))
+- `advanced_config` (Block List, Max: 1) The configuration for advanced features in index setting. (see [below for nested schema](#nestedblock--advanced_config))
+- `attributes_config` (Block List, Max: 1) The configuration for attributes. (see [below for nested schema](#nestedblock--attributes_config))
+- `deletion_protection` (Boolean) Whether to allow Terraform to destroy the index.  Unless this field is set to false in Terraform state, a terraform destroy or terraform apply command that deletes the instance will fail.
+- `enable_personalization` (Boolean) Whether to enable the Personalization feature.
+- `enable_rules` (Boolean) Whether Rules should be globally enabled.
+- `faceting_config` (Block List, Max: 1) The configuration for faceting. (see [below for nested schema](#nestedblock--faceting_config))
+- `highlight_and_snippet_config` (Block List, Max: 1) The configuration for highlight / snippet in index setting. (see [below for nested schema](#nestedblock--highlight_and_snippet_config))
+- `id` (String) The ID of this resource.
+- `languages_config` (Block List, Max: 1) The configuration for languages in index setting. (see [below for nested schema](#nestedblock--languages_config))
+- `pagination_config` (Block List, Max: 1) The configuration for pagination in index setting. (see [below for nested schema](#nestedblock--pagination_config))
+- `performance_config` (Block List, Max: 1) The configuration for performance in index setting. (see [below for nested schema](#nestedblock--performance_config))
+- `query_strategy_config` (Block List, Max: 1) The configuration for query strategy in index setting. (see [below for nested schema](#nestedblock--query_strategy_config))
+- `ranking_config` (Block List, Max: 1) The configuration for ranking. (see [below for nested schema](#nestedblock--ranking_config))
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `typos_config` (Block List, Max: 1) The configuration for typos in index setting. (see [below for nested schema](#nestedblock--typos_config))
 
 ### Read-Only
 
-- **virtual** (Boolean) Whether the index is virtual index. If true, applying the params listed in the [doc](https://www.algolia.com/doc/guides/managing-results/refine-results/sorting/in-depth/replicas/#unsupported-parameters) will be ignored.
+- `virtual` (Boolean) Whether the index is virtual index. If true, applying the params listed in the [doc](https://www.algolia.com/doc/guides/managing-results/refine-results/sorting/in-depth/replicas/#unsupported-parameters) will be ignored.
 
 <a id="nestedblock--advanced_config"></a>
 ### Nested Schema for `advanced_config`
 
 Optional:
 
-- **attribute_criteria_computed_by_min_proximity** (Boolean) When attribute is ranked above proximity in your ranking formula, proximity is used to select which searchable attribute is matched in the **attribute ranking stage**.
-- **attribute_for_distinct** (String) Name of the de-duplication attribute to be used with the `distinct` feature.
-- **distinct** (Number) Whether to enable de-duplication or grouping of results.
+- `attribute_criteria_computed_by_min_proximity` (Boolean) When attribute is ranked above proximity in your ranking formula, proximity is used to select which searchable attribute is matched in the **attribute ranking stage**.
+- `attribute_for_distinct` (String) Name of the de-duplication attribute to be used with the `distinct` feature.
+- `distinct` (Number) Whether to enable de-duplication or grouping of results.
 - When set to `0`, you disable de-duplication and grouping.
 - When set to `1`, you enable **de-duplication**, in which only the most relevant result is returned for all records that have the same value in the distinct attribute. This is similar to the SQL `distinct` keyword.
 if `distinct` is set to 1 (de-duplication):
 - When set to `N (where N > 1)`, you enable grouping, in which most N hits will be returned with the same value for the distinct attribute.
 then the N most relevant episodes for every show are kept, with similar consequences.
-- **max_facet_hits** (Number) Maximum number of facet hits to return during a search for facet values.
-- **min_proximity** (Number) Precision of the `proximity` ranking criterion.
-- **replace_synonyms_in_highlight** (Boolean) Whether to highlight and snippet the original word that matches the synonym or the synonym itself.
-- **response_fields** (Set of String) The fields the response will contain. Applies to search and browse queries.
+- `max_facet_hits` (Number) Maximum number of facet hits to return during a search for facet values.
+- `min_proximity` (Number) Precision of the `proximity` ranking criterion.
+- `replace_synonyms_in_highlight` (Boolean) Whether to highlight and snippet the original word that matches the synonym or the synonym itself.
+- `response_fields` (Set of String) The fields the response will contain. Applies to search and browse queries.
 This parameter is mainly intended to **limit the response size.** For example, in complex queries, echoing of request parameters in the response’s params field can be undesirable.
 
 
@@ -108,10 +108,10 @@ This parameter is mainly intended to **limit the response size.** For example, i
 
 Optional:
 
-- **attributes_for_faceting** (Set of String) The complete list of attributes that will be used for faceting.
-- **attributes_to_retrieve** (Set of String) List of attributes to be retrieved at query time.
-- **searchable_attributes** (List of String) The complete list of attributes used for searching.
-- **unretrievable_attributes** (Set of String) List of attributes that cannot be retrieved at query time.
+- `attributes_for_faceting` (Set of String) The complete list of attributes that will be used for faceting.
+- `attributes_to_retrieve` (Set of String) List of attributes to be retrieved at query time.
+- `searchable_attributes` (List of String) The complete list of attributes used for searching.
+- `unretrievable_attributes` (Set of String) List of attributes that cannot be retrieved at query time.
 
 
 <a id="nestedblock--faceting_config"></a>
@@ -119,8 +119,8 @@ Optional:
 
 Optional:
 
-- **max_values_per_facet** (Number) Maximum number of facet values to return for each facet during a regular search.
-- **sort_facet_values_by** (String) Parameter to controls how the facet values are sorted within each faceted attribute.
+- `max_values_per_facet` (Number) Maximum number of facet values to return for each facet during a regular search.
+- `sort_facet_values_by` (String) Parameter to controls how the facet values are sorted within each faceted attribute.
 
 
 <a id="nestedblock--highlight_and_snippet_config"></a>
@@ -128,12 +128,12 @@ Optional:
 
 Optional:
 
-- **attributes_to_highlight** (Set of String) List of attributes to highlight.
-- **attributes_to_snippet** (Set of String) List of attributes to snippet, with an optional maximum number of words to snippet.
-- **highlight_post_tag** (String) The HTML string to insert after the highlighted parts in all highlight and snippet results.
-- **highlight_pre_tag** (String) The HTML string to insert before the highlighted parts in all highlight and snippet results.
-- **restrict_highlight_and_snippet_arrays** (Boolean) Restrict highlighting and snippeting to items that matched the query.
-- **snippet_ellipsis_text** (String) String used as an ellipsis indicator when a snippet is truncated.
+- `attributes_to_highlight` (Set of String) List of attributes to highlight.
+- `attributes_to_snippet` (Set of String) List of attributes to snippet, with an optional maximum number of words to snippet.
+- `highlight_post_tag` (String) The HTML string to insert after the highlighted parts in all highlight and snippet results.
+- `highlight_pre_tag` (String) The HTML string to insert before the highlighted parts in all highlight and snippet results.
+- `restrict_highlight_and_snippet_arrays` (Boolean) Restrict highlighting and snippeting to items that matched the query.
+- `snippet_ellipsis_text` (String) String used as an ellipsis indicator when a snippet is truncated.
 
 
 <a id="nestedblock--languages_config"></a>
@@ -141,27 +141,27 @@ Optional:
 
 Optional:
 
-- **attributes_to_transliterate** (Set of String) List of attributes to apply transliteration
-- **camel_case_attributes** (Set of String) List of attributes on which to do a decomposition of camel case words.
-- **custom_normalization** (Map of String) Custom normalization which overrides the engine’s default normalization
-- **decompound_query** (Boolean) Whether to split compound words into their composing atoms in the query.
-- **decompounded_attributes** (Block List) List of attributes to apply word segmentation, also known as decompounding. (see [below for nested schema](#nestedblock--languages_config--decompounded_attributes))
-- **ignore_plurals** (Boolean) Whether to treat singular, plurals, and other forms of declensions as matching terms.
-- **ignore_plurals_for** (Set of String) Whether to treat singular, plurals, and other forms of declensions as matching terms in target languages.
+- `attributes_to_transliterate` (Set of String) List of attributes to apply transliteration
+- `camel_case_attributes` (Set of String) List of attributes on which to do a decomposition of camel case words.
+- `custom_normalization` (Map of String) Custom normalization which overrides the engine’s default normalization
+- `decompound_query` (Boolean) Whether to split compound words into their composing atoms in the query.
+- `decompounded_attributes` (Block List) List of attributes to apply word segmentation, also known as decompounding. (see [below for nested schema](#nestedblock--languages_config--decompounded_attributes))
+- `ignore_plurals` (Boolean) Whether to treat singular, plurals, and other forms of declensions as matching terms.
+- `ignore_plurals_for` (Set of String) Whether to treat singular, plurals, and other forms of declensions as matching terms in target languages.
 List of supported languages are listed on http://nhttps//www.algolia.com/doc/api-reference/api-parameters/ignorePlurals/#usage-notes
-- **index_languages** (Set of String) List of languages at the index level for language-specific processing such as tokenization and normalization.
-- **keep_diacritics_on_characters** (String) List of characters that the engine shouldn’t automatically normalize.
-- **query_languages** (Set of String) List of languages to be used by language-specific settings and functionalities such as ignorePlurals, removeStopWords, and CJK word-detection.
-- **remove_stop_words** (Boolean) Whether to removes stop (common) words from the query before executing it.
-- **remove_stop_words_for** (Set of String) List of languages to removes stop (common) words from the query before executing it.
+- `index_languages` (Set of String) List of languages at the index level for language-specific processing such as tokenization and normalization.
+- `keep_diacritics_on_characters` (String) List of characters that the engine shouldn’t automatically normalize.
+- `query_languages` (Set of String) List of languages to be used by language-specific settings and functionalities such as ignorePlurals, removeStopWords, and CJK word-detection.
+- `remove_stop_words` (Boolean) Whether to removes stop (common) words from the query before executing it.
+- `remove_stop_words_for` (Set of String) List of languages to removes stop (common) words from the query before executing it.
 
 <a id="nestedblock--languages_config--decompounded_attributes"></a>
 ### Nested Schema for `languages_config.decompounded_attributes`
 
 Required:
 
-- **attributes** (Set of String)
-- **language** (String)
+- `attributes` (Set of String)
+- `language` (String)
 
 
 
@@ -170,8 +170,8 @@ Required:
 
 Optional:
 
-- **hits_per_page** (Number) The number of hits per page.
-- **pagination_limited_to** (Number) The maximum number of hits accessible via pagination
+- `hits_per_page` (Number) The number of hits per page.
+- `pagination_limited_to` (Number) The maximum number of hits accessible via pagination
 
 
 <a id="nestedblock--performance_config"></a>
@@ -179,8 +179,8 @@ Optional:
 
 Optional:
 
-- **allow_compression_of_integer_array** (Boolean) Whether to enable compression of large integer arrays.
-- **numeric_attributes_for_filtering** (Set of String) List of numeric attributes that can be used as numerical filters.
+- `allow_compression_of_integer_array` (Boolean) Whether to enable compression of large integer arrays.
+- `numeric_attributes_for_filtering` (Set of String) List of numeric attributes that can be used as numerical filters.
 
 
 <a id="nestedblock--query_strategy_config"></a>
@@ -188,15 +188,15 @@ Optional:
 
 Optional:
 
-- **advanced_syntax** (Boolean) Whether to enable the advanced query syntax.
-- **advanced_syntax_features** (Set of String) Advanced syntax features to be activated when ‘advancedSyntax’ is enabled
-- **alternatives_as_exact** (Set of String) List of alternatives that should be considered an exact match by the exact ranking criterion.
-- **disable_exact_on_attributes** (Set of String) List of attributes on which you want to disable the exact ranking criterion.
-- **disable_prefix_on_attributes** (Set of String) List of attributes on which you want to disable prefix matching.
-- **exact_on_single_word_query** (String) Controls how the exact ranking criterion is computed when the query contains only one word.
-- **optional_words** (Set of String) A list of words that should be considered as optional when found in the query.
-- **query_type** (String) Query type to control if and how query words are interpreted as prefixes.
-- **remove_words_if_no_results** (String) Strategy to remove words from the query when it doesn’t match any hits.
+- `advanced_syntax` (Boolean) Whether to enable the advanced query syntax.
+- `advanced_syntax_features` (Set of String) Advanced syntax features to be activated when ‘advancedSyntax’ is enabled
+- `alternatives_as_exact` (Set of String) List of alternatives that should be considered an exact match by the exact ranking criterion.
+- `disable_exact_on_attributes` (Set of String) List of attributes on which you want to disable the exact ranking criterion.
+- `disable_prefix_on_attributes` (Set of String) List of attributes on which you want to disable prefix matching.
+- `exact_on_single_word_query` (String) Controls how the exact ranking criterion is computed when the query contains only one word.
+- `optional_words` (Set of String) A list of words that should be considered as optional when found in the query.
+- `query_type` (String) Query type to control if and how query words are interpreted as prefixes.
+- `remove_words_if_no_results` (String) Strategy to remove words from the query when it doesn’t match any hits.
 
 
 <a id="nestedblock--ranking_config"></a>
@@ -204,9 +204,9 @@ Optional:
 
 Optional:
 
-- **custom_ranking** (List of String) List of attributes for custom ranking criterion.
-- **ranking** (List of String) List of ranking criteria.
-- **replicas** (Set of String) List of replica names.
+- `custom_ranking` (List of String) List of attributes for custom ranking criterion.
+- `ranking` (List of String) List of ranking criteria.
+- `replicas` (Set of String) List of replica names.
 
 
 <a id="nestedblock--timeouts"></a>
@@ -214,7 +214,7 @@ Optional:
 
 Optional:
 
-- **default** (String)
+- `default` (String)
 
 
 <a id="nestedblock--typos_config"></a>
@@ -222,13 +222,13 @@ Optional:
 
 Optional:
 
-- **allow_typos_on_numeric_tokens** (Boolean) Whether to allow typos on numbers (“numeric tokens”) in the query str
-- **disable_typo_tolerance_on_attributes** (List of String) List of attributes on which you want to disable typo tolerance.
-- **disable_typo_tolerance_on_words** (List of String) List of words on which typo tolerance will be disabled.
-- **min_word_size_for_1_typo** (Number) Minimum number of characters a word in the query string must contain to accept matches with 1 typo.
-- **min_word_size_for_2_typos** (Number) Minimum number of characters a word in the query string must contain to accept matches with 2 typos.
-- **separators_to_index** (String) Separators (punctuation characters) to index. By default, separators are not indexed.
-- **typo_tolerance** (String) Whether typo tolerance is enabled and how it is applied
+- `allow_typos_on_numeric_tokens` (Boolean) Whether to allow typos on numbers (“numeric tokens”) in the query str
+- `disable_typo_tolerance_on_attributes` (List of String) List of attributes on which you want to disable typo tolerance.
+- `disable_typo_tolerance_on_words` (List of String) List of words on which typo tolerance will be disabled.
+- `min_word_size_for_1_typo` (Number) Minimum number of characters a word in the query string must contain to accept matches with 1 typo.
+- `min_word_size_for_2_typos` (Number) Minimum number of characters a word in the query string must contain to accept matches with 2 typos.
+- `separators_to_index` (String) Separators (punctuation characters) to index. By default, separators are not indexed.
+- `typo_tolerance` (String) Whether typo tolerance is enabled and how it is applied
 
 ## Import
 
