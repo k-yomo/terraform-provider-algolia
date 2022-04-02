@@ -33,7 +33,7 @@ func TestAccResourceQuerySuggestions(t *testing.T) {
 					testCheckResourceListAttr(resourceName, "source_indices.0.generate", []string{}),
 					testCheckResourceListAttr(resourceName, "source_indices.0.external", []string{}),
 					testCheckResourceListAttr(resourceName, "languages", []string{"en"}),
-					resource.TestCheckNoResourceAttr(resourceName, "exclude"),
+					resource.TestCheckNoResourceAttr(resourceName, "exclude.0"),
 				),
 			},
 			{
@@ -52,7 +52,7 @@ func TestAccResourceQuerySuggestions(t *testing.T) {
 					testCheckResourceListAttr(resourceName, "source_indices.0.generate.1", []string{"brand", "category"}),
 					testCheckResourceListAttr(resourceName, "source_indices.0.external", []string{}),
 					testCheckResourceListAttr(resourceName, "languages", []string{"en", "ja"}),
-					resource.TestCheckNoResourceAttr(resourceName, "exclude"),
+					resource.TestCheckNoResourceAttr(resourceName, "exclude.0"),
 				),
 			},
 			{
