@@ -125,11 +125,9 @@ func resourceQuerySuggestions() *schema.Resource {
 				},
 			},
 			"languages": {
-				Type: schema.TypeSet,
-				Elem: &schema.Schema{Type: schema.TypeString},
-				Set:  schema.HashString,
-				// For now, we get deserialization error if `languages` is not set.
-				// https://github.com/algolia/algoliasearch-client-go/issues/671
+				Type:        schema.TypeSet,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+				Set:         schema.HashString,
 				Optional:    true,
 				Description: "A list of languages used to de-duplicate singular and plural suggestions.",
 			},
@@ -260,7 +258,7 @@ func refreshQuerySuggestionsState(ctx context.Context, d *schema.ResourceData, m
 	values := map[string]interface{}{
 		"index_name":     querySuggestionsIndexConfig.IndexName,
 		"source_indices": sourceIndices,
-		"languages":      querySuggestionsIndexConfig.Languages,
+		"languages":      querySuggestionsIndexConfig.Languages.StringArray,
 		"exclude":        querySuggestionsIndexConfig.Exclude,
 	}
 	if err := setValues(d, values); err != nil {
@@ -280,7 +278,7 @@ func mapToQuerySuggestionsIndexConfig(d *schema.ResourceData) suggestions.IndexC
 	}
 
 	if v, ok := d.GetOk("languages"); ok {
-		indexConfig.Languages = castStringSet(v)
+		indexConfig.Languages = suggestions.BoolOrStringArray{StringArray: castStringSet(v)}
 	}
 
 	if v, ok := d.GetOk("exclude"); ok {
