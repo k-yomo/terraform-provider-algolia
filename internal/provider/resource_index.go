@@ -37,7 +37,8 @@ func resourceIndex() *schema.Resource {
 			},
 			"virtual": {
 				Type:        schema.TypeBool,
-				Computed:    true,
+				Optional:    true,
+				Default:     false,
 				Description: "Whether the index is virtual index. If true, applying the params listed in the [doc](https://www.algolia.com/doc/guides/managing-results/refine-results/sorting/in-depth/replicas/#unsupported-parameters) will be ignored.",
 			},
 			"attributes_config": {
@@ -686,14 +687,9 @@ func refreshIndexState(ctx context.Context, d *schema.ResourceData, m interface{
 		})
 	}
 
-	isVirtualIndex := false
-	if primaryIndex := settings.Primary.Get(); primaryIndex != "" {
-		isVirtualIndex = true
-	}
-
 	values := map[string]interface{}{
 		"name":    d.Id(),
-		"virtual": isVirtualIndex,
+		"virtual": d.Get("virtual").(bool),
 		"attributes_config": []interface{}{map[string]interface{}{
 			"searchable_attributes":    settings.SearchableAttributes.Get(),
 			"attributes_for_faceting":  settings.AttributesForFaceting.Get(),
