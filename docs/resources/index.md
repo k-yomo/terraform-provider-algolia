@@ -79,10 +79,6 @@ resource "algolia_index" "example" {
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - `typos_config` (Block List, Max: 1) The configuration for typos in index setting. (see [below for nested schema](#nestedblock--typos_config))
 
-### Read-Only
-
-- `virtual` (Boolean) Whether the index is virtual index. If true, applying the params listed in the [doc](https://www.algolia.com/doc/guides/managing-results/refine-results/sorting/in-depth/replicas/#unsupported-parameters) will be ignored.
-
 <a id="nestedblock--advanced_config"></a>
 ### Nested Schema for `advanced_config`
 

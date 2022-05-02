@@ -35,11 +35,6 @@ func resourceIndex() *schema.Resource {
 				ForceNew:    true,
 				Description: "Name of the index.",
 			},
-			"virtual": {
-				Type:        schema.TypeBool,
-				Computed:    true,
-				Description: "Whether the index is virtual index. If true, applying the params listed in the [doc](https://www.algolia.com/doc/guides/managing-results/refine-results/sorting/in-depth/replicas/#unsupported-parameters) will be ignored.",
-			},
 			"attributes_config": {
 				Type:        schema.TypeList,
 				Optional:    true,
@@ -686,14 +681,8 @@ func refreshIndexState(ctx context.Context, d *schema.ResourceData, m interface{
 		})
 	}
 
-	isVirtualIndex := false
-	if primaryIndex := settings.Primary.Get(); primaryIndex != "" {
-		isVirtualIndex = true
-	}
-
 	values := map[string]interface{}{
-		"name":    d.Id(),
-		"virtual": isVirtualIndex,
+		"name": d.Id(),
 		"attributes_config": []interface{}{map[string]interface{}{
 			"searchable_attributes":    settings.SearchableAttributes.Get(),
 			"attributes_for_faceting":  settings.AttributesForFaceting.Get(),
@@ -779,11 +768,9 @@ func refreshIndexState(ctx context.Context, d *schema.ResourceData, m interface{
 }
 
 func mapToIndexSettings(d *schema.ResourceData) search.Settings {
-	isVirtualIndex := d.Get("virtual").(bool)
-
 	settings := search.Settings{}
 	if v, ok := d.GetOk("attributes_config"); ok {
-		unmarshalAttributesConfig(v, &settings, isVirtualIndex)
+		unmarshalAttributesConfig(v, &settings)
 	}
 	if v, ok := d.GetOk("ranking_config"); ok {
 		unmarshalRankingConfig(v, &settings)
@@ -798,10 +785,10 @@ func mapToIndexSettings(d *schema.ResourceData) search.Settings {
 		unmarshalPaginationConfig(v, &settings)
 	}
 	if v, ok := d.GetOk("typos_config"); ok {
-		unmarshalTyposConfig(v, &settings, isVirtualIndex)
+		unmarshalTyposConfig(v, &settings)
 	}
 	if v, ok := d.GetOk("languages_config"); ok {
-		unmarshalLanguagesConfig(v, &settings, isVirtualIndex)
+		unmarshalLanguagesConfig(v, &settings)
 	}
 	if v, ok := d.GetOk("enable_rules"); ok {
 		settings.EnableRules = opt.EnableRules(v.(bool))
@@ -810,30 +797,28 @@ func mapToIndexSettings(d *schema.ResourceData) search.Settings {
 		settings.EnablePersonalization = opt.EnablePersonalization(v.(bool))
 	}
 	if v, ok := d.GetOk("query_strategy_config"); ok {
-		unmarshalQueryStrategyConfig(v, &settings, isVirtualIndex)
+		unmarshalQueryStrategyConfig(v, &settings)
 	}
 	if v, ok := d.GetOk("performance_config"); ok {
-		unmarshalPerformanceConfig(v, &settings, isVirtualIndex)
+		unmarshalPerformanceConfig(v, &settings)
 	}
 	if v, ok := d.GetOk("advanced_config"); ok {
-		unmarshalAdvancedConfig(v, &settings, isVirtualIndex)
+		unmarshalAdvancedConfig(v, &settings)
 	}
 
 	return settings
 }
 
-func unmarshalAttributesConfig(configured interface{}, settings *search.Settings, isVirtualIndex bool) {
+func unmarshalAttributesConfig(configured interface{}, settings *search.Settings) {
 	l := configured.([]interface{})
 	if len(l) == 0 || l[0] == nil {
 		return
 	}
 	config := l[0].(map[string]interface{})
+	settings.SearchableAttributes = opt.SearchableAttributes(castStringList(config["searchable_attributes"])...)
+	settings.AttributesForFaceting = opt.AttributesForFaceting(castStringSet(config["attributes_for_faceting"])...)
 	settings.UnretrievableAttributes = opt.UnretrievableAttributes(castStringSet(config["unretrievable_attributes"])...)
 	settings.AttributesToRetrieve = opt.AttributesToRetrieve(castStringSet(config["attributes_to_retrieve"])...)
-	if !isVirtualIndex {
-		settings.SearchableAttributes = opt.SearchableAttributes(castStringList(config["searchable_attributes"])...)
-		settings.AttributesForFaceting = opt.AttributesForFaceting(castStringSet(config["attributes_for_faceting"])...)
-	}
 }
 
 func unmarshalRankingConfig(configured interface{}, settings *search.Settings) {
@@ -906,7 +891,7 @@ func unmarshalPaginationConfig(configured interface{}, settings *search.Settings
 	}
 }
 
-func unmarshalTyposConfig(configured interface{}, settings *search.Settings, isVirtualIndex bool) {
+func unmarshalTyposConfig(configured interface{}, settings *search.Settings) {
 	l := configured.([]interface{})
 	if len(l) == 0 || l[0] == nil {
 		return
@@ -935,21 +920,18 @@ func unmarshalTyposConfig(configured interface{}, settings *search.Settings, isV
 	if v, ok := config["allow_typos_on_numeric_tokens"]; ok {
 		settings.AllowTyposOnNumericTokens = opt.AllowTyposOnNumericTokens(v.(bool))
 	}
-
-	if !isVirtualIndex {
-		if v, ok := config["disable_typo_tolerance_on_attributes"]; ok {
-			settings.DisableTypoToleranceOnAttributes = opt.DisableTypoToleranceOnAttributes(castStringList(v)...)
-		}
-		if v, ok := config["disable_typo_tolerance_on_words"]; ok {
-			settings.DisableTypoToleranceOnWords = opt.DisableTypoToleranceOnWords(castStringList(v)...)
-		}
-		if v, ok := config["separators_to_index"]; ok {
-			settings.SeparatorsToIndex = opt.SeparatorsToIndex(v.(string))
-		}
+	if v, ok := config["disable_typo_tolerance_on_attributes"]; ok {
+		settings.DisableTypoToleranceOnAttributes = opt.DisableTypoToleranceOnAttributes(castStringList(v)...)
+	}
+	if v, ok := config["disable_typo_tolerance_on_words"]; ok {
+		settings.DisableTypoToleranceOnWords = opt.DisableTypoToleranceOnWords(castStringList(v)...)
+	}
+	if v, ok := config["separators_to_index"]; ok {
+		settings.SeparatorsToIndex = opt.SeparatorsToIndex(v.(string))
 	}
 }
 
-func unmarshalLanguagesConfig(configured interface{}, settings *search.Settings, isVirtualIndex bool) {
+func unmarshalLanguagesConfig(configured interface{}, settings *search.Settings) {
 	l := configured.([]interface{})
 	if len(l) == 0 || l[0] == nil {
 		return
@@ -966,6 +948,9 @@ func unmarshalLanguagesConfig(configured interface{}, settings *search.Settings,
 			settings.IgnorePlurals = opt.IgnorePluralsFor(set...)
 		}
 	}
+	if v, ok := config["attributes_to_transliterate"]; ok {
+		settings.AttributesToTransliterate = opt.AttributesToTransliterate(castStringSet(v)...)
+	}
 	if v, ok := config["remove_stop_words"]; ok {
 		settings.RemoveStopWords = opt.RemoveStopWords(v.(bool))
 	}
@@ -975,34 +960,26 @@ func unmarshalLanguagesConfig(configured interface{}, settings *search.Settings,
 			settings.RemoveStopWords = opt.RemoveStopWordsFor(set...)
 		}
 	}
+	if v, ok := config["camel_case_attributes"]; ok {
+		settings.CamelCaseAttributes = opt.CamelCaseAttributes(castStringSet(v)...)
+	}
 	if v, ok := config["decompounded_attributes"]; ok {
 		unmarshalLanguagesConfigDecompoundedAttributes(v, settings)
+	}
+	if v, ok := config["keep_diacritics_on_characters"]; ok {
+		settings.KeepDiacriticsOnCharacters = opt.KeepDiacriticsOnCharacters(v.(string))
+	}
+	if v, ok := config["custom_normalization"]; ok {
+		settings.CustomNormalization = opt.CustomNormalization(map[string]map[string]string{"default": castStringMap(v)})
 	}
 	if v, ok := config["query_languages"]; ok {
 		settings.QueryLanguages = opt.QueryLanguages(castStringSet(v)...)
 	}
+	if v, ok := config["index_languages"]; ok {
+		settings.IndexLanguages = opt.IndexLanguages(castStringSet(v)...)
+	}
 	if v, ok := config["decompound_query"]; ok {
 		settings.DecompoundQuery = opt.DecompoundQuery(v.(bool))
-	}
-	if !isVirtualIndex {
-		if v, ok := config["attributes_to_transliterate"]; ok {
-			settings.AttributesToTransliterate = opt.AttributesToTransliterate(castStringSet(v)...)
-		}
-		if v, ok := config["camel_case_attributes"]; ok {
-			settings.CamelCaseAttributes = opt.CamelCaseAttributes(castStringSet(v)...)
-		}
-		if v, ok := config["keep_diacritics_on_characters"]; ok {
-			settings.KeepDiacriticsOnCharacters = opt.KeepDiacriticsOnCharacters(v.(string))
-		}
-		if v, ok := config["decompounded_attributes"]; ok {
-			unmarshalLanguagesConfigDecompoundedAttributes(v, settings)
-		}
-		if v, ok := config["custom_normalization"]; ok {
-			settings.CustomNormalization = opt.CustomNormalization(map[string]map[string]string{"default": castStringMap(v)})
-		}
-		if v, ok := config["index_languages"]; ok {
-			settings.IndexLanguages = opt.IndexLanguages(castStringSet(v)...)
-		}
 	}
 }
 
@@ -1021,7 +998,7 @@ func unmarshalLanguagesConfigDecompoundedAttributes(configured interface{}, sett
 	settings.DecompoundedAttributes = opt.DecompoundedAttributes(decompoundedAttributesMap)
 }
 
-func unmarshalQueryStrategyConfig(configured interface{}, settings *search.Settings, isVirtualIndex bool) {
+func unmarshalQueryStrategyConfig(configured interface{}, settings *search.Settings) {
 	l := configured.([]interface{})
 	if len(l) == 0 || l[0] == nil {
 		return
@@ -1038,6 +1015,15 @@ func unmarshalQueryStrategyConfig(configured interface{}, settings *search.Setti
 	if v, ok := config["advanced_syntax"]; ok {
 		settings.AdvancedSyntax = opt.AdvancedSyntax(v.(bool))
 	}
+	if v, ok := config["optional_words"]; ok {
+		settings.OptionalWords = opt.OptionalWords(castStringSet(v)...)
+	}
+	if v, ok := config["disable_prefix_on_attributes"]; ok {
+		settings.DisablePrefixOnAttributes = opt.DisablePrefixOnAttributes(castStringSet(v)...)
+	}
+	if v, ok := config["disable_exact_on_attributes"]; ok {
+		settings.DisableExactOnAttributes = opt.DisableExactOnAttributes(castStringSet(v)...)
+	}
 	if v, ok := config["exact_on_single_word_query"]; ok {
 		settings.ExactOnSingleWordQuery = opt.ExactOnSingleWordQuery(v.(string))
 	}
@@ -1047,21 +1033,9 @@ func unmarshalQueryStrategyConfig(configured interface{}, settings *search.Setti
 	if v, ok := config["advanced_syntax_features"]; ok {
 		settings.AdvancedSyntaxFeatures = opt.AdvancedSyntaxFeatures(castStringSet(v)...)
 	}
-
-	if !isVirtualIndex {
-		if v, ok := config["optional_words"]; ok {
-			settings.OptionalWords = opt.OptionalWords(castStringSet(v)...)
-		}
-		if v, ok := config["disable_prefix_on_attributes"]; ok {
-			settings.DisablePrefixOnAttributes = opt.DisablePrefixOnAttributes(castStringSet(v)...)
-		}
-		if v, ok := config["disable_exact_on_attributes"]; ok {
-			settings.DisableExactOnAttributes = opt.DisableExactOnAttributes(castStringSet(v)...)
-		}
-	}
 }
 
-func unmarshalPerformanceConfig(configured interface{}, settings *search.Settings, isVirtualIndex bool) {
+func unmarshalPerformanceConfig(configured interface{}, settings *search.Settings) {
 	l := configured.([]interface{})
 	if len(l) == 0 || l[0] == nil {
 		return
@@ -1069,17 +1043,15 @@ func unmarshalPerformanceConfig(configured interface{}, settings *search.Setting
 
 	config := l[0].(map[string]interface{})
 
-	if !isVirtualIndex {
-		if v, ok := config["numeric_attributes_for_filtering"]; ok {
-			settings.NumericAttributesForFiltering = opt.NumericAttributesForFiltering(castStringSet(v)...)
-		}
-		if v, ok := config["allow_compression_of_integer_array"]; ok {
-			settings.AllowCompressionOfIntegerArray = opt.AllowCompressionOfIntegerArray(v.(bool))
-		}
+	if v, ok := config["numeric_attributes_for_filtering"]; ok {
+		settings.NumericAttributesForFiltering = opt.NumericAttributesForFiltering(castStringSet(v)...)
+	}
+	if v, ok := config["allow_compression_of_integer_array"]; ok {
+		settings.AllowCompressionOfIntegerArray = opt.AllowCompressionOfIntegerArray(v.(bool))
 	}
 }
 
-func unmarshalAdvancedConfig(configured interface{}, settings *search.Settings, isVirtualIndex bool) {
+func unmarshalAdvancedConfig(configured interface{}, settings *search.Settings) {
 	l := configured.([]interface{})
 	if len(l) == 0 || l[0] == nil {
 		return
@@ -1087,6 +1059,9 @@ func unmarshalAdvancedConfig(configured interface{}, settings *search.Settings, 
 
 	config := l[0].(map[string]interface{})
 
+	if v, ok := config["attribute_for_distinct"]; ok {
+		settings.AttributeForDistinct = opt.AttributeForDistinct(v.(string))
+	}
 	if v, ok := config["distinct"]; ok {
 		settings.Distinct = opt.DistinctOf(v.(int))
 	}
@@ -1104,11 +1079,5 @@ func unmarshalAdvancedConfig(configured interface{}, settings *search.Settings, 
 	}
 	if v, ok := config["attribute_criteria_computed_by_min_proximity"]; ok {
 		settings.AttributeCriteriaComputedByMinProximity = opt.AttributeCriteriaComputedByMinProximity(v.(bool))
-	}
-
-	if !isVirtualIndex {
-		if v, ok := config["attribute_for_distinct"]; ok {
-			settings.AttributeForDistinct = opt.AttributeForDistinct(v.(string))
-		}
 	}
 }
