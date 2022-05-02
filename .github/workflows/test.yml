@@ -48,15 +48,15 @@ jobs:
       fail-fast: false
       matrix:
         terraform:
-          - '0.14.11'
           - '0.15.5'
           - '1.0.0'
+          - '1.1.9'
     steps:
 
     - name: Set up Go
       uses: actions/setup-go@v3
       with:
-        go-version: ^1.16
+        go-version: ^1.17
       id: go
 
     - name: Check out code into the Go module directory
