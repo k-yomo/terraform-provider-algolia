@@ -70,7 +70,6 @@ resource "algolia_index" "example" {
 - `enable_rules` (Boolean) Whether Rules should be globally enabled.
 - `faceting_config` (Block List, Max: 1) The configuration for faceting. (see [below for nested schema](#nestedblock--faceting_config))
 - `highlight_and_snippet_config` (Block List, Max: 1) The configuration for highlight / snippet in index setting. (see [below for nested schema](#nestedblock--highlight_and_snippet_config))
-- `id` (String) The ID of this resource.
 - `languages_config` (Block List, Max: 1) The configuration for languages in index setting. (see [below for nested schema](#nestedblock--languages_config))
 - `pagination_config` (Block List, Max: 1) The configuration for pagination in index setting. (see [below for nested schema](#nestedblock--pagination_config))
 - `performance_config` (Block List, Max: 1) The configuration for performance in index setting. (see [below for nested schema](#nestedblock--performance_config))
@@ -79,6 +78,10 @@ resource "algolia_index" "example" {
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - `typos_config` (Block List, Max: 1) The configuration for typos in index setting. (see [below for nested schema](#nestedblock--typos_config))
 - `virtual` (Boolean) Whether the index is virtual index. If true, applying the params listed in the [doc](https://www.algolia.com/doc/guides/managing-results/refine-results/sorting/in-depth/replicas/#unsupported-parameters) will be ignored.
+
+### Read-Only
+
+- `id` (String) The ID of this resource.
 
 <a id="nestedblock--advanced_config"></a>
 ### Nested Schema for `advanced_config`

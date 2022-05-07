@@ -23,7 +23,7 @@ A configuration for synonyms. To get more information about synonyms, see the [O
 - `index_name` (String) Name of the index to apply synonyms.
 - `synonyms` (Block Set, Min: 1) A list of conditions that should apply to activate a Rule. You can use up to 25 conditions per Rule. (see [below for nested schema](#nestedblock--synonyms))
 
-### Optional
+### Read-Only
 
 - `id` (String) The ID of this resource.
 

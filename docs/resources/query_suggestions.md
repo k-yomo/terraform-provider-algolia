@@ -46,9 +46,12 @@ resource "algolia_query_suggestions" "example" {
 ### Optional
 
 - `exclude` (Set of String) A list of words and patterns to exclude from the Query Suggestions index.
-- `id` (String) The ID of this resource.
 - `languages` (Set of String) A list of languages used to de-duplicate singular and plural suggestions.
 - `region` (String) Region to create the index in. "us", "eu", "de" are supported. Defaults to "us" when not specified.
+
+### Read-Only
+
+- `id` (String) The ID of this resource.
 
 <a id="nestedblock--source_indices"></a>
 ### Nested Schema for `source_indices`

@@ -25,10 +25,6 @@ data "algolia_index" "example" {
 
 - `name` (String) Name of the index.
 
-### Optional
-
-- `id` (String) The ID of this resource.
-
 ### Read-Only
 
 - `advanced_config` (List of Object) The configuration for advanced features in index setting. (see [below for nested schema](#nestedatt--advanced_config))
@@ -37,6 +33,7 @@ data "algolia_index" "example" {
 - `enable_rules` (Boolean) Whether Rules should be globally enabled.
 - `faceting_config` (List of Object) The configuration for faceting. (see [below for nested schema](#nestedatt--faceting_config))
 - `highlight_and_snippet_config` (List of Object) The configuration for highlight / snippet in index setting. (see [below for nested schema](#nestedatt--highlight_and_snippet_config))
+- `id` (String) The ID of this resource.
 - `languages_config` (List of Object) The configuration for languages in index setting. (see [below for nested schema](#nestedatt--languages_config))
 - `pagination_config` (Block List) The configuration for pagination in index setting. (see [below for nested schema](#nestedblock--pagination_config))
 - `performance_config` (List of Object) The configuration for performance in index setting. (see [below for nested schema](#nestedatt--performance_config))
