@@ -158,6 +158,7 @@ Read-Only:
 
 - `custom_ranking` (List of String)
 - `ranking` (List of String)
+- `relevancy_strictness` (Number)
 - `replicas` (Set of String)
 
 
