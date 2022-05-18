@@ -33,7 +33,7 @@ func resourceIndex() *schema.Resource {
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,
-				Description: "Name of the index.",
+				Description: "Name of the index. If the index is a virtual replica, its name should NOT be surrounded with `virtual()`.",
 			},
 			"virtual": {
 				Type:        schema.TypeBool,
@@ -119,7 +119,7 @@ func resourceIndex() *schema.Resource {
 							Elem:        &schema.Schema{Type: schema.TypeString},
 							Set:         schema.HashString,
 							Optional:    true,
-							Description: "List of replica names.",
+							Description: "List of replica names. Names of virtual replicas should be surrounded with `virtual()`.",
 						},
 					},
 				},
