@@ -105,15 +105,13 @@ func resourceIndex() *schema.Resource {
 							Optional:    true,
 							Description: "List of attributes for custom ranking criterion.",
 						},
-						// TODO: Add after the PR below merged.
-						//  https://github.com/algolia/algoliasearch-client-go/pull/661
-						// "relevancy_strictness": {
-						// 	Type:         schema.TypeInt,
-						// 	Optional:     true,
-						// 	Default:      100,
-						// 	ValidateFunc: validation.IntBetween(0, 100),
-						// 	Description:  "Relevancy threshold below which less relevant results aren’t included in the results",
-						// },
+						"relevancy_strictness": {
+							Type:         schema.TypeInt,
+							Optional:     true,
+							Default:      100,
+							ValidateFunc: validation.IntBetween(0, 100),
+							Description:  "Relevancy threshold below which less relevant results aren’t included in the results",
+						},
 						"replicas": {
 							Type:        schema.TypeSet,
 							Elem:        &schema.Schema{Type: schema.TypeString},
@@ -697,9 +695,10 @@ func refreshIndexState(ctx context.Context, d *schema.ResourceData, m interface{
 			"attributes_to_retrieve":   settings.AttributesToRetrieve.Get(),
 		}},
 		"ranking_config": []interface{}{map[string]interface{}{
-			"ranking":        settings.Ranking.Get(),
-			"custom_ranking": settings.CustomRanking.Get(),
-			"replicas":       settings.Replicas.Get(),
+			"ranking":              settings.Ranking.Get(),
+			"custom_ranking":       settings.CustomRanking.Get(),
+			"replicas":             settings.Replicas.Get(),
+			"relevancy_strictness": settings.RelevancyStrictness.Get(),
 		}},
 		"faceting_config": []interface{}{map[string]interface{}{
 			"max_values_per_facet": settings.MaxValuesPerFacet.Get(),
@@ -841,6 +840,7 @@ func unmarshalRankingConfig(configured interface{}, settings *search.Settings) {
 	settings.Ranking = opt.Ranking(castStringList(config["ranking"])...)
 	settings.CustomRanking = opt.CustomRanking(castStringList(config["custom_ranking"])...)
 	settings.Replicas = opt.Replicas(castStringSet(config["replicas"])...)
+	settings.RelevancyStrictness = opt.RelevancyStrictness(config["relevancy_strictness"].(int))
 }
 
 func unmarshalFacetingConfig(configured interface{}, settings *search.Settings) {

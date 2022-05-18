@@ -78,13 +78,11 @@ func dataSourceIndex() *schema.Resource {
 							Computed:    true,
 							Description: "List of attributes for custom ranking criterion.",
 						},
-						// TODO: Add after the PR below merged.
-						//  https://github.com/algolia/algoliasearch-client-go/pull/661
-						// "relevancy_strictness": {
-						// 	Type:         schema.TypeInt,
-						//  Computed:    true,
-						// 	Description:  "Relevancy threshold below which less relevant results aren’t included in the results",
-						// },
+						"relevancy_strictness": {
+							Type:        schema.TypeInt,
+							Computed:    true,
+							Description: "Relevancy threshold below which less relevant results aren’t included in the results",
+						},
 						"replicas": {
 							Type:        schema.TypeSet,
 							Elem:        &schema.Schema{Type: schema.TypeString},
