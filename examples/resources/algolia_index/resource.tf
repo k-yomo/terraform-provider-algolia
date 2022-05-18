@@ -59,7 +59,7 @@ resource "algolia_index" "example_virtual_replica" {
 
   ranking_config {
     ranking = [
-      "proximity"
+      "proximity",
       "words",
     ]
   }
