@@ -33,7 +33,7 @@ func resourceIndex() *schema.Resource {
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,
-				Description: "Name of the index. If the index is a virtual replica, its name should NOT be surrounded with `virtual()`.",
+				Description: "Name of the index / replica index. For creating virtual replica, use `algolia_virtual_index` resource instead.",
 			},
 			"virtual": {
 				Type:        schema.TypeBool,

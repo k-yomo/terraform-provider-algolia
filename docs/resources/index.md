@@ -59,7 +59,7 @@ resource "algolia_index" "example" {
 
 ### Required
 
-- `name` (String) Name of the index. If the index is a virtual replica, its name should NOT be surrounded with `virtual()`.
+- `name` (String) Name of the index / replica index. For creating virtual replica, use `algolia_virtual_index` resource instead.
 
 ### Optional
 
