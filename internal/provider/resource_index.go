@@ -655,7 +655,74 @@ func refreshIndexState(ctx context.Context, d *schema.ResourceData, m interface{
 		}
 		return err
 	}
+	if err := setValues(d, mapToIndexResourceValues(d, settings)); err != nil {
+		return err
+	}
 
+	return nil
+}
+
+func mapToIndexResourceValues(d *schema.ResourceData, settings search.Settings) map[string]interface{} {
+	isVirtualIndex := d.Get("virtual").(bool)
+
+	return map[string]interface{}{
+		"name":              d.Id(),
+		"virtual":           isVirtualIndex,
+		"attributes_config": marshalAttributesConfig(settings, isVirtualIndex),
+		"ranking_config":    marshalRankingConfig(settings, isVirtualIndex),
+		"faceting_config": []interface{}{map[string]interface{}{
+			"max_values_per_facet": settings.MaxValuesPerFacet.Get(),
+			"sort_facet_values_by": settings.SortFacetValuesBy.Get(),
+		}},
+		"highlight_and_snippet_config": []interface{}{map[string]interface{}{
+			"attributes_to_highlight":               settings.AttributesToHighlight.Get(),
+			"attributes_to_snippet":                 settings.AttributesToSnippet.Get(),
+			"highlight_pre_tag":                     settings.HighlightPreTag.Get(),
+			"highlight_post_tag":                    settings.HighlightPostTag.Get(),
+			"snippet_ellipsis_text":                 settings.SnippetEllipsisText.Get(),
+			"restrict_highlight_and_snippet_arrays": settings.RestrictHighlightAndSnippetArrays.Get(),
+		}},
+		"pagination_config": []interface{}{map[string]interface{}{
+			"hits_per_page":         settings.HitsPerPage.Get(),
+			"pagination_limited_to": settings.PaginationLimitedTo.Get(),
+		}},
+		"typos_config":           marshalTyposConfig(settings, isVirtualIndex),
+		"languages_config":       marshalLanguageConfig(settings, isVirtualIndex),
+		"enable_rules":           settings.EnableRules.Get(),
+		"enable_personalization": settings.EnablePersonalization.Get(),
+		"query_strategy_config":  marshalQueryStrategyConfig(settings, isVirtualIndex),
+		"performance_config":     marshalPerformanceConfig(settings, isVirtualIndex),
+		"advanced_config":        marshalAdvancedConfig(settings, isVirtualIndex),
+	}
+}
+
+func marshalAttributesConfig(settings search.Settings, isVirtualIndex bool) []interface{} {
+	attributesConfig := map[string]interface{}{
+		"unretrievable_attributes": settings.UnretrievableAttributes.Get(),
+		"attributes_to_retrieve":   settings.AttributesToRetrieve.Get(),
+	}
+	if !isVirtualIndex {
+		attributesConfig["searchable_attributes"] = settings.SearchableAttributes.Get()
+		attributesConfig["attributes_for_faceting"] = settings.AttributesForFaceting.Get()
+	}
+
+	return []interface{}{attributesConfig}
+}
+
+func marshalRankingConfig(settings search.Settings, isVirtualIndex bool) []interface{} {
+	rankingConfig := map[string]interface{}{
+		"custom_ranking":       settings.CustomRanking.Get(),
+		"relevancy_strictness": settings.RelevancyStrictness.Get(),
+	}
+	if !isVirtualIndex {
+		rankingConfig["ranking"] = settings.Ranking.Get()
+		rankingConfig["replicas"] = settings.Replicas.Get()
+	}
+
+	return []interface{}{rankingConfig}
+}
+
+func marshalTyposConfig(settings search.Settings, isVirtualIndex bool) []interface{} {
 	var typoTolerance string
 	if b, s := settings.TypoTolerance.Get(); s != "" {
 		typoTolerance = s
@@ -663,6 +730,22 @@ func refreshIndexState(ctx context.Context, d *schema.ResourceData, m interface{
 		typoTolerance = strconv.FormatBool(b)
 	}
 
+	typosConfig := map[string]interface{}{
+		"min_word_size_for_1_typo":      settings.MinWordSizefor1Typo.Get(),
+		"min_word_size_for_2_typos":     settings.MinWordSizefor2Typos.Get(),
+		"typo_tolerance":                typoTolerance,
+		"allow_typos_on_numeric_tokens": settings.AllowTyposOnNumericTokens.Get(),
+		"separators_to_index":           settings.SeparatorsToIndex.Get(),
+	}
+	if !isVirtualIndex {
+		typosConfig["disable_typo_tolerance_on_attributes"] = settings.DisableTypoToleranceOnAttributes.Get()
+		typosConfig["disable_typo_tolerance_on_words"] = settings.DisableTypoToleranceOnWords.Get()
+	}
+
+	return []interface{}{typosConfig}
+}
+
+func marshalLanguageConfig(settings search.Settings, isVirtualIndex bool) []interface{} {
 	var ignorePlurals, ignorePluralsFor interface{}
 	if ignore, languages := settings.IgnorePlurals.Get(); len(languages) > 0 {
 		ignorePluralsFor = languages
@@ -685,92 +768,69 @@ func refreshIndexState(ctx context.Context, d *schema.ResourceData, m interface{
 		})
 	}
 
-	values := map[string]interface{}{
-		"name":    d.Id(),
-		"virtual": d.Get("virtual").(bool),
-		"attributes_config": []interface{}{map[string]interface{}{
-			"searchable_attributes":    settings.SearchableAttributes.Get(),
-			"attributes_for_faceting":  settings.AttributesForFaceting.Get(),
-			"unretrievable_attributes": settings.UnretrievableAttributes.Get(),
-			"attributes_to_retrieve":   settings.AttributesToRetrieve.Get(),
-		}},
-		"ranking_config": []interface{}{map[string]interface{}{
-			"ranking":              settings.Ranking.Get(),
-			"custom_ranking":       settings.CustomRanking.Get(),
-			"replicas":             settings.Replicas.Get(),
-			"relevancy_strictness": settings.RelevancyStrictness.Get(),
-		}},
-		"faceting_config": []interface{}{map[string]interface{}{
-			"max_values_per_facet": settings.MaxValuesPerFacet.Get(),
-			"sort_facet_values_by": settings.SortFacetValuesBy.Get(),
-		}},
-		"highlight_and_snippet_config": []interface{}{map[string]interface{}{
-			"attributes_to_highlight":               settings.AttributesToHighlight.Get(),
-			"attributes_to_snippet":                 settings.AttributesToSnippet.Get(),
-			"highlight_pre_tag":                     settings.HighlightPreTag.Get(),
-			"highlight_post_tag":                    settings.HighlightPostTag.Get(),
-			"snippet_ellipsis_text":                 settings.SnippetEllipsisText.Get(),
-			"restrict_highlight_and_snippet_arrays": settings.RestrictHighlightAndSnippetArrays.Get(),
-		}},
-		"pagination_config": []interface{}{map[string]interface{}{
-			"hits_per_page":         settings.HitsPerPage.Get(),
-			"pagination_limited_to": settings.PaginationLimitedTo.Get(),
-		}},
-		"typos_config": []interface{}{map[string]interface{}{
-			"min_word_size_for_1_typo":             settings.MinWordSizefor1Typo.Get(),
-			"min_word_size_for_2_typos":            settings.MinWordSizefor2Typos.Get(),
-			"typo_tolerance":                       typoTolerance,
-			"allow_typos_on_numeric_tokens":        settings.AllowTyposOnNumericTokens.Get(),
-			"disable_typo_tolerance_on_attributes": settings.DisableTypoToleranceOnAttributes.Get(),
-			"disable_typo_tolerance_on_words":      settings.DisableTypoToleranceOnWords.Get(),
-			"separators_to_index":                  settings.SeparatorsToIndex.Get(),
-		}},
-		"languages_config": []interface{}{map[string]interface{}{
-			"ignore_plurals":                ignorePlurals,
-			"ignore_plurals_for":            ignorePluralsFor,
-			"attributes_to_transliterate":   settings.AttributesToTransliterate.Get(),
-			"remove_stop_words":             removeStopWords,
-			"remove_stop_words_for":         removeStopWordsFor,
-			"camel_case_attributes":         settings.CamelCaseAttributes.Get(),
-			"decompounded_attributes":       decompoundedAttributes,
-			"keep_diacritics_on_characters": settings.KeepDiacriticsOnCharacters.Get(),
-			"custom_normalization":          settings.CustomNormalization.Get()["default"],
-			"query_languages":               settings.QueryLanguages.Get(),
-			"index_languages":               settings.IndexLanguages.Get(),
-			"decompound_query":              settings.DecompoundQuery.Get(),
-		}},
-		"enable_rules":           settings.EnableRules.Get(),
-		"enable_personalization": settings.EnablePersonalization.Get(),
-		"query_strategy_config": []interface{}{map[string]interface{}{
-			"query_type":                   settings.QueryType.Get(),
-			"remove_words_if_no_results":   settings.RemoveWordsIfNoResults.Get(),
-			"advanced_syntax":              settings.AdvancedSyntax.Get(),
-			"optional_words":               settings.OptionalWords.Get(),
-			"disable_prefix_on_attributes": settings.DisablePrefixOnAttributes.Get(),
-			"disable_exact_on_attributes":  settings.DisableExactOnAttributes.Get(),
-			"exact_on_single_word_query":   settings.ExactOnSingleWordQuery.Get(),
-			"alternatives_as_exact":        settings.AlternativesAsExact.Get(),
-			"advanced_syntax_features":     settings.AdvancedSyntaxFeatures.Get(),
-		}},
-		"performance_config": []interface{}{map[string]interface{}{
-			"numeric_attributes_for_filtering":   settings.NumericAttributesForFiltering.Get(),
-			"allow_compression_of_integer_array": settings.AllowCompressionOfIntegerArray.Get(),
-		}},
-		"advanced_config": []interface{}{map[string]interface{}{
-			"attribute_for_distinct":        settings.AttributeForDistinct.Get(),
-			"distinct":                      func() int { _, i := settings.Distinct.Get(); return i }(),
-			"replace_synonyms_in_highlight": settings.ReplaceSynonymsInHighlight.Get(),
-			"min_proximity":                 settings.MinProximity.Get(),
-			"response_fields":               settings.ResponseFields.Get(),
-			"max_facet_hits":                settings.MaxFacetHits.Get(),
-			"attribute_criteria_computed_by_min_proximity": settings.AttributeCriteriaComputedByMinProximity.Get(),
-		}},
+	languageConfig := map[string]interface{}{
+		"ignore_plurals":              ignorePlurals,
+		"ignore_plurals_for":          ignorePluralsFor,
+		"attributes_to_transliterate": settings.AttributesToTransliterate.Get(),
+		"remove_stop_words":           removeStopWords,
+		"remove_stop_words_for":       removeStopWordsFor,
+		"query_languages":             settings.QueryLanguages.Get(),
+		"decompound_query":            settings.DecompoundQuery.Get(),
 	}
-	if err := setValues(d, values); err != nil {
-		return err
+	if !isVirtualIndex {
+		languageConfig["camel_case_attributes"] = settings.CamelCaseAttributes.Get()
+		languageConfig["custom_normalization"] = settings.CustomNormalization.Get()["default"]
+		languageConfig["decompounded_attributes"] = decompoundedAttributes
+		languageConfig["keep_diacritics_on_characters"] = settings.KeepDiacriticsOnCharacters.Get()
+		languageConfig["index_languages"] = settings.IndexLanguages.Get()
 	}
 
-	return nil
+	return []interface{}{languageConfig}
+}
+
+func marshalQueryStrategyConfig(settings search.Settings, isVirtualIndex bool) []interface{} {
+	queryStrategyConfig := map[string]interface{}{
+		"query_type":                 settings.QueryType.Get(),
+		"remove_words_if_no_results": settings.RemoveWordsIfNoResults.Get(),
+		"advanced_syntax":            settings.AdvancedSyntax.Get(),
+		"exact_on_single_word_query": settings.ExactOnSingleWordQuery.Get(),
+		"alternatives_as_exact":      settings.AlternativesAsExact.Get(),
+		"advanced_syntax_features":   settings.AdvancedSyntaxFeatures.Get(),
+	}
+	if !isVirtualIndex {
+		queryStrategyConfig["optional_words"] = settings.OptionalWords.Get()
+		queryStrategyConfig["disable_prefix_on_attributes"] = settings.DisablePrefixOnAttributes.Get()
+		queryStrategyConfig["disable_exact_on_attributes"] = settings.DisableExactOnAttributes.Get()
+	}
+
+	return []interface{}{queryStrategyConfig}
+}
+
+func marshalPerformanceConfig(settings search.Settings, isVirtualIndex bool) []interface{} {
+	if isVirtualIndex {
+		return nil
+	}
+
+	return []interface{}{map[string]interface{}{
+		"numeric_attributes_for_filtering":   settings.NumericAttributesForFiltering.Get(),
+		"allow_compression_of_integer_array": settings.AllowCompressionOfIntegerArray.Get(),
+	}}
+}
+
+func marshalAdvancedConfig(settings search.Settings, isVirtualIndex bool) []interface{} {
+	advancedConfig := map[string]interface{}{
+		"distinct":                      func() int { _, i := settings.Distinct.Get(); return i }(),
+		"replace_synonyms_in_highlight": settings.ReplaceSynonymsInHighlight.Get(),
+		"min_proximity":                 settings.MinProximity.Get(),
+		"response_fields":               settings.ResponseFields.Get(),
+		"max_facet_hits":                settings.MaxFacetHits.Get(),
+		"attribute_criteria_computed_by_min_proximity": settings.AttributeCriteriaComputedByMinProximity.Get(),
+	}
+	if !isVirtualIndex {
+		advancedConfig["attribute_for_distinct"] = settings.AttributeForDistinct.Get()
+	}
+
+	return []interface{}{advancedConfig}
 }
 
 func mapToIndexSettings(d *schema.ResourceData) search.Settings {
