@@ -86,63 +86,6 @@ func TestAccResourceIndex(t *testing.T) {
 	})
 }
 
-func TestAccResourceVirtualIndex(t *testing.T) {
-	indexName := randStringStartWithAlpha(80)
-	virtualIndexName := fmt.Sprintf("%s_virtual", indexName)
-	indexResourceName := fmt.Sprintf("algolia_index.%s", indexName)
-	virtualIndexResourceName := fmt.Sprintf("algolia_index.%s", virtualIndexName)
-
-	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: providerFactories,
-		Steps: []resource.TestStep{
-			{
-				Config: testAccResourceVirtualIndex(indexName, virtualIndexName),
-				Check: resource.ComposeTestCheckFunc(
-					// index
-					resource.TestCheckResourceAttr(indexResourceName, "name", indexName),
-					resource.TestCheckResourceAttr(indexResourceName, "virtual", "false"),
-					resource.TestCheckResourceAttr(indexResourceName, "attributes_config.0.attributes_to_retrieve.0", "*"),
-					testCheckResourceListAttr(indexResourceName, "attributes_config.0.searchable_attributes", []string{"name", "description", "category_name"}),
-					testCheckResourceListAttr(indexResourceName, "attributes_config.0.attributes_for_faceting", []string{"category_id"}),
-					testCheckResourceListAttr(indexResourceName, "ranking_config.0.ranking", []string{"typo", "geo"}),
-					testCheckResourceListAttr(indexResourceName, "ranking_config.0.replicas", []string{fmt.Sprintf("virtual(%s)", virtualIndexName)}),
-					resource.TestCheckResourceAttr(indexResourceName, "advanced_config.0.distinct", "2"),
-					resource.TestCheckResourceAttr(indexResourceName, "advanced_config.0.attribute_for_distinct", "url"),
-					// virtual index
-					resource.TestCheckResourceAttr(virtualIndexResourceName, "name", virtualIndexName),
-					resource.TestCheckResourceAttr(virtualIndexResourceName, "virtual", "true"),
-					testCheckResourceListAttr(virtualIndexResourceName, "ranking_config.0.custom_ranking", []string{"desc(likes)"}),
-					testCheckResourceListAttr(virtualIndexResourceName, "advanced_config.0.response_fields", []string{"*"}),
-					resource.TestCheckResourceAttr(virtualIndexResourceName, "advanced_config.0.distinct", "1"),
-					resource.TestCheckResourceAttr(virtualIndexResourceName, "deletion_protection", "false"),
-				),
-			},
-			{
-				ResourceName:      virtualIndexResourceName,
-				ImportStateId:     virtualIndexName,
-				ImportState:       true,
-				ImportStateVerify: true,
-				ImportStateVerifyIgnore: []string{
-					"virtual",
-					"attributes_config",
-					"ranking_config",
-					"advanced_config",
-					"performance_config",
-					"deletion_protection",
-				},
-			},
-			{
-				// NOTE: Removing from replica, then deleting virtual index should work, but it fails.
-				// https://www.algolia.com/doc/guides/managing-results/refine-results/sorting/how-to/deleting-replicas/?client=go#using-the-api
-				// So deleting primary index first, then deleting virtual index here
-				Config: testAccResourceVirtualIndexOnly(virtualIndexName),
-			},
-		},
-		CheckDestroy: testAccCheckIndexDestroy,
-	})
-}
-
 func testAccResourceIndex(name string) string {
 	return fmt.Sprintf(`
 resource "algolia_index" "%s" {
@@ -214,66 +157,6 @@ resource "algolia_index" "` + name + `" {
 
   languages_config {
     remove_stop_words_for = ["en"]
-  }
-
-  deletion_protection = false
-}
-`
-}
-
-func testAccResourceVirtualIndex(name string, virtualIndexName string) string {
-	return `
-resource "algolia_index" "` + name + `" {
-  name = "` + name + `"
-
-  attributes_config {
-    attributes_to_retrieve = ["*"]
-    searchable_attributes = ["name", "description", "category_name"]
-    attributes_for_faceting = ["category_id"]
-  }
-
-  ranking_config {
-    ranking = ["typo", "geo"]
-    replicas = ["virtual(` + virtualIndexName + `)"]
-  }
-
-  advanced_config {
-    response_fields = ["*"]
-    distinct = 2
-    attribute_for_distinct = "url"
-  }
-
-  deletion_protection = false
-}
-
-resource "algolia_index" "` + virtualIndexName + `" {
-  name    = "` + virtualIndexName + `"
-  virtual = true
-
-  ranking_config {
-    custom_ranking = ["desc(likes)"]
-  }
-
-  advanced_config {
-    response_fields = ["*"]
-    distinct = 1
-  }
-
-  deletion_protection = false
-
-  depends_on = [algolia_index.` + name + `] 
-}
-`
-}
-
-func testAccResourceVirtualIndexOnly(virtualIndexName string) string {
-	return `
-resource "algolia_index" "` + virtualIndexName + `" {
-  name    = "` + virtualIndexName + `"
-  virtual = true
-
-  ranking_config {
-    custom_ranking = ["desc(likes)"]
   }
 
   deletion_protection = false
