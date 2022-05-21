@@ -35,12 +35,12 @@ func resourceIndex() *schema.Resource {
 				ForceNew:    true,
 				Description: "Name of the index. If the index is a virtual replica, its name should NOT be surrounded with `virtual()`.",
 			},
-			// Deprecated: Use `algolia_virtual_index` instead.
 			"virtual": {
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     false,
-				Description: "**Deprecated:** Use `algolia_virtual_index` instead. Whether the index is virtual index. If true, applying the params listed in the [doc](https://www.algolia.com/doc/guides/managing-results/refine-results/sorting/in-depth/replicas/#unsupported-parameters) will be ignored.",
+				Description: "**Deprecated:** Use `algolia_virtual_index` resource instead. Whether the index is virtual index. If true, applying the params listed in the [doc](https://www.algolia.com/doc/guides/managing-results/refine-results/sorting/in-depth/replicas/#unsupported-parameters) will be ignored.",
+				Deprecated:  "Use `algolia_virtual_index` resource instead",
 			},
 			"attributes_config": {
 				Type:        schema.TypeList,
