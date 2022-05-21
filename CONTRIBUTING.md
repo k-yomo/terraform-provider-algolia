@@ -41,8 +41,9 @@ Then commit the changes to `go.mod` and `go.sum`.
 
 ## Developing the Provider
 
-If you wish to work on the provider, you'll first need [Go](http://www.golang.org) installed on your machine (see [Prerequisites](#requirements) above).
+If you wish to work on the provider, you'll first need [Go](http://www.golang.org) installed on your machine (see [Prerequisites](#Prerequisites) above).
 
+When you changed schema or `examples` directory, you need to regenerate documents.
 To generate or update documentation, run `make generate`.
 
 ### Test
@@ -57,5 +58,5 @@ Run `make testacc` to run the full suite of Acceptance tests.
 ```sh
 $ make testacc
 ```
-*Note:* Acceptance tests create real resources, and often cost money to run.
+*Note:* Acceptance tests create real resources, and might cost money to run.
 
