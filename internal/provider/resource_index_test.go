@@ -9,7 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
-// TODO: Cover all params
+// TODO: Cover all fields
 func TestAccResourceIndex(t *testing.T) {
 	indexName := randStringStartWithAlpha(100)
 	resourceName := fmt.Sprintf("algolia_index.%s", indexName)
@@ -63,6 +63,14 @@ func TestAccResourceIndex(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "highlight_and_snippet_config.0.highlight_post_tag", "</b>"),
 					resource.TestCheckResourceAttr(resourceName, "highlight_and_snippet_config.0.snippet_ellipsis_text", "..."),
 					resource.TestCheckResourceAttr(resourceName, "highlight_and_snippet_config.0.restrict_highlight_and_snippet_arrays", "true"),
+					resource.TestCheckResourceAttr(resourceName, "pagination_config.0.hits_per_page", "100"),
+					resource.TestCheckResourceAttr(resourceName, "pagination_config.0.pagination_limited_to", "500"),
+					resource.TestCheckResourceAttr(resourceName, "typos_config.0.min_word_size_for_1_typo", "3"),
+					resource.TestCheckResourceAttr(resourceName, "typos_config.0.min_word_size_for_2_typos", "6"),
+					resource.TestCheckResourceAttr(resourceName, "typos_config.0.typo_tolerance", "strict"),
+					resource.TestCheckResourceAttr(resourceName, "typos_config.0.allow_typos_on_numeric_tokens", "false"),
+					testCheckResourceListAttr(resourceName, "typos_config.0.disable_typo_tolerance_on_attributes", []string{"model"}),
+					testCheckResourceListAttr(resourceName, "typos_config.0.disable_typo_tolerance_on_words", []string{"test"}),
 					resource.TestCheckResourceAttr(resourceName, "deletion_protection", "false"),
 				),
 			},
@@ -139,9 +147,9 @@ resource "algolia_index" "%s" {
 }
 
 func testAccResourceIndexUpdate(name string) string {
-	return fmt.Sprintf(`
-resource "algolia_index" "%s" {
-  name = "%s"
+	return `
+resource "algolia_index" "` + name + `" {
+  name = "` + name + `"
 
   attributes_config {
     searchable_attributes = [
@@ -185,13 +193,27 @@ resource "algolia_index" "%s" {
     restrict_highlight_and_snippet_arrays = true
   }
 
+  pagination_config {
+    hits_per_page = 100
+    pagination_limited_to = 500
+  }
+
+  typos_config {
+    min_word_size_for_1_typo = 3
+    min_word_size_for_2_typos = 6
+    typo_tolerance = "strict"
+    allow_typos_on_numeric_tokens = false
+    disable_typo_tolerance_on_attributes = ["model"]
+    disable_typo_tolerance_on_words = ["test"]
+  }
+
   languages_config {
     remove_stop_words_for = ["en"]
   }
 
   deletion_protection = false
 }
-`, name, name)
+`
 }
 
 func testAccResourceVirtualIndex(name string, virtualIndexName string) string {

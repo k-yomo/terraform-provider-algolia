@@ -26,7 +26,7 @@ func main() {
 		eg.Go(func() error {
 			res, err := algoliaClient.InitIndex(index.Name).Delete()
 			if err != nil {
-				return fmt.Errorf("failed to delete %s", index.Name)
+				return fmt.Errorf("failed to delete %s: %w", index.Name, err)
 			}
 			if err := res.Wait(); err != nil {
 				return fmt.Errorf("failed to delete %s: %w", index.Name, err)
