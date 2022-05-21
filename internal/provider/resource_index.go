@@ -515,10 +515,12 @@ List of supported languages are listed on http://nhttps//www.algolia.com/doc/api
 							Description:  "Name of the de-duplication attribute to be used with the `distinct` feature.",
 						},
 						"distinct": {
-							Type:         schema.TypeInt,
-							Optional:     true,
-							Default:      0,
-							RequiredWith: []string{"advanced_config.0.attribute_for_distinct"},
+							Type:     schema.TypeInt,
+							Optional: true,
+							Default:  0,
+							// `distinct` requires `attribute_for_distinct` but disable the constraint here for virtual index.
+							// since `attribute_for_distinct` can't be set in virtual index.
+							// RequiredWith: []string{"advanced_config.0.attribute_for_distinct"},
 							Description: `Whether to enable de-duplication or grouping of results.
 - When set to ` + "`0`" + `, you disable de-duplication and grouping.
 - When set to ` + "`1`" + `, you enable **de-duplication**, in which only the most relevant result is returned for all records that have the same value in the distinct attribute. This is similar to the SQL ` + "`distinct`" + ` keyword.

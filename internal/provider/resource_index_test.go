@@ -107,10 +107,14 @@ func TestAccResourceVirtualIndex(t *testing.T) {
 					testCheckResourceListAttr(indexResourceName, "attributes_config.0.attributes_for_faceting", []string{"category_id"}),
 					testCheckResourceListAttr(indexResourceName, "ranking_config.0.ranking", []string{"typo", "geo"}),
 					testCheckResourceListAttr(indexResourceName, "ranking_config.0.replicas", []string{fmt.Sprintf("virtual(%s)", virtualIndexName)}),
+					resource.TestCheckResourceAttr(indexResourceName, "advanced_config.0.distinct", "2"),
+					resource.TestCheckResourceAttr(indexResourceName, "advanced_config.0.attribute_for_distinct", "url"),
 					// virtual index
 					resource.TestCheckResourceAttr(virtualIndexResourceName, "name", virtualIndexName),
 					resource.TestCheckResourceAttr(virtualIndexResourceName, "virtual", "true"),
 					testCheckResourceListAttr(virtualIndexResourceName, "ranking_config.0.custom_ranking", []string{"desc(likes)"}),
+					testCheckResourceListAttr(virtualIndexResourceName, "advanced_config.0.response_fields", []string{"*"}),
+					resource.TestCheckResourceAttr(virtualIndexResourceName, "advanced_config.0.distinct", "1"),
 					resource.TestCheckResourceAttr(virtualIndexResourceName, "deletion_protection", "false"),
 				),
 			},
@@ -123,6 +127,7 @@ func TestAccResourceVirtualIndex(t *testing.T) {
 					"virtual",
 					"attributes_config",
 					"ranking_config",
+					"advanced_config",
 					"performance_config",
 					"deletion_protection",
 				},
@@ -232,6 +237,12 @@ resource "algolia_index" "` + name + `" {
     replicas = ["virtual(` + virtualIndexName + `)"]
   }
 
+  advanced_config {
+    response_fields = ["*"]
+    distinct = 2
+    attribute_for_distinct = "url"
+  }
+
   deletion_protection = false
 }
 
@@ -241,6 +252,11 @@ resource "algolia_index" "` + virtualIndexName + `" {
 
   ranking_config {
     custom_ranking = ["desc(likes)"]
+  }
+
+  advanced_config {
+    response_fields = ["*"]
+    distinct = 1
   }
 
   deletion_protection = false
