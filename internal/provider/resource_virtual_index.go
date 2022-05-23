@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"regexp"
 	"strconv"
 	"time"
 
@@ -562,8 +561,6 @@ This parameter is mainly intended to **limit the response size.** For example, i
 	}
 }
 
-var virtualReplicaNameRegex = regexp.MustCompile(`^virtual\(\S+\)$`)
-
 func resourceVirtualIndexCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	apiClient := m.(*apiClient)
 
@@ -576,13 +573,8 @@ func resourceVirtualIndexCreate(ctx context.Context, d *schema.ResourceData, m i
 		return diag.FromErr(err)
 	}
 
-	virtualReplicaExist := false
-	for _, replica := range primaryIndexSettings.Replicas.Get() {
-		if virtualReplicaNameRegex.MatchString(replica) {
-			virtualReplicaExist = true
-		}
-	}
-	if !virtualReplicaExist {
+	replicas := primaryIndexSettings.Replicas.Get()
+	if !algoliautil.IndexExistsInReplicas(replicas, indexName, true) {
 		// Modifying the primary's replica setting on primary can cause problems if other replicas
 		// are modifying it at the same time. Lock the primary until we're done in order to prevent that.
 		mutexKV.Lock(algoliaIndexMutexKey(apiClient.appID, primaryIndexName))
@@ -655,23 +647,18 @@ func resourceVirtualIndexDelete(ctx context.Context, d *schema.ResourceData, m i
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	var newReplicas []string
-	for _, replica := range primaryIndexSettings.Replicas.Get() {
-		if virtualReplicaNameRegex.MatchString(replica) {
-			continue
+	if algoliautil.IndexExistsInReplicas(primaryIndexSettings.Replicas.Get(), indexName, true) {
+		newReplicas := algoliautil.RemoveIndexFromReplicas(primaryIndexSettings.Replicas.Get(), indexName, true)
+		updateReplicasRes, err := primaryIndex.SetSettings(search.Settings{
+			Replicas: opt.Replicas(newReplicas...),
+		})
+		if err != nil {
+			return diag.FromErr(err)
 		}
-		newReplicas = append(newReplicas, replica)
+		if err := updateReplicasRes.Wait(); err != nil {
+			return diag.FromErr(err)
+		}
 	}
-	updateReplicasRes, err := primaryIndex.SetSettings(search.Settings{
-		Replicas: opt.Replicas(newReplicas...),
-	})
-	if err != nil {
-		return diag.FromErr(err)
-	}
-	if err := updateReplicasRes.Wait(); err != nil {
-		return diag.FromErr(err)
-	}
-
 	index := apiClient.searchClient.InitIndex(indexName)
 	deleteIndexRes, err := index.Delete(ctx)
 	if err != nil {
