@@ -82,11 +82,9 @@ resource "algolia_index" "` + primaryIndexName + `" {
 
 resource "algolia_virtual_index" "` + virtualIndexName + `" {
   name               = "` + virtualIndexName + `"
-  primary_index_name = "` + primaryIndexName + `"
+  primary_index_name = algolia_index.` + primaryIndexName + `.name
 
   deletion_protection = false
-
-  depends_on = [algolia_index.` + primaryIndexName + `] 
 }
 `
 }
@@ -117,7 +115,7 @@ resource "algolia_index" "` + primaryIndexName + `" {
 
 resource "algolia_virtual_index" "` + virtualIndexName + `" {
   name               = "` + virtualIndexName + `"
-  primary_index_name = "` + primaryIndexName + `"
+  primary_index_name = algolia_index.` + primaryIndexName + `.name
 
   ranking_config {
     custom_ranking = ["desc(likes)"]
@@ -129,8 +127,6 @@ resource "algolia_virtual_index" "` + virtualIndexName + `" {
   }
 
   deletion_protection = false
-
-  depends_on = [algolia_index.` + primaryIndexName + `] 
 }
 `
 }

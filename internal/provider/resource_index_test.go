@@ -84,6 +84,31 @@ func TestAccResourceIndex(t *testing.T) {
 	})
 }
 
+func TestAccResourceIndexWithReplica(t *testing.T) {
+	primaryIndexName := randStringStartWithAlpha(80)
+	replicaIndexName := fmt.Sprintf("%s_replica", primaryIndexName)
+	primaryIndexResourceName := fmt.Sprintf("algolia_index.%s", primaryIndexName)
+	replicaIndexResourceName := fmt.Sprintf("algolia_index.%s", replicaIndexName)
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: providerFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccResourceIndexWithReplica(primaryIndexName, replicaIndexName),
+				Check: resource.ComposeTestCheckFunc(
+					// primary index
+					resource.TestCheckResourceAttr(primaryIndexResourceName, "name", primaryIndexName),
+					// replica index
+					resource.TestCheckResourceAttr(replicaIndexResourceName, "name", replicaIndexName),
+					resource.TestCheckResourceAttr(replicaIndexResourceName, "primary_index_name", primaryIndexName),
+				),
+			},
+		},
+		CheckDestroy: testAccCheckIndexDestroy,
+	})
+}
+
 func testAccResourceIndex(name string) string {
 	return fmt.Sprintf(`
 resource "algolia_index" "%s" {
@@ -156,6 +181,23 @@ resource "algolia_index" "` + name + `" {
   languages_config {
     remove_stop_words_for = ["en"]
   }
+
+  deletion_protection = false
+}
+`
+}
+
+func testAccResourceIndexWithReplica(name string, replicaName string) string {
+	return `
+resource "algolia_index" "` + name + `" {
+  name = "` + name + `"
+
+  deletion_protection = false
+}
+
+resource "algolia_index" "` + replicaName + `" {
+  name               =  "` + replicaName + `"
+  primary_index_name = algolia_index.` + name + `.name
 
   deletion_protection = false
 }
