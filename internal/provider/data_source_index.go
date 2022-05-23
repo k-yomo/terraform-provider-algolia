@@ -19,6 +19,11 @@ func dataSourceIndex() *schema.Resource {
 				ForceNew:    true,
 				Description: "Name of the index.",
 			},
+			"primary_index_name": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "The name of the existing primary index name. This field is filled when the index is a replica index.",
+			},
 			"virtual": {
 				Type:        schema.TypeBool,
 				Computed:    true,

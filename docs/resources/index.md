@@ -73,6 +73,7 @@ resource "algolia_index" "example" {
 - `languages_config` (Block List, Max: 1) The configuration for languages in index setting. (see [below for nested schema](#nestedblock--languages_config))
 - `pagination_config` (Block List, Max: 1) The configuration for pagination in index setting. (see [below for nested schema](#nestedblock--pagination_config))
 - `performance_config` (Block List, Max: 1) The configuration for performance in index setting. (see [below for nested schema](#nestedblock--performance_config))
+- `primary_index_name` (String) The name of the existing primary index name. This field is used to create a replica index.
 - `query_strategy_config` (Block List, Max: 1) The configuration for query strategy in index setting. (see [below for nested schema](#nestedblock--query_strategy_config))
 - `ranking_config` (Block List, Max: 1) The configuration for ranking. (see [below for nested schema](#nestedblock--ranking_config))
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))

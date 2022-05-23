@@ -35,6 +35,12 @@ func resourceIndex() *schema.Resource {
 				ForceNew:    true,
 				Description: "Name of the index / replica index. For creating virtual replica, use `algolia_virtual_index` resource instead.",
 			},
+			"primary_index_name": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				ForceNew:    true,
+				Description: "The name of the existing primary index name. This field is used to create a replica index.",
+			},
 			"virtual": {
 				Type:        schema.TypeBool,
 				Optional:    true,
@@ -583,6 +589,33 @@ func resourceIndexCreate(ctx context.Context, d *schema.ResourceData, m interfac
 	apiClient := m.(*apiClient)
 
 	indexName := d.Get("name").(string)
+
+	if primaryIndexName, ok := d.GetOk("primary_index_name"); ok {
+		primaryIndex := apiClient.searchClient.InitIndex(primaryIndexName.(string))
+		primaryIndexSettings, err := primaryIndex.GetSettings(ctx)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+		replicaExist := false
+		for _, replica := range primaryIndexSettings.Replicas.Get() {
+			if replica == indexName {
+				replicaExist = true
+			}
+		}
+		if !replicaExist {
+			newReplicas := append(primaryIndexSettings.Replicas.Get(), indexName)
+			res, err := primaryIndex.SetSettings(search.Settings{
+				Replicas: opt.Replicas(newReplicas...),
+			})
+			if err != nil {
+				return diag.FromErr(err)
+			}
+			if err := res.Wait(); err != nil {
+				return diag.FromErr(err)
+			}
+		}
+	}
+
 	index := apiClient.searchClient.InitIndex(indexName)
 	res, err := index.SetSettings(mapToIndexSettings(d))
 	if err != nil {
@@ -620,18 +653,43 @@ func resourceIndexUpdate(ctx context.Context, d *schema.ResourceData, m interfac
 }
 
 func resourceIndexDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	apiClient := m.(*apiClient)
-
 	if d.Get("deletion_protection").(bool) {
 		return diag.Errorf("cannot destroy index without setting deletion_protection=false and running `terraform apply`")
 	}
 
-	index := apiClient.searchClient.InitIndex(d.Id())
-	res, err := index.Delete(ctx)
+	apiClient := m.(*apiClient)
+	indexName := d.Id()
+
+	if primaryIndexName, ok := d.GetOk("primary_index_name"); ok {
+		primaryIndex := apiClient.searchClient.InitIndex(primaryIndexName.(string))
+		primaryIndexSettings, err := primaryIndex.GetSettings(ctx)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+		var newReplicas []string
+		for _, replica := range primaryIndexSettings.Replicas.Get() {
+			if replica == indexName {
+				continue
+			}
+			newReplicas = append(newReplicas, replica)
+		}
+		updateReplicasRes, err := primaryIndex.SetSettings(search.Settings{
+			Replicas: opt.Replicas(newReplicas...),
+		})
+		if err != nil {
+			return diag.FromErr(err)
+		}
+		if err := updateReplicasRes.Wait(); err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
+	index := apiClient.searchClient.InitIndex(indexName)
+	deleteIndexRes, err := index.Delete(ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	if err := res.Wait(ctx); err != nil {
+	if err := deleteIndexRes.Wait(ctx); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -670,10 +728,11 @@ func mapToIndexResourceValues(d *schema.ResourceData, settings search.Settings) 
 	isVirtualIndex := d.Get("virtual").(bool)
 
 	return map[string]interface{}{
-		"name":              d.Id(),
-		"virtual":           isVirtualIndex,
-		"attributes_config": marshalAttributesConfig(settings, isVirtualIndex),
-		"ranking_config":    marshalRankingConfig(settings, isVirtualIndex),
+		"name":               d.Id(),
+		"primary_index_name": settings.Primary.Get(),
+		"virtual":            isVirtualIndex,
+		"attributes_config":  marshalAttributesConfig(settings, isVirtualIndex),
+		"ranking_config":     marshalRankingConfig(settings, isVirtualIndex),
 		"faceting_config": []interface{}{map[string]interface{}{
 			"max_values_per_facet": settings.MaxValuesPerFacet.Get(),
 			"sort_facet_values_by": settings.SortFacetValuesBy.Get(),
