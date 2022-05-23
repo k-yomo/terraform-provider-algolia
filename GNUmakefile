@@ -14,7 +14,7 @@ generate:
 # Run acceptance tests
 .PHONY: testacc
 testacc:
-	TF_ACC=1 go test ./... -v $(TESTARGS) -coverprofile=coverage.out -timeout 120m
+	TF_ACC=1 go test ./... -v $(TESTARGS) -race -coverprofile=coverage.out -timeout 120m
 
 # Run acceptance tests and show coverages
 .PHONY: testacc-cover
