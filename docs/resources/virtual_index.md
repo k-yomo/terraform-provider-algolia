@@ -23,8 +23,6 @@ resource "algolia_index" "example" {
     ]
     attributes_to_retrieve = ["*"]
   }
-
-  replicas = ["virtual(example_replica)"]
 }
 
 resource "algolia_virtual_index" "example_virtual_replica" {

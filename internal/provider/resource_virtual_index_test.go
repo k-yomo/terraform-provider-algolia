@@ -23,7 +23,6 @@ func TestAccResourceVirtualIndex(t *testing.T) {
 					// index
 					resource.TestCheckResourceAttr(indexResourceName, "name", indexName),
 					resource.TestCheckResourceAttr(indexResourceName, "virtual", "false"),
-					testCheckResourceListAttr(indexResourceName, "ranking_config.0.replicas", []string{fmt.Sprintf("virtual(%s)", virtualIndexName)}),
 					// virtual index
 					resource.TestCheckResourceAttr(virtualIndexResourceName, "name", virtualIndexName),
 					resource.TestCheckResourceAttr(virtualIndexResourceName, "deletion_protection", "false"),
@@ -39,7 +38,6 @@ func TestAccResourceVirtualIndex(t *testing.T) {
 					testCheckResourceListAttr(indexResourceName, "attributes_config.0.searchable_attributes", []string{"name", "description", "category_name"}),
 					testCheckResourceListAttr(indexResourceName, "attributes_config.0.attributes_for_faceting", []string{"category_id"}),
 					testCheckResourceListAttr(indexResourceName, "ranking_config.0.ranking", []string{"typo", "geo"}),
-					testCheckResourceListAttr(indexResourceName, "ranking_config.0.replicas", []string{fmt.Sprintf("virtual(%s)", virtualIndexName)}),
 					resource.TestCheckResourceAttr(indexResourceName, "advanced_config.0.distinct", "2"),
 					resource.TestCheckResourceAttr(indexResourceName, "advanced_config.0.attribute_for_distinct", "url"),
 					// virtual index
@@ -77,7 +75,6 @@ resource "algolia_index" "` + primaryIndexName + `" {
 
   ranking_config {
     ranking = ["typo", "geo"]
-    replicas = ["virtual(` + virtualIndexName + `)"]
   }
 
   deletion_protection = false
@@ -107,7 +104,6 @@ resource "algolia_index" "` + primaryIndexName + `" {
 
   ranking_config {
     ranking = ["typo", "geo"]
-    replicas = ["virtual(` + virtualIndexName + `)"]
   }
 
   advanced_config {

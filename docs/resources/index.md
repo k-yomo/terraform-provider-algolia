@@ -208,7 +208,6 @@ Optional:
 - `custom_ranking` (List of String) List of attributes for custom ranking criterion.
 - `ranking` (List of String) List of ranking criteria.
 - `relevancy_strictness` (Number) Relevancy threshold below which less relevant results aren’t included in the results
-- `replicas` (Set of String) List of replica names. Names of virtual replicas should be surrounded with `virtual()`.
 
 
 <a id="nestedblock--timeouts"></a>

@@ -119,13 +119,6 @@ func resourceIndex() *schema.Resource {
 							ValidateFunc: validation.IntBetween(0, 100),
 							Description:  "Relevancy threshold below which less relevant results aren’t included in the results",
 						},
-						"replicas": {
-							Type:        schema.TypeSet,
-							Elem:        &schema.Schema{Type: schema.TypeString},
-							Set:         schema.HashString,
-							Optional:    true,
-							Description: "List of replica names. Names of virtual replicas should be surrounded with `virtual()`.",
-						},
 					},
 				},
 			},
@@ -779,7 +772,6 @@ func marshalRankingConfig(settings search.Settings, isVirtualIndex bool) []inter
 	}
 	if !isVirtualIndex {
 		rankingConfig["ranking"] = settings.Ranking.Get()
-		rankingConfig["replicas"] = settings.Replicas.Get()
 	}
 
 	return []interface{}{rankingConfig}
@@ -964,7 +956,6 @@ func unmarshalRankingConfig(configured interface{}, settings *search.Settings, i
 	settings.RelevancyStrictness = opt.RelevancyStrictness(config["relevancy_strictness"].(int))
 	if !isVirtualIndex {
 		settings.Ranking = opt.Ranking(castStringList(config["ranking"])...)
-		settings.Replicas = opt.Replicas(castStringSet(config["replicas"])...)
 	}
 }
 
