@@ -596,13 +596,7 @@ func resourceIndexCreate(ctx context.Context, d *schema.ResourceData, m interfac
 		if err != nil {
 			return diag.FromErr(err)
 		}
-		replicaExist := false
-		for _, replica := range primaryIndexSettings.Replicas.Get() {
-			if replica == indexName {
-				replicaExist = true
-			}
-		}
-		if !replicaExist {
+		if !algoliautil.IndexExistsInReplicas(primaryIndexSettings.Replicas.Get(), indexName, false) {
 			newReplicas := append(primaryIndexSettings.Replicas.Get(), indexName)
 			res, err := primaryIndex.SetSettings(search.Settings{
 				Replicas: opt.Replicas(newReplicas...),
@@ -672,21 +666,17 @@ func resourceIndexDelete(ctx context.Context, d *schema.ResourceData, m interfac
 		if err != nil {
 			return diag.FromErr(err)
 		}
-		var newReplicas []string
-		for _, replica := range primaryIndexSettings.Replicas.Get() {
-			if replica == indexName {
-				continue
+		if algoliautil.IndexExistsInReplicas(primaryIndexSettings.Replicas.Get(), indexName, false) {
+			newReplicas := algoliautil.RemoveIndexFromReplicas(primaryIndexSettings.Replicas.Get(), indexName, false)
+			updateReplicasRes, err := primaryIndex.SetSettings(search.Settings{
+				Replicas: opt.Replicas(newReplicas...),
+			})
+			if err != nil {
+				return diag.FromErr(err)
 			}
-			newReplicas = append(newReplicas, replica)
-		}
-		updateReplicasRes, err := primaryIndex.SetSettings(search.Settings{
-			Replicas: opt.Replicas(newReplicas...),
-		})
-		if err != nil {
-			return diag.FromErr(err)
-		}
-		if err := updateReplicasRes.Wait(); err != nil {
-			return diag.FromErr(err)
+			if err := updateReplicasRes.Wait(); err != nil {
+				return diag.FromErr(err)
+			}
 		}
 	}
 
