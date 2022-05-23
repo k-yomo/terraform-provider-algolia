@@ -85,6 +85,11 @@ func TestAccResourceIndex(t *testing.T) {
 }
 
 func TestAccResourceIndexWithReplica(t *testing.T) {
+	// NOTE: Deleting replica fails due to the same reason as the below issue.
+	// https://github.com/algolia/algoliasearch-client-javascript/issues/1377
+	// TODO: Remove t.Skip() once the issue is resolved.
+	t.Skip()
+
 	primaryIndexName := randStringStartWithAlpha(80)
 	replicaIndexName := fmt.Sprintf("%s_replica", primaryIndexName)
 	primaryIndexResourceName := fmt.Sprintf("algolia_index.%s", primaryIndexName)
@@ -187,6 +192,7 @@ resource "algolia_index" "` + name + `" {
 `
 }
 
+// nolint:unused
 func testAccResourceIndexWithReplica(name string, replicaName string) string {
 	return `
 resource "algolia_index" "` + name + `" {
