@@ -13,7 +13,8 @@ resource "algolia_index" "example" {
 }
 
 resource "algolia_virtual_index" "example_virtual_replica" {
-  name = "example_replica"
+  name               = "example_replica"
+  primary_index_name = "example"
 
   attributes_config {
     unretrievable_attributes = [

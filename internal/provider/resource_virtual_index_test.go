@@ -63,17 +63,17 @@ func TestAccResourceVirtualIndex(t *testing.T) {
 				// NOTE: Removing from replica, then deleting virtual index should work, but it fails.
 				// https://www.algolia.com/doc/guides/managing-results/refine-results/sorting/how-to/deleting-replicas/?client=go#using-the-api
 				// So deleting primary index first, then deleting virtual index here
-				Config: testAccResourceVirtualIndexOnly(virtualIndexName),
+				Config: testAccResourceVirtualIndexOnly(indexName, virtualIndexName),
 			},
 		},
 		CheckDestroy: testAccCheckIndexDestroy,
 	})
 }
 
-func testAccResourceVirtualIndex(name string, virtualIndexName string) string {
+func testAccResourceVirtualIndex(primaryIndexName string, virtualIndexName string) string {
 	return `
-resource "algolia_index" "` + name + `" {
-  name = "` + name + `"
+resource "algolia_index" "` + primaryIndexName + `" {
+  name = "` + primaryIndexName + `"
 
   ranking_config {
     ranking = ["typo", "geo"]
@@ -84,19 +84,20 @@ resource "algolia_index" "` + name + `" {
 }
 
 resource "algolia_virtual_index" "` + virtualIndexName + `" {
-  name    = "` + virtualIndexName + `"
+  name               = "` + virtualIndexName + `"
+  primary_index_name = "` + primaryIndexName + `"
 
   deletion_protection = false
 
-  depends_on = [algolia_index.` + name + `] 
+  depends_on = [algolia_index.` + primaryIndexName + `] 
 }
 `
 }
 
-func testAccResourceVirtualIndexUpdate(name string, virtualIndexName string) string {
+func testAccResourceVirtualIndexUpdate(primaryIndexName string, virtualIndexName string) string {
 	return `
-resource "algolia_index" "` + name + `" {
-  name = "` + name + `"
+resource "algolia_index" "` + primaryIndexName + `" {
+  name = "` + primaryIndexName + `"
 
   attributes_config {
     attributes_to_retrieve = ["*"]
@@ -119,7 +120,8 @@ resource "algolia_index" "` + name + `" {
 }
 
 resource "algolia_virtual_index" "` + virtualIndexName + `" {
-  name    = "` + virtualIndexName + `"
+  name               = "` + virtualIndexName + `"
+  primary_index_name = "` + primaryIndexName + `"
 
   ranking_config {
     custom_ranking = ["desc(likes)"]
@@ -132,15 +134,16 @@ resource "algolia_virtual_index" "` + virtualIndexName + `" {
 
   deletion_protection = false
 
-  depends_on = [algolia_index.` + name + `] 
+  depends_on = [algolia_index.` + primaryIndexName + `] 
 }
 `
 }
 
-func testAccResourceVirtualIndexOnly(virtualIndexName string) string {
+func testAccResourceVirtualIndexOnly(primaryIndexName string, virtualIndexName string) string {
 	return `
 resource "algolia_virtual_index" "` + virtualIndexName + `" {
-  name    = "` + virtualIndexName + `"
+  name               = "` + virtualIndexName + `"
+  primary_index_name = "` + primaryIndexName + `"
 
   ranking_config {
     custom_ranking = ["desc(likes)"]
