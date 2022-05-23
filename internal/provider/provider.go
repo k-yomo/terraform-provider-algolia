@@ -2,7 +2,6 @@ package provider
 
 import (
 	"context"
-
 	"github.com/algolia/algoliasearch-client-go/v3/algolia/region"
 	"github.com/algolia/algoliasearch-client-go/v3/algolia/search"
 	"github.com/algolia/algoliasearch-client-go/v3/algolia/suggestions"
@@ -11,7 +10,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/logging"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-provider-algolia/internal/algoliautil"
+	"github.com/hashicorp/terraform-provider-algolia/internal/mutex"
 )
+
+// Global Key/Value Mutex
+var mutexKV = mutex.NewKV()
 
 // nolint: gochecknoinits
 func init() {

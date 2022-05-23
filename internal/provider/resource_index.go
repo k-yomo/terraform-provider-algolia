@@ -2,6 +2,7 @@ package provider
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"strconv"
 	"time"
@@ -583,8 +584,14 @@ func resourceIndexCreate(ctx context.Context, d *schema.ResourceData, m interfac
 
 	indexName := d.Get("name").(string)
 
-	if primaryIndexName, ok := d.GetOk("primary_index_name"); ok {
-		primaryIndex := apiClient.searchClient.InitIndex(primaryIndexName.(string))
+	if v, ok := d.GetOk("primary_index_name"); ok {
+		primaryIndexName := v.(string)
+		// Modifying the primary's replica setting on primary can cause problems if other replicas
+		// are modifying it at the same time. Lock the primary until we're done in order to prevent that.
+		mutexKV.Lock(algoliaIndexMutexKey(apiClient.appID, primaryIndexName))
+		defer mutexKV.Unlock(algoliaIndexMutexKey(apiClient.appID, primaryIndexName))
+
+		primaryIndex := apiClient.searchClient.InitIndex(primaryIndexName)
 		primaryIndexSettings, err := primaryIndex.GetSettings(ctx)
 		if err != nil {
 			return diag.FromErr(err)
@@ -653,8 +660,14 @@ func resourceIndexDelete(ctx context.Context, d *schema.ResourceData, m interfac
 	apiClient := m.(*apiClient)
 	indexName := d.Id()
 
-	if primaryIndexName, ok := d.GetOk("primary_index_name"); ok {
-		primaryIndex := apiClient.searchClient.InitIndex(primaryIndexName.(string))
+	if v, ok := d.GetOk("primary_index_name"); ok {
+		primaryIndexName := v.(string)
+		// Modifying the primary's replica setting on primary can cause problems if other replicas
+		// are modifying it at the same time. Lock the primary until we're done in order to prevent that.
+		mutexKV.Lock(algoliaIndexMutexKey(apiClient.appID, primaryIndexName))
+		defer mutexKV.Unlock(algoliaIndexMutexKey(apiClient.appID, primaryIndexName))
+
+		primaryIndex := apiClient.searchClient.InitIndex(primaryIndexName)
 		primaryIndexSettings, err := primaryIndex.GetSettings(ctx)
 		if err != nil {
 			return diag.FromErr(err)
@@ -1223,4 +1236,8 @@ func unmarshalAdvancedConfig(configured interface{}, settings *search.Settings, 
 			settings.AttributeForDistinct = opt.AttributeForDistinct(v.(string))
 		}
 	}
+}
+
+func algoliaIndexMutexKey(appID string, indexName string) string {
+	return fmt.Sprintf("%s-algolia-index-%s", appID, indexName)
 }
