@@ -28,7 +28,6 @@ func TestAccResourceIndex(t *testing.T) {
 					resource.TestCheckNoResourceAttr(resourceName, "attributes_config.0.unretrievable_attributes.0"),
 					resource.TestCheckResourceAttr(resourceName, "attributes_config.0.attributes_to_retrieve.0", "*"),
 					testCheckResourceListAttr(resourceName, "ranking_config.0.ranking", []string{"typo", "geo", "words", "filters", "proximity", "attribute", "exact", "custom"}),
-					resource.TestCheckNoResourceAttr(resourceName, "ranking_config.0.replicas.0"),
 					testCheckResourceListAttr(resourceName, "highlight_and_snippet_config.0.attributes_to_highlight", []string{}),
 					testCheckResourceListAttr(resourceName, "highlight_and_snippet_config.0.attributes_to_snippet", []string{}),
 					resource.TestCheckResourceAttr(resourceName, "highlight_and_snippet_config.0.highlight_pre_tag", "<em>"),
@@ -54,7 +53,6 @@ func TestAccResourceIndex(t *testing.T) {
 					testCheckResourceListAttr(resourceName, "attributes_config.0.unretrievable_attributes", []string{"author_email"}),
 					testCheckResourceListAttr(resourceName, "attributes_config.0.attributes_to_retrieve", []string{"body", "category", "description", "tag", "title"}),
 					testCheckResourceListAttr(resourceName, "ranking_config.0.ranking", []string{"words", "proximity"}),
-					resource.TestCheckNoResourceAttr(resourceName, "ranking_config.0.replicas.0"),
 					resource.TestCheckResourceAttr(resourceName, "faceting_config.0.max_values_per_facet", "50"),
 					resource.TestCheckResourceAttr(resourceName, "faceting_config.0.sort_facet_values_by", "alpha"),
 					testCheckResourceListAttr(resourceName, "highlight_and_snippet_config.0.attributes_to_highlight", []string{"title"}),
@@ -80,6 +78,36 @@ func TestAccResourceIndex(t *testing.T) {
 				ImportState:             true,
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"deletion_protection"},
+			},
+		},
+		CheckDestroy: testAccCheckIndexDestroy,
+	})
+}
+
+func TestAccResourceIndexWithReplica(t *testing.T) {
+	// NOTE: Deleting replica fails due to the same reason as the below issue.
+	// https://github.com/algolia/algoliasearch-client-javascript/issues/1377
+	// TODO: Remove t.Skip() once the issue is resolved.
+	t.Skip()
+
+	primaryIndexName := randStringStartWithAlpha(80)
+	replicaIndexName := fmt.Sprintf("%s_replica", primaryIndexName)
+	primaryIndexResourceName := fmt.Sprintf("algolia_index.%s", primaryIndexName)
+	replicaIndexResourceName := fmt.Sprintf("algolia_index.%s", replicaIndexName)
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: providerFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccResourceIndexWithReplica(primaryIndexName, replicaIndexName),
+				Check: resource.ComposeTestCheckFunc(
+					// primary index
+					resource.TestCheckResourceAttr(primaryIndexResourceName, "name", primaryIndexName),
+					// replica index
+					resource.TestCheckResourceAttr(replicaIndexResourceName, "name", replicaIndexName),
+					resource.TestCheckResourceAttr(replicaIndexResourceName, "primary_index_name", primaryIndexName),
+				),
 			},
 		},
 		CheckDestroy: testAccCheckIndexDestroy,
@@ -158,6 +186,24 @@ resource "algolia_index" "` + name + `" {
   languages_config {
     remove_stop_words_for = ["en"]
   }
+
+  deletion_protection = false
+}
+`
+}
+
+// nolint:unused
+func testAccResourceIndexWithReplica(name string, replicaName string) string {
+	return `
+resource "algolia_index" "` + name + `" {
+  name = "` + name + `"
+
+  deletion_protection = false
+}
+
+resource "algolia_index" "` + replicaName + `" {
+  name               =  "` + replicaName + `"
+  primary_index_name = algolia_index.` + name + `.name
 
   deletion_protection = false
 }

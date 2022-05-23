@@ -2,7 +2,9 @@ package provider
 
 import (
 	"context"
+	"fmt"
 	"log"
+	"regexp"
 	"strconv"
 	"time"
 
@@ -35,6 +37,12 @@ func resourceVirtualIndex() *schema.Resource {
 				Required:    true,
 				ForceNew:    true,
 				Description: "Name of the virtual index. Its name should NOT be surrounded with `virtual()`.",
+			},
+			"primary_index_name": {
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
+				Description: "The name of the existing primary index name.",
 			},
 			"attributes_config": {
 				Type:        schema.TypeList,
@@ -554,10 +562,39 @@ This parameter is mainly intended to **limit the response size.** For example, i
 	}
 }
 
+var virtualReplicaNameRegex = regexp.MustCompile(`^virtual\(\S+\)$`)
+
 func resourceVirtualIndexCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	apiClient := m.(*apiClient)
 
 	indexName := d.Get("name").(string)
+
+	primaryIndexName := d.Get("primary_index_name").(string)
+	primaryIndex := apiClient.searchClient.InitIndex(primaryIndexName)
+	primaryIndexSettings, err := primaryIndex.GetSettings(ctx)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	virtualReplicaExist := false
+	for _, replica := range primaryIndexSettings.Replicas.Get() {
+		if virtualReplicaNameRegex.MatchString(replica) {
+			virtualReplicaExist = true
+		}
+	}
+	if !virtualReplicaExist {
+		newReplicas := append(primaryIndexSettings.Replicas.Get(), fmt.Sprintf("virtual(%s)", indexName))
+		res, err := primaryIndex.SetSettings(search.Settings{
+			Replicas: opt.Replicas(newReplicas...),
+		})
+		if err != nil {
+			return diag.FromErr(err)
+		}
+		if err := res.Wait(); err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
 	index := apiClient.searchClient.InitIndex(indexName)
 	res, err := index.SetSettings(mapToVirtualIndexSettings(d))
 	if err != nil {
@@ -595,18 +632,42 @@ func resourceVirtualIndexUpdate(ctx context.Context, d *schema.ResourceData, m i
 }
 
 func resourceVirtualIndexDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	apiClient := m.(*apiClient)
-
 	if d.Get("deletion_protection").(bool) {
 		return diag.Errorf("cannot destroy index without setting deletion_protection=false and running `terraform apply`")
 	}
 
-	index := apiClient.searchClient.InitIndex(d.Id())
-	res, err := index.Delete(ctx)
+	apiClient := m.(*apiClient)
+	indexName := d.Id()
+
+	primaryIndexName := d.Get("primary_index_name").(string)
+	primaryIndex := apiClient.searchClient.InitIndex(primaryIndexName)
+	primaryIndexSettings, err := primaryIndex.GetSettings(ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	if err := res.Wait(ctx); err != nil {
+	var newReplicas []string
+	for _, replica := range primaryIndexSettings.Replicas.Get() {
+		if virtualReplicaNameRegex.MatchString(replica) {
+			continue
+		}
+		newReplicas = append(newReplicas, replica)
+	}
+	updateReplicasRes, err := primaryIndex.SetSettings(search.Settings{
+		Replicas: opt.Replicas(newReplicas...),
+	})
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	if err := updateReplicasRes.Wait(); err != nil {
+		return diag.FromErr(err)
+	}
+
+	index := apiClient.searchClient.InitIndex(indexName)
+	deleteIndexRes, err := index.Delete(ctx)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	if err := deleteIndexRes.Wait(ctx); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -665,7 +726,8 @@ func refreshVirtualIndexState(ctx context.Context, d *schema.ResourceData, m int
 	}
 
 	values := map[string]interface{}{
-		"name": d.Id(),
+		"name":               d.Id(),
+		"primary_index_name": settings.Primary.Get(),
 		"attributes_config": []interface{}{map[string]interface{}{
 			"searchable_attributes":    settings.SearchableAttributes.Get(),
 			"attributes_for_faceting":  settings.AttributesForFaceting.Get(),

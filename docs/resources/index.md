@@ -73,6 +73,7 @@ resource "algolia_index" "example" {
 - `languages_config` (Block List, Max: 1) The configuration for languages in index setting. (see [below for nested schema](#nestedblock--languages_config))
 - `pagination_config` (Block List, Max: 1) The configuration for pagination in index setting. (see [below for nested schema](#nestedblock--pagination_config))
 - `performance_config` (Block List, Max: 1) The configuration for performance in index setting. (see [below for nested schema](#nestedblock--performance_config))
+- `primary_index_name` (String) The name of the existing primary index name. This field is used to create a replica index.
 - `query_strategy_config` (Block List, Max: 1) The configuration for query strategy in index setting. (see [below for nested schema](#nestedblock--query_strategy_config))
 - `ranking_config` (Block List, Max: 1) The configuration for ranking. (see [below for nested schema](#nestedblock--ranking_config))
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
@@ -207,7 +208,6 @@ Optional:
 - `custom_ranking` (List of String) List of attributes for custom ranking criterion.
 - `ranking` (List of String) List of ranking criteria.
 - `relevancy_strictness` (Number) Relevancy threshold below which less relevant results aren’t included in the results
-- `replicas` (Set of String) List of replica names. Names of virtual replicas should be surrounded with `virtual()`.
 
 
 <a id="nestedblock--timeouts"></a>

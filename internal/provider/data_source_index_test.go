@@ -25,7 +25,6 @@ func TestAccDataSourceIndex(t *testing.T) {
 					testCheckResourceListAttr(dataSourceName, "attributes_config.0.unretrievable_attributes", []string{"author_email"}),
 					testCheckResourceListAttr(dataSourceName, "attributes_config.0.attributes_to_retrieve", []string{"body", "category", "description", "tag", "title"}),
 					testCheckResourceListAttr(dataSourceName, "ranking_config.0.ranking", []string{"words", "proximity"}),
-					resource.TestCheckNoResourceAttr(dataSourceName, "ranking_config.0.replicas.0"),
 					resource.TestCheckResourceAttr(dataSourceName, "faceting_config.0.max_values_per_facet", "50"),
 					resource.TestCheckResourceAttr(dataSourceName, "faceting_config.0.sort_facet_values_by", "alpha"),
 				),

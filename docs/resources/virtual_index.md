@@ -23,12 +23,11 @@ resource "algolia_index" "example" {
     ]
     attributes_to_retrieve = ["*"]
   }
-
-  replicas = ["virtual(example_replica)"]
 }
 
 resource "algolia_virtual_index" "example_virtual_replica" {
-  name = "example_replica"
+  name               = "example_replica"
+  primary_index_name = algolia_index.example.name
 
   attributes_config {
     unretrievable_attributes = [
@@ -58,6 +57,7 @@ resource "algolia_virtual_index" "example_virtual_replica" {
 ### Required
 
 - `name` (String) Name of the virtual index. Its name should NOT be surrounded with `virtual()`.
+- `primary_index_name` (String) The name of the existing primary index name.
 
 ### Optional
 

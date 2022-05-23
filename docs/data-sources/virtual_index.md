@@ -37,6 +37,7 @@ data "algolia_virtual_index" "example" {
 - `languages_config` (List of Object) The configuration for languages in index setting. (see [below for nested schema](#nestedatt--languages_config))
 - `pagination_config` (Block List) The configuration for pagination in index setting. (see [below for nested schema](#nestedblock--pagination_config))
 - `performance_config` (List of Object) The configuration for performance in index setting. (see [below for nested schema](#nestedatt--performance_config))
+- `primary_index_name` (String) The name of the existing primary index name. This field is filled when the index is a replica index.
 - `query_strategy_config` (List of Object) The configuration for query strategy in index setting. (see [below for nested schema](#nestedatt--query_strategy_config))
 - `ranking_config` (List of Object) The configuration for ranking. (see [below for nested schema](#nestedatt--ranking_config))
 - `typos_config` (List of Object) The configuration for typos in index setting. (see [below for nested schema](#nestedatt--typos_config))
