@@ -131,3 +131,10 @@ resource "algolia_api_key" "example" {
 I appreciate your help!
 
 To contribute, please read the [Contributing to Terraform - Algolia Provider](./CONTRIBUTING.md)
+
+## Sponsor
+<a href="https://www.manomano.com">
+  <img src="https://avatars.githubusercontent.com/u/25135828?s=200&v=4" width="64">
+  <br>
+  ManoMano
+</a>
