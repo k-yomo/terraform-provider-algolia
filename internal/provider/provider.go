@@ -34,6 +34,7 @@ func New(version string) func() *schema.Provider {
 				"api_key": {
 					Type:        schema.TypeString,
 					Optional:    true,
+					Sensitive:   true,
 					DefaultFunc: schema.EnvDefaultFunc("ALGOLIA_API_KEY", nil),
 					Description: "The API key to access algolia resources. Defaults to the env variable `ALGOLIA_API_KEY`.",
 				},
