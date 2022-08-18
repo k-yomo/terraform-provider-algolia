@@ -28,7 +28,7 @@ func (d *DebugRequester) Request(req *http.Request) (*http.Response, error) {
 }
 
 // Code from below is basically copied from the following logging helper
-//(need to copy to mask secrets)
+// (need to copy to mask secrets)
 // https://github.com/hashicorp/terraform-plugin-sdk/blob/45133e6e2aebbe0aca05427cbcd360f968979e98/helper/logging/transport.go#L12
 type debugTransport struct {
 	name      string

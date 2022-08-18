@@ -12,7 +12,7 @@ import (
 )
 
 func TestAccResourceAPIKey(t *testing.T) {
-	name := randStringStartWithAlpha(100)
+	name := randResourceID(100)
 	resourceName := fmt.Sprintf("algolia_api_key.%s", name)
 
 	resource.ParallelTest(t, resource.TestCase{

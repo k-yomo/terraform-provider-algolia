@@ -11,8 +11,8 @@ import (
 )
 
 func TestAccResourceRule(t *testing.T) {
-	indexName := randStringStartWithAlpha(100)
-	objectID := randStringStartWithAlpha(64)
+	indexName := randResourceID(100)
+	objectID := randResourceID(64)
 	resourceName := fmt.Sprintf("algolia_rule.%s", objectID)
 
 	resource.ParallelTest(t, resource.TestCase{

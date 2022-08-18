@@ -13,7 +13,7 @@ func TestAccResourceVirtualIndex(t *testing.T) {
 	// TODO: Remove t.Skip() once the issue is resolved.
 	t.Skip()
 
-	indexName := randStringStartWithAlpha(80)
+	indexName := randResourceID(80)
 	virtualIndexName := fmt.Sprintf("%s_virtual", indexName)
 	indexResourceName := fmt.Sprintf("algolia_index.%s", indexName)
 	virtualIndexResourceName := fmt.Sprintf("algolia_virtual_index.%s", virtualIndexName)

@@ -17,7 +17,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v3
       with:
-        go-version: 1.17
+        go-version: 1.18
       id: go
 
     - name: Check out code into the Go module directory
@@ -30,7 +30,7 @@ jobs:
     - name: Lint
       uses: golangci/golangci-lint-action@v3
       with:
-        version: v1.33
+        version: v1.48
 
     - name: Docs check
       run: make docs-check
@@ -56,7 +56,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v3
       with:
-        go-version: ^1.17
+        go-version: ^1.18
       id: go
 
     - name: Check out code into the Go module directory

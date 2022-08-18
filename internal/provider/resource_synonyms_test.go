@@ -10,7 +10,7 @@ import (
 )
 
 func TestAccResourceSynonyms(t *testing.T) {
-	indexName := randStringStartWithAlpha(100)
+	indexName := randResourceID(100)
 	resourceName := fmt.Sprintf("algolia_synonyms.%s", indexName)
 
 	resource.ParallelTest(t, resource.TestCase{
