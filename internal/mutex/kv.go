@@ -8,7 +8,6 @@ import (
 // KV is a simple key/value store for arbitrary mutexes. It can be used to
 // serialize changes across arbitrary collaborators that share knowledge of the
 // keys they must serialize on.
-//
 type KV struct {
 	lock  sync.Mutex
 	store map[string]*sync.Mutex
