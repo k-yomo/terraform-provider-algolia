@@ -12,8 +12,8 @@ import (
 )
 
 func TestAccResourceQuerySuggestions(t *testing.T) {
-	indexName := randStringStartWithAlpha(100)
-	sourceIndexName := randStringStartWithAlpha(100)
+	indexName := randResourceID(100)
+	sourceIndexName := randResourceID(100)
 	resourceName := fmt.Sprintf("algolia_query_suggestions.%s", indexName)
 
 	resource.ParallelTest(t, resource.TestCase{

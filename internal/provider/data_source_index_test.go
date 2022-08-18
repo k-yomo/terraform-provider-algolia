@@ -8,7 +8,7 @@ import (
 )
 
 func TestAccDataSourceIndex(t *testing.T) {
-	indexName := randStringStartWithAlpha(100)
+	indexName := randResourceID(100)
 	dataSourceName := fmt.Sprintf("data.algolia_index.%s", indexName)
 
 	resource.ParallelTest(t, resource.TestCase{

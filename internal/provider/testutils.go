@@ -5,6 +5,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-provider-algolia/internal/algoliautil"
 	"github.com/rs/xid"
 )
 
@@ -17,14 +18,15 @@ func testCheckResourceListAttr(name, key string, values []string) resource.TestC
 	return resource.ComposeTestCheckFunc(testCheckFuncs...)
 }
 
-// The first character must be alphabet for algolia resources
-func randStringStartWithAlpha(length int) string {
-	const uuidLen = 21 // firstChar + xid(20 chars)
-	uuid := acctest.RandStringFromCharSet(1, acctest.CharSetAlpha) + xid.New().String()
+// randResourceID generates unique id string
+// id length must be longer than (prefix + uuid length)
+func randResourceID(length int) string {
+	// The first character must be alphabet for algolia resources
+	uuid := algoliautil.TestIndexNamePrefix + xid.New().String()
 
-	if length < uuidLen {
-		return uuid[:length]
+	if length < len(uuid) {
+		panic(fmt.Sprintf("length must be longer than %d", len(uuid)))
 	}
 
-	return uuid + acctest.RandStringFromCharSet(length-uuidLen, acctest.CharSetAlphaNum)
+	return uuid + acctest.RandStringFromCharSet(length-len(uuid), acctest.CharSetAlphaNum)
 }

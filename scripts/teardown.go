@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/algolia/algoliasearch-client-go/v3/algolia/search"
+	"github.com/hashicorp/terraform-provider-algolia/internal/algoliautil"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -13,7 +15,7 @@ func main() {
 	appID := os.Getenv("ALGOLIA_APP_ID")
 	apiKey := os.Getenv("ALGOLIA_API_KEY")
 
-	log.Printf("[START] Deletes All indices, appID: %s", appID)
+	log.Printf("[START] Deletes All indices with prefix '%s' in appID: %s", algoliautil.TestIndexNamePrefix, appID)
 	algoliaClient := search.NewClient(appID, apiKey)
 	res, err := algoliaClient.ListIndices()
 	if err != nil {
@@ -22,6 +24,9 @@ func main() {
 
 	eg := errgroup.Group{}
 	for _, index := range res.Items {
+		if !strings.HasPrefix(index.Name, algoliautil.TestIndexNamePrefix) {
+			continue
+		}
 		index := index
 		eg.Go(func() error {
 			res, err := algoliaClient.InitIndex(index.Name).Delete()

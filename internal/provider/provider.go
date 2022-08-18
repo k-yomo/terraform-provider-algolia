@@ -2,6 +2,7 @@ package provider
 
 import (
 	"context"
+
 	"github.com/algolia/algoliasearch-client-go/v3/algolia/region"
 	"github.com/algolia/algoliasearch-client-go/v3/algolia/search"
 	"github.com/algolia/algoliasearch-client-go/v3/algolia/suggestions"

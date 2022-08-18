@@ -11,7 +11,7 @@ import (
 
 // TODO: Cover all fields
 func TestAccResourceIndex(t *testing.T) {
-	indexName := randStringStartWithAlpha(100)
+	indexName := randResourceID(100)
 	resourceName := fmt.Sprintf("algolia_index.%s", indexName)
 
 	resource.ParallelTest(t, resource.TestCase{
@@ -90,7 +90,7 @@ func TestAccResourceIndexWithReplica(t *testing.T) {
 	// TODO: Remove t.Skip() once the issue is resolved.
 	t.Skip()
 
-	primaryIndexName := randStringStartWithAlpha(80)
+	primaryIndexName := randResourceID(80)
 	replicaIndexName := fmt.Sprintf("%s_replica", primaryIndexName)
 	primaryIndexResourceName := fmt.Sprintf("algolia_index.%s", primaryIndexName)
 	replicaIndexResourceName := fmt.Sprintf("algolia_index.%s", replicaIndexName)
