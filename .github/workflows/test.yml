@@ -30,7 +30,7 @@ jobs:
     - name: Lint
       uses: golangci/golangci-lint-action@v3
       with:
-        version: v1.33
+        version: v1.48
 
     - name: Docs check
       run: make docs-check
