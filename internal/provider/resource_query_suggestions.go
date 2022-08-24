@@ -2,11 +2,12 @@ package provider
 
 import (
 	"context"
-	"log"
+	"fmt"
 	"time"
 
 	"github.com/algolia/algoliasearch-client-go/v3/algolia/region"
 	"github.com/algolia/algoliasearch-client-go/v3/algolia/suggestions"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -228,7 +229,7 @@ func refreshQuerySuggestionsState(ctx context.Context, d *schema.ResourceData, m
 	})
 	if err != nil {
 		if algoliautil.IsNotFoundError(err) {
-			log.Printf("[WARN] query suggestions index (%s) not found, removing from state", d.Id())
+			tflog.Warn(ctx, fmt.Sprintf("query suggestions index (%s) not found, removing from state", d.Id()))
 			d.SetId("")
 			return nil
 		}

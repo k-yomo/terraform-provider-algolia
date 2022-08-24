@@ -3,12 +3,12 @@ package provider
 import (
 	"context"
 	"fmt"
-	"log"
 	"strconv"
 	"time"
 
 	"github.com/algolia/algoliasearch-client-go/v3/algolia/opt"
 	"github.com/algolia/algoliasearch-client-go/v3/algolia/search"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-provider-algolia/internal/algoliautil"
 
@@ -577,8 +577,8 @@ func resourceVirtualIndexCreate(ctx context.Context, d *schema.ResourceData, m i
 	if !algoliautil.IndexExistsInReplicas(replicas, indexName, true) {
 		// Modifying the primary's replica setting on primary can cause problems if other replicas
 		// are modifying it at the same time. Lock the primary until we're done in order to prevent that.
-		mutexKV.Lock(algoliaIndexMutexKey(apiClient.appID, primaryIndexName))
-		defer mutexKV.Unlock(algoliaIndexMutexKey(apiClient.appID, primaryIndexName))
+		mutexKV.Lock(ctx, algoliaIndexMutexKey(apiClient.appID, primaryIndexName))
+		defer mutexKV.Unlock(ctx, algoliaIndexMutexKey(apiClient.appID, primaryIndexName))
 
 		newReplicas := append(primaryIndexSettings.Replicas.Get(), fmt.Sprintf("virtual(%s)", indexName))
 		res, err := primaryIndex.SetSettings(search.Settings{
@@ -639,8 +639,8 @@ func resourceVirtualIndexDelete(ctx context.Context, d *schema.ResourceData, m i
 	primaryIndexName := d.Get("primary_index_name").(string)
 	// Modifying the primary's replica setting on primary can cause problems if other replicas
 	// are modifying it at the same time. Lock the primary until we're done in order to prevent that.
-	mutexKV.Lock(algoliaIndexMutexKey(apiClient.appID, primaryIndexName))
-	defer mutexKV.Unlock(algoliaIndexMutexKey(apiClient.appID, primaryIndexName))
+	mutexKV.Lock(ctx, algoliaIndexMutexKey(apiClient.appID, primaryIndexName))
+	defer mutexKV.Unlock(ctx, algoliaIndexMutexKey(apiClient.appID, primaryIndexName))
 
 	primaryIndex := apiClient.searchClient.InitIndex(primaryIndexName)
 	primaryIndexSettings, err := primaryIndex.GetSettings(ctx)
@@ -686,7 +686,7 @@ func refreshVirtualIndexState(ctx context.Context, d *schema.ResourceData, m int
 	settings, err := index.GetSettings(ctx)
 	if err != nil {
 		if algoliautil.IsNotFoundError(err) {
-			log.Printf("[WARN] virtual index (%s) not found, removing from state", d.Id())
+			tflog.Warn(ctx, fmt.Sprintf("virtual index (%s) not found, removing from state", d.Id()))
 			d.SetId("")
 			return nil
 		}

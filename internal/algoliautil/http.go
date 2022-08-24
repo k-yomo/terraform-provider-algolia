@@ -3,12 +3,13 @@ package algoliautil
 import (
 	"bytes"
 	"encoding/json"
-	"log"
+	"fmt"
 	"net/http"
 	"net/http/httputil"
 	"strings"
 
 	"github.com/algolia/algoliasearch-client-go/v3/algolia/transport"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
 type DebugRequester struct {
@@ -36,11 +37,12 @@ type debugTransport struct {
 }
 
 func (t *debugTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	ctx := req.Context()
 	reqData, err := httputil.DumpRequestOut(req, true)
 	if err == nil {
-		log.Printf("[DEBUG] "+logReqMsg, t.name, prettyPrintJsonLines(reqData))
+		tflog.Debug(ctx, fmt.Sprintf(logReqMsg, t.name, prettyPrintJsonLines(reqData)))
 	} else {
-		log.Printf("[ERROR] %s API Request error: %#v", t.name, err)
+		tflog.Error(ctx, fmt.Sprintf("%s API Request error: %#v", t.name, err))
 	}
 
 	resp, err := t.transport.RoundTrip(req)
@@ -50,9 +52,9 @@ func (t *debugTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 
 	respData, err := httputil.DumpResponse(resp, true)
 	if err == nil {
-		log.Printf("[DEBUG] "+logRespMsg, t.name, prettyPrintJsonLines(respData))
+		tflog.Debug(ctx, fmt.Sprintf(logRespMsg, t.name, prettyPrintJsonLines(respData)))
 	} else {
-		log.Printf("[ERROR] %s API Response error: %#v", t.name, err)
+		tflog.Error(ctx, fmt.Sprintf("%s API Response error: %#v", t.name, err))
 	}
 
 	return resp, nil

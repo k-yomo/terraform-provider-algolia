@@ -1,8 +1,10 @@
 package mutex
 
 import (
-	"log"
+	"context"
 	"sync"
+
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
 // KV is a simple key/value store for arbitrary mutexes. It can be used to
@@ -22,17 +24,17 @@ func NewKV() *KV {
 
 // Lock the mutex for the given key. Caller is responsible for calling Unlock
 // for the same key
-func (m *KV) Lock(key string) {
-	log.Printf("[DEBUG] Locking %q", key)
+func (m *KV) Lock(ctx context.Context, key string) {
+	tflog.Trace(ctx, "Locking", map[string]interface{}{"key": key})
 	m.get(key).Lock()
-	log.Printf("[DEBUG] Locked %q", key)
+	tflog.Trace(ctx, "Locked", map[string]interface{}{"key": key})
 }
 
 // Unlock the mutex for the given key. Caller must have called Lock for the same key first
-func (m *KV) Unlock(key string) {
-	log.Printf("[DEBUG] Unlocking %q", key)
+func (m *KV) Unlock(ctx context.Context, key string) {
+	tflog.Trace(ctx, "Unlocking", map[string]interface{}{"key": key})
 	m.get(key).Unlock()
-	log.Printf("[DEBUG] Unlocked %q", key)
+	tflog.Trace(ctx, "Unlocked", map[string]interface{}{"key": key})
 }
 
 // Returns a mutex for the given key, no guarantee of its lock status

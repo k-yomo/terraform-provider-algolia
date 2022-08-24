@@ -3,12 +3,12 @@ package provider
 import (
 	"context"
 	"fmt"
-	"log"
 	"strconv"
 	"time"
 
 	"github.com/algolia/algoliasearch-client-go/v3/algolia/opt"
 	"github.com/algolia/algoliasearch-client-go/v3/algolia/search"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -588,8 +588,8 @@ func resourceIndexCreate(ctx context.Context, d *schema.ResourceData, m interfac
 		primaryIndexName := v.(string)
 		// Modifying the primary's replica setting on primary can cause problems if other replicas
 		// are modifying it at the same time. Lock the primary until we're done in order to prevent that.
-		mutexKV.Lock(algoliaIndexMutexKey(apiClient.appID, primaryIndexName))
-		defer mutexKV.Unlock(algoliaIndexMutexKey(apiClient.appID, primaryIndexName))
+		mutexKV.Lock(ctx, algoliaIndexMutexKey(apiClient.appID, primaryIndexName))
+		defer mutexKV.Unlock(ctx, algoliaIndexMutexKey(apiClient.appID, primaryIndexName))
 
 		primaryIndex := apiClient.searchClient.InitIndex(primaryIndexName)
 		primaryIndexSettings, err := primaryIndex.GetSettings(ctx)
@@ -658,8 +658,8 @@ func resourceIndexDelete(ctx context.Context, d *schema.ResourceData, m interfac
 		primaryIndexName := v.(string)
 		// Modifying the primary's replica setting on primary can cause problems if other replicas
 		// are modifying it at the same time. Lock the primary until we're done in order to prevent that.
-		mutexKV.Lock(algoliaIndexMutexKey(apiClient.appID, primaryIndexName))
-		defer mutexKV.Unlock(algoliaIndexMutexKey(apiClient.appID, primaryIndexName))
+		mutexKV.Lock(ctx, algoliaIndexMutexKey(apiClient.appID, primaryIndexName))
+		defer mutexKV.Unlock(ctx, algoliaIndexMutexKey(apiClient.appID, primaryIndexName))
 
 		primaryIndex := apiClient.searchClient.InitIndex(primaryIndexName)
 		primaryIndexSettings, err := primaryIndex.GetSettings(ctx)
@@ -707,7 +707,7 @@ func refreshIndexState(ctx context.Context, d *schema.ResourceData, m interface{
 	settings, err := index.GetSettings(ctx)
 	if err != nil {
 		if algoliautil.IsNotFoundError(err) {
-			log.Printf("[WARN] index (%s) not found, removing from state", d.Id())
+			tflog.Warn(ctx, fmt.Sprintf("index (%s) not found, removing from state", d.Id()))
 			d.SetId("")
 			return nil
 		}
