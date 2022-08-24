@@ -1,6 +1,7 @@
 package mutex
 
 import (
+	"context"
 	"sync"
 	"testing"
 	"time"
@@ -10,6 +11,7 @@ func TestKV(t *testing.T) {
 	t.Parallel()
 
 	mutexKV := NewKV()
+	ctx := context.Background()
 	start := time.Now()
 
 	wg := sync.WaitGroup{}
@@ -17,18 +19,18 @@ func TestKV(t *testing.T) {
 	go func() {
 		defer wg.Done()
 
-		mutexKV.Lock("test")
+		mutexKV.Lock(ctx, "test")
 		time.Sleep(100 * time.Millisecond)
-		mutexKV.Unlock("test")
+		mutexKV.Unlock(ctx, "test")
 	}()
 
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
 
-		mutexKV.Lock("test")
+		mutexKV.Lock(ctx, "test")
 		time.Sleep(100 * time.Millisecond)
-		mutexKV.Unlock("test")
+		mutexKV.Unlock(ctx, "test")
 	}()
 	wg.Wait()
 

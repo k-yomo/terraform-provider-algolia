@@ -3,13 +3,14 @@ package provider
 import (
 	"context"
 	"errors"
-	"log"
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/algolia/algoliasearch-client-go/v3/algolia/opt"
 	"github.com/algolia/algoliasearch-client-go/v3/algolia/search"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -377,7 +378,7 @@ func refreshRuleState(ctx context.Context, d *schema.ResourceData, m interface{}
 	})
 	if err != nil {
 		if algoliautil.IsNotFoundError(err) {
-			log.Printf("[WARN] rule (%s) not found, removing from state", d.Id())
+			tflog.Warn(ctx, fmt.Sprintf("rule (%s) not found, removing from state", d.Id()))
 			d.SetId("")
 			return nil
 		}
