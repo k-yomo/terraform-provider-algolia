@@ -568,17 +568,16 @@ func resourceVirtualIndexCreate(ctx context.Context, d *schema.ResourceData, m i
 
 	primaryIndexName := d.Get("primary_index_name").(string)
 	primaryIndex := apiClient.searchClient.InitIndex(primaryIndexName)
+
+	// Modifying the primary's replica setting on primary can cause problems if other replicas
+	// are modifying it at the same time. Lock the primary until we're done in order to prevent that.
+	mutexKV.Lock(ctx, algoliaIndexMutexKey(apiClient.appID, primaryIndexName))
 	primaryIndexSettings, err := primaryIndex.GetSettings(ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-
 	replicas := primaryIndexSettings.Replicas.Get()
 	if !algoliautil.IndexExistsInReplicas(replicas, indexName, true) {
-		// Modifying the primary's replica setting on primary can cause problems if other replicas
-		// are modifying it at the same time. Lock the primary until we're done in order to prevent that.
-		mutexKV.Lock(ctx, algoliaIndexMutexKey(apiClient.appID, primaryIndexName))
-		defer mutexKV.Unlock(ctx, algoliaIndexMutexKey(apiClient.appID, primaryIndexName))
 
 		newReplicas := append(primaryIndexSettings.Replicas.Get(), fmt.Sprintf("virtual(%s)", indexName))
 		res, err := primaryIndex.SetSettings(search.Settings{
@@ -591,6 +590,7 @@ func resourceVirtualIndexCreate(ctx context.Context, d *schema.ResourceData, m i
 			return diag.FromErr(err)
 		}
 	}
+	mutexKV.Unlock(ctx, algoliaIndexMutexKey(apiClient.appID, primaryIndexName))
 
 	index := apiClient.searchClient.InitIndex(indexName)
 	res, err := index.SetSettings(mapToVirtualIndexSettings(d))
