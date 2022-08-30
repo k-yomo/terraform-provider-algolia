@@ -574,6 +574,7 @@ func resourceVirtualIndexCreate(ctx context.Context, d *schema.ResourceData, m i
 	mutexKV.Lock(ctx, algoliaIndexMutexKey(apiClient.appID, primaryIndexName))
 	primaryIndexSettings, err := primaryIndex.GetSettings(ctx)
 	if err != nil {
+		mutexKV.Unlock(ctx, algoliaIndexMutexKey(apiClient.appID, primaryIndexName))
 		return diag.FromErr(err)
 	}
 	replicas := primaryIndexSettings.Replicas.Get()
@@ -584,9 +585,11 @@ func resourceVirtualIndexCreate(ctx context.Context, d *schema.ResourceData, m i
 			Replicas: opt.Replicas(newReplicas...),
 		})
 		if err != nil {
+			mutexKV.Unlock(ctx, algoliaIndexMutexKey(apiClient.appID, primaryIndexName))
 			return diag.FromErr(err)
 		}
 		if err := res.Wait(); err != nil {
+			mutexKV.Unlock(ctx, algoliaIndexMutexKey(apiClient.appID, primaryIndexName))
 			return diag.FromErr(err)
 		}
 	}
