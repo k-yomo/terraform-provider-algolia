@@ -1,9 +1,7 @@
 package main
 
 import (
-	"context"
 	"flag"
-	"log"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/plugin"
 	"github.com/hashicorp/terraform-provider-algolia/internal/provider"
@@ -37,14 +35,7 @@ func main() {
 	opts := &plugin.ServeOpts{
 		ProviderFunc: provider.New(version),
 		ProviderAddr: "registry.terraform.io/k-yomo/algolia",
-	}
-
-	if debugMode {
-		_, _, err := plugin.DebugServe(context.Background(), opts)
-		if err != nil {
-			log.Fatal(err.Error())
-		}
-		return
+		Debug:        debugMode,
 	}
 
 	plugin.Serve(opts)
