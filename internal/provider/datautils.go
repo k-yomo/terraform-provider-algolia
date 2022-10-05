@@ -14,7 +14,8 @@ func setValues(d *schema.ResourceData, values map[string]interface{}) error {
 }
 
 func castStringList(list interface{}) []string {
-	var strs []string
+	// we are initializing non nil array to be marshaled to [] in JSON
+	strs := []string{}
 	for _, v := range list.([]interface{}) {
 		strs = append(strs, v.(string))
 	}
@@ -22,7 +23,8 @@ func castStringList(list interface{}) []string {
 }
 
 func castStringSet(set interface{}) []string {
-	var strs []string
+	// we are initializing non nil array to be marshaled to [] in JSON
+	strs := []string{}
 	for _, v := range set.(*schema.Set).List() {
 		strs = append(strs, v.(string))
 	}
