@@ -1,5 +1,5 @@
-resource "algolia_index" "example" {
-  name = "example"
+resource "algolia_index" "primary" {
+  name = "primary-index"
   attributes_config {
     searchable_attributes = [
       "title",
@@ -36,4 +36,10 @@ resource "algolia_index" "example" {
   languages_config {
     remove_stop_words_for = ["en"]
   }
+}
+
+resource "algolia_index" "replica" {
+  name               = "replica-index"
+  primary_index_name = algolia_index.primary.name
+  // Configure settings for this replica
 }
