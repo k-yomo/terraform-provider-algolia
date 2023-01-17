@@ -32,7 +32,7 @@ func TestAccResourceIndex(t *testing.T) {
 					testCheckResourceListAttr(resourceName, "highlight_and_snippet_config.0.attributes_to_snippet", []string{}),
 					resource.TestCheckResourceAttr(resourceName, "highlight_and_snippet_config.0.highlight_pre_tag", "<em>"),
 					resource.TestCheckResourceAttr(resourceName, "highlight_and_snippet_config.0.highlight_post_tag", "</em>"),
-					resource.TestCheckResourceAttr(resourceName, "highlight_and_snippet_config.0.snippet_ellipsis_text", ""),
+					resource.TestCheckResourceAttr(resourceName, "highlight_and_snippet_config.0.snippet_ellipsis_text", "…"),
 					resource.TestCheckResourceAttr(resourceName, "highlight_and_snippet_config.0.restrict_highlight_and_snippet_arrays", "false"),
 					resource.TestCheckResourceAttr(resourceName, "deletion_protection", "true"),
 				),
