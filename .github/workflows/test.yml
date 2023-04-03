@@ -7,9 +7,8 @@ on:
     - cron: '0 13 * * *'
 
 jobs:
-  # ensure the code builds...
   build:
-    name: Lint and Build
+    name: Build
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -22,17 +21,31 @@ jobs:
     - name: Get dependencies
       run: go mod download
 
-    - name: Lint
-      uses: golangci/golangci-lint-action@v3
-      with:
-        version: v1.48
-
-    - name: Docs check
-      run: make docs-check
-
     - name: Build
       run: |
         go build -v .
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v4
+        with:
+          go-version-file: 'go.mod'
+          cache: true
+
+      - name: Get dependencies
+        run: go mod download
+
+      - name: Lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: v1.48
+
+      - name: Docs check
+        run: make docs-check
 
   test:
     name: Matrix Test
