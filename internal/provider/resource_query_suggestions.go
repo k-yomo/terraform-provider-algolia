@@ -9,7 +9,7 @@ import (
 	"github.com/algolia/algoliasearch-client-go/v3/algolia/suggestions"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/hashicorp/terraform-provider-algolia/internal/algoliautil"
@@ -214,15 +214,15 @@ func refreshQuerySuggestionsState(ctx context.Context, d *schema.ResourceData, m
 	indexName := d.Id()
 
 	var querySuggestionsIndexConfig *suggestions.IndexConfiguration
-	err := resource.RetryContext(ctx, 1*time.Minute, func() *resource.RetryError {
+	err := retry.RetryContext(ctx, 1*time.Minute, func() *retry.RetryError {
 		var err error
 		querySuggestionsIndexConfig, err = suggestionsClient.GetConfig(indexName, ctx)
 
 		if d.IsNewResource() && algoliautil.IsRetryableError(err) {
-			return resource.RetryableError(err)
+			return retry.RetryableError(err)
 		}
 		if err != nil {
-			return resource.NonRetryableError(err)
+			return retry.NonRetryableError(err)
 		}
 
 		return nil
