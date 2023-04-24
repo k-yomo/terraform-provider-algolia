@@ -1090,9 +1090,6 @@ func unmarshalLanguagesConfig(configured interface{}, settings *search.Settings,
 			settings.RemoveStopWords = opt.RemoveStopWordsFor(set...)
 		}
 	}
-	if v, ok := config["decompounded_attributes"]; ok {
-		unmarshalLanguagesConfigDecompoundedAttributes(v, settings)
-	}
 	if v, ok := config["query_languages"]; ok {
 		settings.QueryLanguages = opt.QueryLanguages(castStringSet(v)...)
 	}
