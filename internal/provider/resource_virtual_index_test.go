@@ -8,11 +8,6 @@ import (
 )
 
 func TestAccResourceVirtualIndex(t *testing.T) {
-	// NOTE: Deleting virtual replica fails due to the same reason as the below issue.
-	// https://github.com/algolia/algoliasearch-client-javascript/issues/1377
-	// TODO: Remove t.Skip() once the issue is resolved.
-	t.Skip()
-
 	indexName := randResourceID(80)
 	virtualIndexName := fmt.Sprintf("%s_virtual", indexName)
 	indexResourceName := fmt.Sprintf("algolia_index.%s", indexName)
@@ -75,6 +70,13 @@ resource "algolia_index" "` + primaryIndexName + `" {
 
   ranking_config {
     ranking = ["typo", "geo"]
+  }
+
+  languages_config {
+	decompounded_attributes {
+		language = "de"
+		attributes = ["name"]
+	}
   }
 
   deletion_protection = false
