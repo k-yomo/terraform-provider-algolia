@@ -173,5 +173,3 @@ Read-Only:
 - `min_word_size_for_2_typos` (Number)
 - `separators_to_index` (String)
 - `typo_tolerance` (String)
-
-
