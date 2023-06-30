@@ -29,6 +29,7 @@ func TestAccResourceAPIKey(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "max_queries_per_ip_per_hour", "0"),
 					resource.TestCheckNoResourceAttr(resourceName, "indexes.0"),
 					resource.TestCheckResourceAttr(resourceName, "description", ""),
+					resource.TestCheckResourceAttr(resourceName, "query_parameters", ""),
 				),
 			},
 			{
@@ -42,6 +43,7 @@ func TestAccResourceAPIKey(t *testing.T) {
 					testCheckResourceListAttr(resourceName, "indexes", []string{"dev_*"}),
 					testCheckResourceListAttr(resourceName, "referers", []string{"https://algolia.com/\\*"}),
 					resource.TestCheckResourceAttr(resourceName, "description", "This is a test api key"),
+					resource.TestCheckResourceAttr(resourceName, "query_parameters", "typoTolerance=strict&ignorePlurals=false"),
 				),
 			},
 			{
@@ -75,6 +77,7 @@ resource "algolia_api_key" "%s" {
   indexes                     = ["dev_*"]
   referers                    = ["https://algolia.com/\\*"]
   description                 = "This is a test api key"
+  query_parameters            = "typoTolerance=strict&ignorePlurals=false"
 }`, name)
 }
 
