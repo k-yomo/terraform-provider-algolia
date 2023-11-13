@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/algolia/algoliasearch-client-go/v3/algolia/search"
+	"github.com/algolia/algoliasearch-client-go/v3/algolia/transport"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -195,7 +196,7 @@ func refreshAPIKeyState(ctx context.Context, d *schema.ResourceData, m interface
 		"max_hits_per_query":          key.MaxHitsPerQuery,
 		"max_queries_per_ip_per_hour": key.MaxQueriesPerIPPerHour,
 		"referers":                    key.Referers,
-		"query_parameters":            key.QueryParameters,
+		"query_parameters":            transport.URLEncode(key.QueryParameters),
 		"description":                 key.Description,
 		"indexes":                     key.Indexes,
 		"created_at":                  key.CreatedAt.Unix(),
@@ -227,7 +228,7 @@ func mapToAPIKey(d *schema.ResourceData) search.Key {
 		MaxQueriesPerIPPerHour: d.Get("max_queries_per_ip_per_hour").(int),
 		Indexes:                castStringSet(d.Get("indexes")),
 		Referers:               castStringSet(d.Get("referers")),
-		QueryParameters:        d.Get("query_parameters").(string),
+		QueryParameters:        castKeyQueryParams(d.Get("query_parameters")),
 		Description:            d.Get("description").(string),
 	}
 }
