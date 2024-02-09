@@ -2,6 +2,8 @@ package provider
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/algolia/algoliasearch-client-go/v3/algolia/transport"
+	"github.com/algolia/algoliasearch-client-go/v3/algolia/search"
 )
 
 func setValues(d *schema.ResourceData, values map[string]interface{}) error {
@@ -45,4 +47,19 @@ func castInterfaceMap(m interface{}) map[string]interface{} {
 		interfaceMap[k] = v
 	}
 	return interfaceMap
+}
+
+func castKeyQueryParams(qp string) KeyQueryParams {
+
+	type QueryParameters KeyQueryParams
+
+	err = transport.URLDecode(
+		[]byte(qp),
+		&QueryParameters,
+	)
+	if err != nil {
+		return fmt.Errorf("cannot decode QueryParameters %q: %v", tmp.QueryParameters, err)
+	}
+
+	return QueryParameters
 }

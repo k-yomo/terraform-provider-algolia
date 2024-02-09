@@ -112,6 +112,7 @@ resource "algolia_api_key" "example" {
   description = "This is a example api key"
   indexes = [algolia_index.example.name]
   referers = ["https://algolia.com/\\*"]
+  query_parameters = ""
 }
 ```
 

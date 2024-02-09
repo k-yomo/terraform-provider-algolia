@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/algolia/algoliasearch-client-go/v3/algolia/search"
+	"github.com/algolia/algoliasearch-client-go/v3/algolia/transport"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -88,6 +89,11 @@ This parameter can be used to protect you from attempts at retrieving your entir
 				Set:         schema.HashString,
 				Optional:    true,
 				Description: "List of referrers that can perform an operation. You can use the “*” (asterisk) character as a wildcard to match subdomains, or all pages of a website. For example, `\"https://algolia.com/\\*\"` matches all referrers starting with `\"https://algolia.com/\"`, and `\"\\*.algolia.com\"` matches all referrers ending with `\".algolia.com\"`. If you want to allow all possible referrers from the `algolia.com` domain, you can use `\"\\*algolia.com/\\*\"`.",
+			},
+			"query_parameters": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Specify the list of query parameters. You can force the query parameters for a query using the url string format.",
 			},
 			"description": {
 				Type:        schema.TypeString,
@@ -190,6 +196,7 @@ func refreshAPIKeyState(ctx context.Context, d *schema.ResourceData, m interface
 		"max_hits_per_query":          key.MaxHitsPerQuery,
 		"max_queries_per_ip_per_hour": key.MaxQueriesPerIPPerHour,
 		"referers":                    key.Referers,
+		"query_parameters":            transport.URLEncode(key.QueryParameters),
 		"description":                 key.Description,
 		"indexes":                     key.Indexes,
 		"created_at":                  key.CreatedAt.Unix(),
@@ -221,6 +228,7 @@ func mapToAPIKey(d *schema.ResourceData) search.Key {
 		MaxQueriesPerIPPerHour: d.Get("max_queries_per_ip_per_hour").(int),
 		Indexes:                castStringSet(d.Get("indexes")),
 		Referers:               castStringSet(d.Get("referers")),
+		QueryParameters:        castKeyQueryParams(d.Get("query_parameters")),
 		Description:            d.Get("description").(string),
 	}
 }
