@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"slices"
 	"strings"
 
 	"github.com/algolia/algoliasearch-client-go/v3/algolia/search"
@@ -17,13 +18,13 @@ func main() {
 
 	log.Printf("[START] Deletes All indices with prefix '%s' in appID: %s", algoliautil.TestIndexNamePrefix, appID)
 	algoliaClient := search.NewClient(appID, apiKey)
-	res, err := algoliaClient.ListIndices()
+	listIndicesRes, err := algoliaClient.ListIndices()
 	if err != nil {
 		log.Fatal("Failed to list indices")
 	}
 
 	eg := errgroup.Group{}
-	for _, index := range res.Items {
+	for _, index := range listIndicesRes.Items {
 		if !strings.HasPrefix(index.Name, algoliautil.TestIndexNamePrefix) {
 			continue
 		}
@@ -44,5 +45,31 @@ func main() {
 	if err := eg.Wait(); err != nil {
 		log.Fatal(err)
 	}
-	log.Println("[END] All indices are deleted")
+
+	listAPIKeysRes, err := algoliaClient.ListAPIKeys()
+	if err != nil {
+		log.Fatal("Failed to list api keys")
+	}
+	for _, apiKey := range listAPIKeysRes.Keys {
+		apiKey := apiKey
+		isTestAPIKey := slices.ContainsFunc(apiKey.Indexes, func(index string) bool {
+			return strings.HasPrefix(index, algoliautil.TestIndexNamePrefix)
+		})
+		if !isTestAPIKey {
+			continue
+		}
+		eg.Go(func() error {
+			_, err := algoliaClient.DeleteAPIKey(apiKey.Value)
+			if err != nil {
+				return fmt.Errorf("failed to delete %s: %w", apiKey.Value, err)
+			}
+			log.Printf("[INFO] API key '%s' is deleted", apiKey.Value)
+			return nil
+		})
+	}
+	if err := eg.Wait(); err != nil {
+		log.Fatal(err)
+	}
+
+	log.Println("[END] All indices and API keys are deleted")
 }
