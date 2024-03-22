@@ -91,12 +91,12 @@ resource "algolia_rule" "example" {
   }
 
   consequence {
-    params {
-      automatic_facet_filters {
+    params_json = jsondecode({
+      automaticFacetFilters = {
         facet = "category"
         disjunctive = true
       }
-    }
+    })
   }
 }
 

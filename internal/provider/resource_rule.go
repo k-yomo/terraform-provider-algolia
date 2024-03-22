@@ -2,6 +2,7 @@ package provider
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strconv"
@@ -108,8 +109,9 @@ At least one of the following object must be used:
 							Type:         schema.TypeList,
 							Optional:     true,
 							MaxItems:     1,
-							AtLeastOneOf: []string{"consequence.0.params", "consequence.0.promote", "consequence.0.hide", "consequence.0.user_data"},
-							Description:  "Additional search parameters. Any valid search parameter is allowed. Specific treatment is applied to these fields: `query`, `automaticFacetFilters`, `automaticOptionalFacetFilters`.",
+							AtLeastOneOf: []string{"consequence.0.params", "consequence.0.params_json", "consequence.0.promote", "consequence.0.hide", "consequence.0.user_data"},
+							Description:  "**Deprecated:** Use `params_json` instead. Additional search parameters. Any valid search parameter is allowed. Specific treatment is applied to these fields: `query`, `automaticFacetFilters`, `automaticOptionalFacetFilters`.",
+							Deprecated:   "Use `params_json` instead",
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
 									"query": {
@@ -202,10 +204,18 @@ At least one of the following object must be used:
 								},
 							},
 						},
+						"params_json": {
+							Type:             schema.TypeString,
+							Optional:         true,
+							AtLeastOneOf:     []string{"consequence.0.params", "consequence.0.params_json", "consequence.0.promote", "consequence.0.hide", "consequence.0.user_data"},
+							Description:      "Additional search parameters in JSON format. Any valid search parameter is allowed. Specific treatment is applied to these fields: `query`, `automaticFacetFilters`, `automaticOptionalFacetFilters`.",
+							DiffSuppressFunc: diffJsonSuppress,
+							ValidateFunc:     validation.StringIsJSON,
+						},
 						"promote": {
 							Type:         schema.TypeList,
 							Optional:     true,
-							AtLeastOneOf: []string{"consequence.0.params", "consequence.0.promote", "consequence.0.hide", "consequence.0.user_data"},
+							AtLeastOneOf: []string{"consequence.0.params", "consequence.0.params_json", "consequence.0.promote", "consequence.0.hide", "consequence.0.user_data"},
 							Description:  "Objects to promote as hits.",
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
@@ -228,13 +238,13 @@ At least one of the following object must be used:
 							Elem:         &schema.Schema{Type: schema.TypeString},
 							Set:          schema.HashString,
 							Optional:     true,
-							AtLeastOneOf: []string{"consequence.0.params", "consequence.0.promote", "consequence.0.hide", "consequence.0.user_data"},
+							AtLeastOneOf: []string{"consequence.0.params", "consequence.0.params_json", "consequence.0.promote", "consequence.0.hide", "consequence.0.user_data"},
 							Description:  "List of object IDs to hide from hits.",
 						},
 						"user_data": {
 							Type:         schema.TypeString,
 							Optional:     true,
-							AtLeastOneOf: []string{"consequence.0.params", "consequence.0.promote", "consequence.0.hide", "consequence.0.user_data"},
+							AtLeastOneOf: []string{"consequence.0.params", "consequence.0.params_json", "consequence.0.promote", "consequence.0.hide", "consequence.0.user_data"},
 							Description:  "Custom JSON formatted string that will be appended to the userData array in the response. This object is not interpreted by the API. It is limited to 1kB of minified JSON.",
 						},
 					},
@@ -279,7 +289,10 @@ At least one of the following object must be used:
 func resourceRuleCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	apiClient := m.(*apiClient)
 
-	rule := mapToRule(d)
+	rule, err := mapToRule(d)
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
 	index := apiClient.searchClient.InitIndex(d.Get("index_name").(string))
 	res, err := index.SaveRule(rule, ctx)
@@ -305,7 +318,10 @@ func resourceRuleRead(ctx context.Context, d *schema.ResourceData, m interface{}
 func resourceRuleUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	apiClient := m.(*apiClient)
 
-	rule := mapToRule(d)
+	rule, err := mapToRule(d)
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
 	index := apiClient.searchClient.InitIndex(d.Get("index_name").(string))
 	res, err := index.SaveRule(rule, ctx)
@@ -401,43 +417,53 @@ func refreshRuleState(ctx context.Context, d *schema.ResourceData, m interface{}
 	consequence := map[string]interface{}{}
 	{
 		if rule.Consequence.Params != nil {
-			params := rule.Consequence.Params
-			paramsData := map[string]interface{}{}
-			simpleQuery, objectQuery := params.Query.Get()
-			if objectQuery != nil {
-				var edits []interface{}
-				for _, edit := range objectQuery.Edits {
-					edits = append(edits, map[string]interface{}{
-						"type":   edit.Type,
-						"delete": edit.Delete,
-						"insert": edit.Insert,
+			if isParamsJSONSet(d) {
+				paramsJSON, err := json.Marshal(rule.Consequence.Params)
+				if err != nil {
+					return fmt.Errorf("failed to marshal consequence params: %w", err)
+				}
+				consequence["params_json"] = string(paramsJSON)
+			} else {
+				params := rule.Consequence.Params
+				paramsData := map[string]interface{}{}
+				if params.Query != nil {
+					simpleQuery, objectQuery := params.Query.Get()
+					if objectQuery != nil {
+						var edits []interface{}
+						for _, edit := range objectQuery.Edits {
+							edits = append(edits, map[string]interface{}{
+								"type":   edit.Type,
+								"delete": edit.Delete,
+								"insert": edit.Insert,
+							})
+						}
+						paramsData["object_query"] = edits
+					} else {
+						paramsData["query"] = simpleQuery
+					}
+				}
+				var automaticFacetFilters []interface{}
+				for _, aff := range params.AutomaticFacetFilters {
+					automaticFacetFilters = append(automaticFacetFilters, map[string]interface{}{
+						"facet":       aff.Facet,
+						"score":       aff.Score,
+						"disjunctive": aff.Disjunctive,
 					})
 				}
-				paramsData["object_query"] = edits
-			} else {
-				paramsData["query"] = simpleQuery
-			}
-			var automaticFacetFilters []interface{}
-			for _, aff := range params.AutomaticFacetFilters {
-				automaticFacetFilters = append(automaticFacetFilters, map[string]interface{}{
-					"facet":       aff.Facet,
-					"score":       aff.Score,
-					"disjunctive": aff.Disjunctive,
-				})
-			}
-			paramsData["automatic_facet_filters"] = automaticFacetFilters
+				paramsData["automatic_facet_filters"] = automaticFacetFilters
 
-			var automaticOptionalFacetFilters []interface{}
-			for _, aff := range params.AutomaticOptionalFacetFilters {
-				automaticOptionalFacetFilters = append(automaticOptionalFacetFilters, map[string]interface{}{
-					"facet":       aff.Facet,
-					"score":       aff.Score,
-					"disjunctive": aff.Disjunctive,
-				})
-			}
-			paramsData["automatic_optional_facet_filters"] = automaticOptionalFacetFilters
+				var automaticOptionalFacetFilters []interface{}
+				for _, aff := range params.AutomaticOptionalFacetFilters {
+					automaticOptionalFacetFilters = append(automaticOptionalFacetFilters, map[string]interface{}{
+						"facet":       aff.Facet,
+						"score":       aff.Score,
+						"disjunctive": aff.Disjunctive,
+					})
+				}
+				paramsData["automatic_optional_facet_filters"] = automaticOptionalFacetFilters
 
-			consequence["params"] = []interface{}{paramsData}
+				consequence["params"] = []interface{}{paramsData}
+			}
 		}
 		var promotedObjects []interface{}
 		for _, p := range rule.Consequence.Promote {
@@ -490,7 +516,18 @@ func refreshRuleState(ctx context.Context, d *schema.ResourceData, m interface{}
 	return nil
 }
 
-func mapToRule(d *schema.ResourceData) search.Rule {
+func isParamsJSONSet(d *schema.ResourceData) bool {
+	l, ok := d.Get("consequence").([]interface{})
+	if !ok || len(l) == 0 {
+		return false
+	}
+
+	consequence := l[0].(map[string]interface{})
+	_, ok = consequence["params_json"]
+	return ok
+}
+
+func mapToRule(d *schema.ResourceData) (search.Rule, error) {
 	rule := search.Rule{
 		ObjectID: d.Get("object_id").(string),
 	}
@@ -498,7 +535,11 @@ func mapToRule(d *schema.ResourceData) search.Rule {
 	if v, ok := d.GetOk("conditions"); ok {
 		unmarshalConditions(v, &rule)
 	}
-	rule.Consequence = unmarshalConsequence(d.Get("consequence"))
+	var err error
+	rule.Consequence, err = unmarshalConsequence(d.Get("consequence"))
+	if err != nil {
+		return rule, err
+	}
 	if v, ok := d.GetOk("description"); ok {
 		rule.Description = v.(string)
 	}
@@ -509,7 +550,7 @@ func mapToRule(d *schema.ResourceData) search.Rule {
 		rule.Validity = unmarshalValidity(v)
 	}
 
-	return rule
+	return rule, nil
 }
 
 func unmarshalConditions(configured interface{}, rule *search.Rule) {
@@ -544,16 +585,23 @@ func unmarshalConditions(configured interface{}, rule *search.Rule) {
 	rule.Conditions = conditions
 }
 
-func unmarshalConsequence(configured interface{}) search.RuleConsequence {
+func unmarshalConsequence(configured interface{}) (search.RuleConsequence, error) {
 	l := configured.([]interface{})
 	if len(l) == 0 || l[0] == nil {
-		return search.RuleConsequence{}
+		return search.RuleConsequence{}, nil
 	}
 
 	config := l[0].(map[string]interface{})
 	consequence := search.RuleConsequence{}
 	if v, ok := config["params"]; ok {
 		consequence.Params = unmarshalConsequenceParams(v)
+	}
+	if v, ok := config["params_json"]; ok {
+		var err error
+		consequence.Params, err = unmarshalConsequenceParamsJSON(v)
+		if err != nil {
+			return search.RuleConsequence{}, err
+		}
 	}
 	if v, ok := config["promote"]; ok {
 		var promotedObjects []search.PromotedObject
@@ -578,7 +626,7 @@ func unmarshalConsequence(configured interface{}) search.RuleConsequence {
 		consequence.UserData = v.(string)
 	}
 	consequence.UserData = nil
-	return consequence
+	return consequence, nil
 }
 
 func unmarshalConsequenceParams(configured interface{}) *search.RuleParams {
@@ -616,6 +664,15 @@ func unmarshalConsequenceParams(configured interface{}) *search.RuleParams {
 	}
 
 	return &params
+}
+
+func unmarshalConsequenceParamsJSON(configured interface{}) (*search.RuleParams, error) {
+	paramsJSON := configured.(string)
+	params := search.RuleParams{}
+	if err := json.Unmarshal([]byte(paramsJSON), &params); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal consequence params: %w", err)
+	}
+	return &params, nil
 }
 
 func unmarshalAutomaticFacetFilters(configured interface{}) []search.AutomaticFacetFilter {

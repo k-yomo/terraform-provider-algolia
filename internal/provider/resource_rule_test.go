@@ -26,8 +26,7 @@ func TestAccResourceRule(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "object_id", objectID),
 					resource.TestCheckResourceAttr(resourceName, "conditions.0.pattern", "{facet:category}"),
 					resource.TestCheckResourceAttr(resourceName, "conditions.0.anchoring", "contains"),
-					resource.TestCheckResourceAttr(resourceName, "consequence.0.params.0.automatic_facet_filters.0.facet", "category"),
-					resource.TestCheckResourceAttr(resourceName, "consequence.0.params.0.automatic_facet_filters.0.disjunctive", "true"),
+					resource.TestCheckResourceAttr(resourceName, "consequence.0.params_json", `{"automaticFacetFilters":[{"facet":"category","disjunctive":true,"score":0}]}`),
 					// testCheckResourceListAttr(resourceName, "consequence.0.promote.0.object_ids", []string{"promote-12345"}),
 					// resource.TestCheckResourceAttr(resourceName, "consequence.0.promote.0.position", "0"),
 					// testCheckResourceListAttr(resourceName, "consequence.0.hide", []string{"hide-12345"}),
@@ -40,8 +39,7 @@ func TestAccResourceRule(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "object_id", objectID),
 					resource.TestCheckResourceAttr(resourceName, "conditions.0.pattern", "{facet:tag}"),
 					resource.TestCheckResourceAttr(resourceName, "conditions.0.anchoring", "is"),
-					resource.TestCheckResourceAttr(resourceName, "consequence.0.params.0.automatic_facet_filters.0.facet", "tag"),
-					resource.TestCheckResourceAttr(resourceName, "consequence.0.params.0.automatic_facet_filters.0.disjunctive", "true"),
+					resource.TestCheckResourceAttr(resourceName, "consequence.0.params_json", `{"query":{"edits":[{"type":"remove","delete":"tag"}]},"automaticFacetFilters":[{"facet":"tag","disjunctive":true,"score":0}]}`),
 					resource.TestCheckResourceAttr(resourceName, "validity.0.from", "2030-01-01T00:00:00Z"),
 					resource.TestCheckResourceAttr(resourceName, "validity.0.until", "2030-03-31T23:59:59Z"),
 				),
@@ -75,12 +73,13 @@ resource "algolia_rule" "` + objectID + `" {
   }
 
   consequence {
-    params {
-      automatic_facet_filters {
+    params_json = jsonencode({
+      automaticFacetFilters = [{
         facet       = "category"
         disjunctive = true
-      }
-    }
+        score 	    = 0
+      }]
+    })
     // specifying id cause 404 error
     //promote {
     //  object_ids  = ["promote-12345"]
@@ -105,16 +104,19 @@ resource "algolia_rule" "` + objectID + `" {
   }
 
   consequence {
-    params {
-      object_query {
-		type = "remove"
-        delete = "tag"
+    params_json = jsonencode({
+      query = {
+		edits = [{
+          type = "remove"
+          delete = "tag"
+		}]
       }
-      automatic_facet_filters {
+      automaticFacetFilters = [{
         facet       = "tag"
         disjunctive = true
-      }
-    }
+        score 	    = 0
+      }]
+    })
   }
 
   validity {
