@@ -7,11 +7,11 @@ updates:
     directory: "/"
     schedule:
       # Check for updates to GitHub Actions every weekday
-      interval: "daily"
+      interval: "monthly"
 
   # Maintain dependencies for Go modules
   - package-ecosystem: "gomod"
     directory: "/"
     schedule:
       # Check for updates to Go modules every weekday
-      interval: "daily"
+      interval: "monthly"
