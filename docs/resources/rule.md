@@ -64,7 +64,8 @@ At least one of the following object must be used:
 Optional:
 
 - `hide` (Set of String) List of object IDs to hide from hits.
-- `params` (Block List, Max: 1) Additional search parameters. Any valid search parameter is allowed. Specific treatment is applied to these fields: `query`, `automaticFacetFilters`, `automaticOptionalFacetFilters`. (see [below for nested schema](#nestedblock--consequence--params))
+- `params` (Block List, Max: 1, Deprecated) **Deprecated:** Use `params_json` instead. Additional search parameters. Any valid search parameter is allowed. Specific treatment is applied to these fields: `query`, `automaticFacetFilters`, `automaticOptionalFacetFilters`. (see [below for nested schema](#nestedblock--consequence--params))
+- `params_json` (String) Additional search parameters in JSON format. Any valid search parameter is allowed. Specific treatment is applied to these fields: `query`, `automaticFacetFilters`, `automaticOptionalFacetFilters`.
 - `promote` (Block List) Objects to promote as hits. (see [below for nested schema](#nestedblock--consequence--promote))
 - `user_data` (String) Custom JSON formatted string that will be appended to the userData array in the response. This object is not interpreted by the API. It is limited to 1kB of minified JSON.
 
