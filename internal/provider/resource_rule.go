@@ -2,6 +2,7 @@ package provider
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strconv"
@@ -105,102 +106,12 @@ At least one of the following object must be used:
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"params": {
-							Type:         schema.TypeList,
-							Optional:     true,
-							MaxItems:     1,
-							AtLeastOneOf: []string{"consequence.0.params", "consequence.0.promote", "consequence.0.hide", "consequence.0.user_data"},
-							Description:  "Additional search parameters. Any valid search parameter is allowed. Specific treatment is applied to these fields: `query`, `automaticFacetFilters`, `automaticOptionalFacetFilters`.",
-							Elem: &schema.Resource{
-								Schema: map[string]*schema.Schema{
-									"query": {
-										Type:          schema.TypeString,
-										Optional:      true,
-										ConflictsWith: []string{"consequence.0.params.0.object_query"},
-										Description:   "It replaces the entire query string. Either one of `query` or `object_query` can be set.",
-									},
-									"object_query": {
-										Type:          schema.TypeList,
-										Optional:      true,
-										ConflictsWith: []string{"consequence.0.params.0.query"},
-										Description:   "It describes incremental edits to be made to the query string. Either one of `query` or `object_query` can be set.",
-										Elem: &schema.Resource{
-											Schema: map[string]*schema.Schema{
-												"type": {
-													Type:         schema.TypeString,
-													Required:     true,
-													ValidateFunc: validation.StringInSlice([]string{"remove", "replace"}, false),
-													Description: `Type of edit. Must be one of:
-	- ` + "`remove`" + `: when you want to delete some text and not replace it with anything
-	- ` + "`replace`" + `: when you want to delete some text and replace it with something else
-`,
-												},
-												"delete": {
-													Type:        schema.TypeString,
-													Required:    true,
-													Description: "Text or patterns to remove from the query string.",
-												},
-												"insert": {
-													Type:        schema.TypeString,
-													Optional:    true,
-													Description: "Text that should be inserted in place of the removed text inside the query string.",
-												},
-											},
-										},
-									},
-									"automatic_facet_filters": {
-										Type:        schema.TypeList,
-										Optional:    true,
-										Description: "Names of facets to which automatic filtering must be applied; they must match the facet name of a facet value placeholder in the query pattern.",
-										Elem: &schema.Resource{
-											Schema: map[string]*schema.Schema{
-												"facet": {
-													Type:        schema.TypeString,
-													Required:    true,
-													Description: "Attribute to filter on. This must match a facet placeholder in the Rule’s pattern.",
-												},
-												"score": {
-													Type:        schema.TypeInt,
-													Optional:    true,
-													Default:     1,
-													Description: "Score for the filter. Typically used for optional or disjunctive filters.",
-												},
-												"disjunctive": {
-													Type:        schema.TypeBool,
-													Optional:    true,
-													Default:     false,
-													Description: "Whether the filter is disjunctive (true) or conjunctive (false). If the filter applies multiple times, e.g. because the query string contains multiple values of the same facet, the multiple occurrences are combined with an `AND` operator by default (conjunctive mode). If the filter is specified as disjunctive, however, multiple occurrences are combined with an `OR` operator instead.",
-												},
-											},
-										},
-									},
-									"automatic_optional_facet_filters": {
-										Type:        schema.TypeList,
-										Optional:    true,
-										Description: "Same syntax as `automatic_facet_filters`, but the engine treats the filters as optional. Behaves like [optionalFilters](https://www.algolia.com/doc/api-reference/api-parameters/optionalFilters/).",
-										Elem: &schema.Resource{
-											Schema: map[string]*schema.Schema{
-												"facet": {
-													Type:        schema.TypeString,
-													Required:    true,
-													Description: "Attribute to filter on. This must match a facet placeholder in the Rule’s pattern.",
-												},
-												"score": {
-													Type:        schema.TypeInt,
-													Optional:    true,
-													Default:     1,
-													Description: "Score for the filter. Typically used for optional or disjunctive filters.",
-												},
-												"disjunctive": {
-													Type:        schema.TypeBool,
-													Optional:    true,
-													Default:     false,
-													Description: "Whether the filter is disjunctive (true) or conjunctive (false). If the filter applies multiple times, e.g. because the query string contains multiple values of the same facet, the multiple occurrences are combined with an `AND` operator by default (conjunctive mode). If the filter is specified as disjunctive, however, multiple occurrences are combined with an `OR` operator instead.",
-												},
-											},
-										},
-									},
-								},
-							},
+							Type:             schema.TypeString,
+							Optional:         true,
+							AtLeastOneOf:     []string{"consequence.0.params", "consequence.0.promote", "consequence.0.hide", "consequence.0.user_data"},
+							Description:      "Additional search parameters in JSON format. Any valid search parameter is allowed. Specific treatment is applied to these fields: `query`, `automaticFacetFilters`, `automaticOptionalFacetFilters`.",
+							DiffSuppressFunc: diffJsonSuppress,
+							ValidateFunc:     validation.StringIsJSON,
 						},
 						"promote": {
 							Type:         schema.TypeList,
@@ -236,6 +147,7 @@ At least one of the following object must be used:
 							Optional:     true,
 							AtLeastOneOf: []string{"consequence.0.params", "consequence.0.promote", "consequence.0.hide", "consequence.0.user_data"},
 							Description:  "Custom JSON formatted string that will be appended to the userData array in the response. This object is not interpreted by the API. It is limited to 1kB of minified JSON.",
+							ValidateFunc: validation.StringIsJSON,
 						},
 					},
 				},
@@ -279,7 +191,10 @@ At least one of the following object must be used:
 func resourceRuleCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	apiClient := m.(*apiClient)
 
-	rule := mapToRule(d)
+	rule, err := mapToRule(d)
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
 	index := apiClient.searchClient.InitIndex(d.Get("index_name").(string))
 	res, err := index.SaveRule(rule, ctx)
@@ -305,7 +220,10 @@ func resourceRuleRead(ctx context.Context, d *schema.ResourceData, m interface{}
 func resourceRuleUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	apiClient := m.(*apiClient)
 
-	rule := mapToRule(d)
+	rule, err := mapToRule(d)
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
 	index := apiClient.searchClient.InitIndex(d.Get("index_name").(string))
 	res, err := index.SaveRule(rule, ctx)
@@ -401,43 +319,11 @@ func refreshRuleState(ctx context.Context, d *schema.ResourceData, m interface{}
 	consequence := map[string]interface{}{}
 	{
 		if rule.Consequence.Params != nil {
-			params := rule.Consequence.Params
-			paramsData := map[string]interface{}{}
-			simpleQuery, objectQuery := params.Query.Get()
-			if objectQuery != nil {
-				var edits []interface{}
-				for _, edit := range objectQuery.Edits {
-					edits = append(edits, map[string]interface{}{
-						"type":   edit.Type,
-						"delete": edit.Delete,
-						"insert": edit.Insert,
-					})
-				}
-				paramsData["object_query"] = edits
-			} else {
-				paramsData["query"] = simpleQuery
+			paramsJSON, err := json.Marshal(rule.Consequence.Params)
+			if err != nil {
+				return fmt.Errorf("failed to marshal consequence params: %w", err)
 			}
-			var automaticFacetFilters []interface{}
-			for _, aff := range params.AutomaticFacetFilters {
-				automaticFacetFilters = append(automaticFacetFilters, map[string]interface{}{
-					"facet":       aff.Facet,
-					"score":       aff.Score,
-					"disjunctive": aff.Disjunctive,
-				})
-			}
-			paramsData["automatic_facet_filters"] = automaticFacetFilters
-
-			var automaticOptionalFacetFilters []interface{}
-			for _, aff := range params.AutomaticOptionalFacetFilters {
-				automaticOptionalFacetFilters = append(automaticOptionalFacetFilters, map[string]interface{}{
-					"facet":       aff.Facet,
-					"score":       aff.Score,
-					"disjunctive": aff.Disjunctive,
-				})
-			}
-			paramsData["automatic_optional_facet_filters"] = automaticOptionalFacetFilters
-
-			consequence["params"] = []interface{}{paramsData}
+			consequence["params"] = string(paramsJSON)
 		}
 		var promotedObjects []interface{}
 		for _, p := range rule.Consequence.Promote {
@@ -490,7 +376,7 @@ func refreshRuleState(ctx context.Context, d *schema.ResourceData, m interface{}
 	return nil
 }
 
-func mapToRule(d *schema.ResourceData) search.Rule {
+func mapToRule(d *schema.ResourceData) (search.Rule, error) {
 	rule := search.Rule{
 		ObjectID: d.Get("object_id").(string),
 	}
@@ -498,7 +384,11 @@ func mapToRule(d *schema.ResourceData) search.Rule {
 	if v, ok := d.GetOk("conditions"); ok {
 		unmarshalConditions(v, &rule)
 	}
-	rule.Consequence = unmarshalConsequence(d.Get("consequence"))
+	var err error
+	rule.Consequence, err = unmarshalConsequence(d.Get("consequence"))
+	if err != nil {
+		return rule, err
+	}
 	if v, ok := d.GetOk("description"); ok {
 		rule.Description = v.(string)
 	}
@@ -509,7 +399,7 @@ func mapToRule(d *schema.ResourceData) search.Rule {
 		rule.Validity = unmarshalValidity(v)
 	}
 
-	return rule
+	return rule, nil
 }
 
 func unmarshalConditions(configured interface{}, rule *search.Rule) {
@@ -544,16 +434,20 @@ func unmarshalConditions(configured interface{}, rule *search.Rule) {
 	rule.Conditions = conditions
 }
 
-func unmarshalConsequence(configured interface{}) search.RuleConsequence {
+func unmarshalConsequence(configured interface{}) (search.RuleConsequence, error) {
 	l := configured.([]interface{})
 	if len(l) == 0 || l[0] == nil {
-		return search.RuleConsequence{}
+		return search.RuleConsequence{}, nil
 	}
 
 	config := l[0].(map[string]interface{})
 	consequence := search.RuleConsequence{}
 	if v, ok := config["params"]; ok {
-		consequence.Params = unmarshalConsequenceParams(v)
+		var err error
+		consequence.Params, err = unmarshalConsequenceParams(v)
+		if err != nil {
+			return search.RuleConsequence{}, err
+		}
 	}
 	if v, ok := config["promote"]; ok {
 		var promotedObjects []search.PromotedObject
@@ -578,58 +472,17 @@ func unmarshalConsequence(configured interface{}) search.RuleConsequence {
 		consequence.UserData = v.(string)
 	}
 	consequence.UserData = nil
-	return consequence
+	return consequence, nil
 }
 
-func unmarshalConsequenceParams(configured interface{}) *search.RuleParams {
-	l := configured.([]interface{})
-	if len(l) == 0 || l[0] == nil {
-		return nil
-	}
-
-	paramsData := l[0].(map[string]interface{})
-
+func unmarshalConsequenceParams(configured interface{}) (*search.RuleParams, error) {
+	paramsJSON := configured.(string)
 	params := search.RuleParams{}
-	if v, ok := paramsData["query"]; ok {
-		params.Query = search.NewRuleQuerySimple(v.(string))
-	}
-	if v, ok := paramsData["object_query"]; ok {
-		var edits []search.QueryEdit
-		for _, e := range v.([]interface{}) {
-			editData := e.(map[string]interface{})
-			edit := search.QueryEdit{
-				Type:   search.QueryEditType(editData["type"].(string)),
-				Delete: editData["delete"].(string),
-			}
-			if insert, ok := editData["insert"]; ok {
-				edit.Insert = insert.(string)
-			}
-			edits = append(edits, edit)
-		}
-		params.Query = search.NewRuleQueryObject(search.RuleQueryObjectQuery{Edits: edits})
-	}
-	if v, ok := paramsData["automatic_facet_filters"]; ok {
-		params.AutomaticFacetFilters = unmarshalAutomaticFacetFilters(v)
-	}
-	if v, ok := paramsData["automatic_optional_facet_filters"]; ok {
-		params.AutomaticOptionalFacetFilters = unmarshalAutomaticFacetFilters(v)
+	if err := json.Unmarshal([]byte(paramsJSON), &params); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal consequence params: %w", err)
 	}
 
-	return &params
-}
-
-func unmarshalAutomaticFacetFilters(configured interface{}) []search.AutomaticFacetFilter {
-	var automaticFacetFilters []search.AutomaticFacetFilter
-	for _, v := range configured.([]interface{}) {
-		data := v.(map[string]interface{})
-		aff := search.AutomaticFacetFilter{
-			Facet:       data["facet"].(string),
-			Score:       data["score"].(int),
-			Disjunctive: data["disjunctive"].(bool),
-		}
-		automaticFacetFilters = append(automaticFacetFilters, aff)
-	}
-	return automaticFacetFilters
+	return &params, nil
 }
 
 func unmarshalValidity(configured interface{}) []search.TimeRange {

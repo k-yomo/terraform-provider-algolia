@@ -23,12 +23,12 @@ resource "algolia_rule" "example" {
   }
 
   consequence {
-    params {
-      automatic_facet_filters {
+    params = jsondecode({
+      automaticFacetFilters = {
         facet       = "category"
         disjunctive = true
       }
-    }
+    })
   }
 }
 ```
@@ -64,61 +64,9 @@ At least one of the following object must be used:
 Optional:
 
 - `hide` (Set of String) List of object IDs to hide from hits.
-- `params` (Block List, Max: 1) Additional search parameters. Any valid search parameter is allowed. Specific treatment is applied to these fields: `query`, `automaticFacetFilters`, `automaticOptionalFacetFilters`. (see [below for nested schema](#nestedblock--consequence--params))
+- `params` (String) Additional search parameters in JSON format. Any valid search parameter is allowed. Specific treatment is applied to these fields: `query`, `automaticFacetFilters`, `automaticOptionalFacetFilters`.
 - `promote` (Block List) Objects to promote as hits. (see [below for nested schema](#nestedblock--consequence--promote))
 - `user_data` (String) Custom JSON formatted string that will be appended to the userData array in the response. This object is not interpreted by the API. It is limited to 1kB of minified JSON.
-
-<a id="nestedblock--consequence--params"></a>
-### Nested Schema for `consequence.params`
-
-Optional:
-
-- `automatic_facet_filters` (Block List) Names of facets to which automatic filtering must be applied; they must match the facet name of a facet value placeholder in the query pattern. (see [below for nested schema](#nestedblock--consequence--params--automatic_facet_filters))
-- `automatic_optional_facet_filters` (Block List) Same syntax as `automatic_facet_filters`, but the engine treats the filters as optional. Behaves like [optionalFilters](https://www.algolia.com/doc/api-reference/api-parameters/optionalFilters/). (see [below for nested schema](#nestedblock--consequence--params--automatic_optional_facet_filters))
-- `object_query` (Block List) It describes incremental edits to be made to the query string. Either one of `query` or `object_query` can be set. (see [below for nested schema](#nestedblock--consequence--params--object_query))
-- `query` (String) It replaces the entire query string. Either one of `query` or `object_query` can be set.
-
-<a id="nestedblock--consequence--params--automatic_facet_filters"></a>
-### Nested Schema for `consequence.params.automatic_facet_filters`
-
-Required:
-
-- `facet` (String) Attribute to filter on. This must match a facet placeholder in the Rule’s pattern.
-
-Optional:
-
-- `disjunctive` (Boolean) Whether the filter is disjunctive (true) or conjunctive (false). If the filter applies multiple times, e.g. because the query string contains multiple values of the same facet, the multiple occurrences are combined with an `AND` operator by default (conjunctive mode). If the filter is specified as disjunctive, however, multiple occurrences are combined with an `OR` operator instead.
-- `score` (Number) Score for the filter. Typically used for optional or disjunctive filters.
-
-
-<a id="nestedblock--consequence--params--automatic_optional_facet_filters"></a>
-### Nested Schema for `consequence.params.automatic_optional_facet_filters`
-
-Required:
-
-- `facet` (String) Attribute to filter on. This must match a facet placeholder in the Rule’s pattern.
-
-Optional:
-
-- `disjunctive` (Boolean) Whether the filter is disjunctive (true) or conjunctive (false). If the filter applies multiple times, e.g. because the query string contains multiple values of the same facet, the multiple occurrences are combined with an `AND` operator by default (conjunctive mode). If the filter is specified as disjunctive, however, multiple occurrences are combined with an `OR` operator instead.
-- `score` (Number) Score for the filter. Typically used for optional or disjunctive filters.
-
-
-<a id="nestedblock--consequence--params--object_query"></a>
-### Nested Schema for `consequence.params.object_query`
-
-Required:
-
-- `delete` (String) Text or patterns to remove from the query string.
-- `type` (String) Type of edit. Must be one of:
-	- `remove`: when you want to delete some text and not replace it with anything
-	- `replace`: when you want to delete some text and replace it with something else
-
-Optional:
-
-- `insert` (String) Text that should be inserted in place of the removed text inside the query string.
-
-
 
 <a id="nestedblock--consequence--promote"></a>
 ### Nested Schema for `consequence.promote`
