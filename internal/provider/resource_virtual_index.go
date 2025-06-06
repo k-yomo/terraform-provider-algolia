@@ -441,7 +441,7 @@ List of supported languages are listed on http://nhttps//www.algolia.com/doc/api
 							Type:         schema.TypeString,
 							Optional:     true,
 							Default:      "attribute",
-							ValidateFunc: validation.StringInSlice([]string{"none", "lastWords", "firstWords", "allOptional"}, false),
+							ValidateFunc: validation.StringInSlice([]string{"none", "word", "attribute"}, false),
 							Description:  "Controls how the exact ranking criterion is computed when the query contains only one word.",
 						},
 						"alternatives_as_exact": {
