@@ -1,27 +1,37 @@
-run:
-  deadline: 3m
-
-issues:
-  max-per-linter: 0
-  max-same-issues: 0
-
+version: "2"
 linters:
-  disable-all: true
+  default: none
   enable:
-    - deadcode
     - errcheck
-    - gofmt
-    - gosimple
+    - govet
     - ineffassign
     - misspell
     - staticcheck
-    - structcheck
     - unconvert
     - unused
-    - varcheck
-    - vet
-
-linters-settings:
-  funlen:
-    lines: 500
-    statements: 80
+  settings:
+    funlen:
+      lines: 500
+      statements: 80
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+issues:
+  max-same-issues: 0
+formatters:
+  enable:
+    - gofmt
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
