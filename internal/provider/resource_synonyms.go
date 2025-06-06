@@ -28,6 +28,10 @@ func resourceSynonyms() *schema.Resource {
 `,
 		// https://www.algolia.com/doc/api-reference/api-methods/batch-synonyms/
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
 			"index_name": {
 				Type:        schema.TypeString,
 				Required:    true,
