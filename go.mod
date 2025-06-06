@@ -4,7 +4,7 @@ go 1.23.0
 
 require (
 	github.com/algolia/algoliasearch-client-go/v3 v3.31.4
-	github.com/hashicorp/terraform-plugin-docs v0.20.1
+	github.com/hashicorp/terraform-plugin-docs v0.21.0
 	github.com/hashicorp/terraform-plugin-log v0.9.0
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.37.0
 	github.com/rs/xid v1.6.0
@@ -22,7 +22,7 @@ require (
 	github.com/apparentlymart/go-textseg/v15 v15.0.0 // indirect
 	github.com/armon/go-radix v1.0.0 // indirect
 	github.com/bgentry/speakeasy v0.1.0 // indirect
-	github.com/bmatcuk/doublestar/v4 v4.7.1 // indirect
+	github.com/bmatcuk/doublestar/v4 v4.8.1 // indirect
 	github.com/cloudflare/circl v1.6.0 // indirect
 	github.com/fatih/color v1.16.0 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
@@ -50,7 +50,7 @@ require (
 	github.com/hashicorp/yamux v0.1.1 // indirect
 	github.com/huandu/xstrings v1.3.3 // indirect
 	github.com/imdario/mergo v0.3.15 // indirect
-	github.com/mattn/go-colorable v0.1.13 // indirect
+	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-runewidth v0.0.9 // indirect
 	github.com/mitchellh/copystructure v1.2.0 // indirect
