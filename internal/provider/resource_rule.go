@@ -31,6 +31,10 @@ func resourceRule() *schema.Resource {
 		Description: "A configuration for a Rule.  To get more information about rules, see the [Official Documentation](https://www.algolia.com/doc/guides/managing-results/rules/rules-overview/).",
 		// https://www.algolia.com/doc/api-reference/api-methods/save-rule/#parameters
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
 			"index_name": {
 				Type:        schema.TypeString,
 				Required:    true,
@@ -96,7 +100,7 @@ This parameter goes hand in hand with the ` + "`pattern` " + ` parameter. If the
 				Type:     schema.TypeList,
 				Required: true,
 				MaxItems: 1,
-				Description: `Consequence of the Rule. 
+				Description: `Consequence of the Rule.
 At least one of the following object must be used:
 - params
 - promote
