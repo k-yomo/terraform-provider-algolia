@@ -46,7 +46,11 @@ jobs:
         uses: golangci/golangci-lint-action@v8
         with:
           version: v2.1.6
-
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+            terraform_version: "^1.3.9"
+            terraform_wrapper: false
       - name: Docs check
         run: make docs-check
 
@@ -71,6 +75,12 @@ jobs:
 
     - name: Get dependencies
       run: go mod download
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: "${{ matrix.terraform }}"
+        terraform_wrapper: false
 
     - name: TF acceptance tests
       timeout-minutes: 10
