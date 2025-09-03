@@ -38,6 +38,7 @@ jobs:
         with:
           go-version-file: 'go.mod'
           cache: true
+      - uses: hashicorp/setup-terraform@v3
 
       - name: Get dependencies
         run: go mod download
