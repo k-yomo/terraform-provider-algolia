@@ -30,6 +30,10 @@ func resourceIndex() *schema.Resource {
 		},
 		// https://www.algolia.com/doc/api-reference/settings-api-parameters/
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
 			"name": {
 				Type:        schema.TypeString,
 				Required:    true,

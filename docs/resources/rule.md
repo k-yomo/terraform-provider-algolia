@@ -38,7 +38,7 @@ resource "algolia_rule" "example" {
 
 ### Required
 
-- `consequence` (Block List, Min: 1, Max: 1) Consequence of the Rule. 
+- `consequence` (Block List, Min: 1, Max: 1) Consequence of the Rule.
 At least one of the following object must be used:
 - params
 - promote
