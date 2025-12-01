@@ -5,7 +5,7 @@ go 1.24.0
 require (
 	github.com/algolia/algoliasearch-client-go/v3 v3.31.4
 	github.com/hashicorp/terraform-plugin-docs v0.24.0
-	github.com/hashicorp/terraform-plugin-log v0.9.0
+	github.com/hashicorp/terraform-plugin-log v0.10.0
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.38.1
 	github.com/rs/xid v1.6.0
 	golang.org/x/sync v0.17.0
