@@ -27,6 +27,10 @@ func resourceQuerySuggestions() *schema.Resource {
 		Description: "A configuration that lies behind your Query Suggestions index.",
 		// https://www.algolia.com/doc/rest-api/query-suggestions/#create-a-configuration
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
 			"index_name": {
 				Type:        schema.TypeString,
 				Required:    true,
@@ -103,7 +107,7 @@ func resourceQuerySuggestions() *schema.Resource {
 								Type: schema.TypeList,
 								Elem: &schema.Schema{Type: schema.TypeString},
 							},
-							Description: `List of facet attributes used to generate Query Suggestions. The resulting suggestions are every combination of the facets in the nested list 
+							Description: `List of facet attributes used to generate Query Suggestions. The resulting suggestions are every combination of the facets in the nested list
 (e.g., (facetA and facetB) and facetC).
 ` + "```" + `
 [

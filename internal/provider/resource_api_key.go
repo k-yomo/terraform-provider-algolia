@@ -26,6 +26,10 @@ func resourceAPIKey() *schema.Resource {
 		Description: "A configuration for an API key",
 		// https://www.algolia.com/doc/api-reference/api-methods/add-api-key/
 		Schema: map[string]*schema.Schema{
+			"id": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
 			"key": {
 				Type:        schema.TypeString,
 				Computed:    true,
