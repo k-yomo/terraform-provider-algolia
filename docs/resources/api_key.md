@@ -55,7 +55,7 @@ The possible ACLs are:
 - `max_queries_per_ip_per_hour` (Number) Maximum number of API calls allowed from an IP address per hour.Each time an API call is performed with this key, a check is performed. If the IP at the source of the call did more than this number of calls in the last hour, a 429 code is returned.
 
 This parameter can be used to protect you from attempts at retrieving your entire index contents by massively querying the index.
-- `referers` (Set of String) List of referrers that can perform an operation. You can use the “*” (asterisk) character as a wildcard to match subdomains, or all pages of a website. For example, `"https://algolia.com/\*"` matches all referrers starting with `"https://algolia.com/"`, and `"\*.algolia.com"` matches all referrers ending with `".algolia.com"`. If you want to allow all possible referrers from the `algolia.com` domain, you can use `"\*algolia.com/\*"`.
+- `referers` (Set of String) List of referrers that can perform an operation. You can use the "*" (asterisk) character as a wildcard to match subdomains, or all pages of a website. For example, `"https://algolia.com/\*"` matches all referrers starting with `"https://algolia.com/"`, and `"\*.algolia.com"` matches all referrers ending with `".algolia.com"`. If you want to allow all possible referrers from the `algolia.com` domain, you can use `"\*algolia.com/\*"`.
 
 ### Read-Only
 
@@ -66,6 +66,8 @@ This parameter can be used to protect you from attempts at retrieving your entir
 ## Import
 
 Import is supported using the following syntax:
+
+The [`terraform import` command](https://developer.hashicorp.com/terraform/cli/commands/import) can be used, for example:
 
 ```shell
 terraform import algolia_api_key.default {{key}}
