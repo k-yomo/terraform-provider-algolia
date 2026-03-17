@@ -2,7 +2,6 @@ package provider
 
 import (
 	"fmt"
-	"io"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -107,11 +106,13 @@ func testAccCheckSynonymsDestroy(s *terraform.State) error {
 			continue
 		}
 
-		synonymsIter, err := apiClient.searchClient.InitIndex(rs.Primary.ID).BrowseSynonyms()
+		res, err := apiClient.searchClient.SearchSynonyms(
+			apiClient.searchClient.NewApiSearchSynonymsRequest(rs.Primary.ID),
+		)
 		if err != nil {
 			return err
 		}
-		if _, err := synonymsIter.Next(); err != io.EOF {
+		if len(res.Hits) > 0 {
 			return fmt.Errorf("synonyms for index '%s' still exists", rs.Primary.ID)
 		}
 	}

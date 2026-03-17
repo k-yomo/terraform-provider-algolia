@@ -5,12 +5,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"strconv"
 	"strings"
 	"time"
 
-	"github.com/algolia/algoliasearch-client-go/v3/algolia/opt"
-	"github.com/algolia/algoliasearch-client-go/v3/algolia/search"
+	"github.com/algolia/algoliasearch-client-go/v4/algolia/search"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -60,7 +58,7 @@ Query patterns are expressed as a string with a specific syntax. A pattern is a 
 - Literal: the world itself. Example: Algolia.
 Special characters (` + "`*`, `{`, `}`, `:` and `\\`" + `) must be escaped by preceding them with a backslash (` + "\\" + `) if they are to be treated as literals.
 
-This parameter goes hand in hand with the ` + "`anchoring`" + ` parameter. If you’re creating a Rule that depends on a specific query, you must specify the pattern and anchoring. The empty ` + "`\"\"`" + ` pattern is only allowed when ` + "`anchoring`" + ` is set to ` + "`is`" + `.
+This parameter goes hand in hand with the ` + "`anchoring`" + ` parameter. If you're creating a Rule that depends on a specific query, you must specify the pattern and anchoring. The empty ` + "`\"\"`" + ` pattern is only allowed when ` + "`anchoring`" + ` is set to ` + "`is`" + `.
 
 Otherwise, you can omit both.
 `,
@@ -71,7 +69,7 @@ Otherwise, you can omit both.
 							ValidateFunc: validation.StringInSlice([]string{"is", "startsWith", "endsWith", "contains"}, false),
 							Description: `Whether the pattern parameter must match the beginning or the end of the query string, or both, or none.
 Possible values are ` + "`is`, `startsWith`, `endsWith` and `contains`." + `
-This parameter goes hand in hand with the ` + "`pattern`" + ` parameter. If you’re creating a Rule that depends on a specific query, you must specify the ` + "`pattern` and `anchoring`." + `
+This parameter goes hand in hand with the ` + "`pattern`" + ` parameter. If you're creating a Rule that depends on a specific query, you must specify the ` + "`pattern` and `anchoring`." + `
 
 Otherwise, you can omit both.
 `,
@@ -82,7 +80,7 @@ Otherwise, you can omit both.
 							Default:  false,
 							Description: `Whether the ` + "`pattern`" + ` matches on plurals, synonyms, and typos.
 
-This parameter goes hand in hand with the ` + "`pattern` " + ` parameter. If the ` + "`pattern` is “shoe” and `alternatives` is `true`, the `pattern`" + ` matches on “shoes”, as well as synonyms and typos of “shoe”.`,
+This parameter goes hand in hand with the ` + "`pattern` " + ` parameter. If the ` + "`pattern` is \u201cshoe\u201d and `alternatives` is `true`, the `pattern`" + ` matches on \u201cshoes\u201d, as well as synonyms and typos of \u201cshoe\u201d.`,
 						},
 						"context": {
 							Type:        schema.TypeString,
@@ -96,7 +94,7 @@ This parameter goes hand in hand with the ` + "`pattern` " + ` parameter. If the
 				Type:     schema.TypeList,
 				Required: true,
 				MaxItems: 1,
-				Description: `Consequence of the Rule. 
+				Description: `Consequence of the Rule.
 At least one of the following object must be used:
 - params
 - promote
@@ -158,7 +156,7 @@ At least one of the following object must be used:
 												"facet": {
 													Type:        schema.TypeString,
 													Required:    true,
-													Description: "Attribute to filter on. This must match a facet placeholder in the Rule’s pattern.",
+													Description: "Attribute to filter on. This must match a facet placeholder in the Rule's pattern.",
 												},
 												"score": {
 													Type:        schema.TypeInt,
@@ -184,7 +182,7 @@ At least one of the following object must be used:
 												"facet": {
 													Type:        schema.TypeString,
 													Required:    true,
-													Description: "Attribute to filter on. This must match a facet placeholder in the Rule’s pattern.",
+													Description: "Attribute to filter on. This must match a facet placeholder in the Rule's pattern.",
 												},
 												"score": {
 													Type:        schema.TypeInt,
@@ -289,17 +287,20 @@ At least one of the following object must be used:
 func resourceRuleCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	apiClient := m.(*apiClient)
 
+	indexName := d.Get("index_name").(string)
 	rule, err := mapToRule(d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	index := apiClient.searchClient.InitIndex(d.Get("index_name").(string))
-	res, err := index.SaveRule(rule, ctx)
+	res, err := apiClient.searchClient.SaveRule(
+		apiClient.searchClient.NewApiSaveRuleRequest(indexName, rule.ObjectID, rule),
+		search.WithContext(ctx),
+	)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	if err = res.Wait(); err != nil {
+	if _, err = apiClient.searchClient.WaitForTask(indexName, res.TaskID); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -318,17 +319,20 @@ func resourceRuleRead(ctx context.Context, d *schema.ResourceData, m interface{}
 func resourceRuleUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	apiClient := m.(*apiClient)
 
+	indexName := d.Get("index_name").(string)
 	rule, err := mapToRule(d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	index := apiClient.searchClient.InitIndex(d.Get("index_name").(string))
-	res, err := index.SaveRule(rule, ctx)
+	res, err := apiClient.searchClient.SaveRule(
+		apiClient.searchClient.NewApiSaveRuleRequest(indexName, rule.ObjectID, rule),
+		search.WithContext(ctx),
+	)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	if err = res.Wait(); err != nil {
+	if _, err = apiClient.searchClient.WaitForTask(indexName, res.TaskID); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -340,12 +344,16 @@ func resourceRuleUpdate(ctx context.Context, d *schema.ResourceData, m interface
 func resourceRuleDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	apiClient := m.(*apiClient)
 
-	index := apiClient.searchClient.InitIndex(d.Get("index_name").(string))
-	res, err := index.DeleteRule(d.Get("object_id").(string), ctx)
+	indexName := d.Get("index_name").(string)
+	objectID := d.Get("object_id").(string)
+	res, err := apiClient.searchClient.DeleteRule(
+		apiClient.searchClient.NewApiDeleteRuleRequest(indexName, objectID),
+		search.WithContext(ctx),
+	)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	if err = res.Wait(); err != nil {
+	if _, err = apiClient.searchClient.WaitForTask(indexName, res.TaskID); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -376,12 +384,14 @@ func refreshRuleState(ctx context.Context, d *schema.ResourceData, m interface{}
 	apiClient := m.(*apiClient)
 
 	indexName := d.Get("index_name").(string)
-	index := apiClient.searchClient.InitIndex(indexName)
 
-	var rule search.Rule
+	var rule *search.Rule
 	err := retry.RetryContext(ctx, 1*time.Minute, func() *retry.RetryError {
 		var err error
-		rule, err = index.GetRule(d.Id(), ctx)
+		rule, err = apiClient.searchClient.GetRule(
+			apiClient.searchClient.NewApiGetRuleRequest(indexName, d.Id()),
+			search.WithContext(ctx),
+		)
 
 		if d.IsNewResource() && algoliautil.IsRetryableError(err) {
 			return retry.RetryableError(err)
@@ -403,14 +413,12 @@ func refreshRuleState(ctx context.Context, d *schema.ResourceData, m interface{}
 
 	var conditions []interface{}
 	for _, c := range rule.Conditions {
-		// The code below is workaround since Alternatives.enable is a private field.
-		alternativesJSONBytes, _ := c.Alternatives.MarshalJSON()
-		alternatives, _ := strconv.ParseBool(string(alternativesJSONBytes))
+		alternatives := c.GetAlternatives()
 		conditions = append(conditions, map[string]interface{}{
-			"pattern":      c.Pattern,
-			"anchoring":    c.Anchoring,
+			"pattern":      c.GetPattern(),
+			"anchoring":    string(c.GetAnchoring()),
 			"alternatives": alternatives,
-			"context":      c.Context,
+			"context":      c.GetContext(),
 		})
 	}
 
@@ -427,38 +435,47 @@ func refreshRuleState(ctx context.Context, d *schema.ResourceData, m interface{}
 				params := rule.Consequence.Params
 				paramsData := map[string]interface{}{}
 				if params.Query != nil {
-					simpleQuery, objectQuery := params.Query.Get()
-					if objectQuery != nil {
+					if params.Query.String != nil {
+						paramsData["query"] = *params.Query.String
+					} else if params.Query.ConsequenceQueryObject != nil {
 						var edits []interface{}
-						for _, edit := range objectQuery.Edits {
-							edits = append(edits, map[string]interface{}{
-								"type":   edit.Type,
-								"delete": edit.Delete,
-								"insert": edit.Insert,
-							})
+						for _, edit := range params.Query.ConsequenceQueryObject.Edits {
+							editMap := map[string]interface{}{
+								"type":   string(edit.GetType()),
+								"delete": edit.GetDelete(),
+								"insert": edit.GetInsert(),
+							}
+							edits = append(edits, editMap)
 						}
 						paramsData["object_query"] = edits
-					} else {
-						paramsData["query"] = simpleQuery
 					}
 				}
+
 				var automaticFacetFilters []interface{}
-				for _, aff := range params.AutomaticFacetFilters {
-					automaticFacetFilters = append(automaticFacetFilters, map[string]interface{}{
-						"facet":       aff.Facet,
-						"score":       aff.Score,
-						"disjunctive": aff.Disjunctive,
-					})
+				if params.AutomaticFacetFilters != nil {
+					if filters := params.AutomaticFacetFilters.ArrayOfAutomaticFacetFilter; filters != nil {
+						for _, aff := range *filters {
+							automaticFacetFilters = append(automaticFacetFilters, map[string]interface{}{
+								"facet":       aff.Facet,
+								"score":       int(aff.GetScore()),
+								"disjunctive": aff.GetDisjunctive(),
+							})
+						}
+					}
 				}
 				paramsData["automatic_facet_filters"] = automaticFacetFilters
 
 				var automaticOptionalFacetFilters []interface{}
-				for _, aff := range params.AutomaticOptionalFacetFilters {
-					automaticOptionalFacetFilters = append(automaticOptionalFacetFilters, map[string]interface{}{
-						"facet":       aff.Facet,
-						"score":       aff.Score,
-						"disjunctive": aff.Disjunctive,
-					})
+				if params.AutomaticOptionalFacetFilters != nil {
+					if filters := params.AutomaticOptionalFacetFilters.ArrayOfAutomaticFacetFilter; filters != nil {
+						for _, aff := range *filters {
+							automaticOptionalFacetFilters = append(automaticOptionalFacetFilters, map[string]interface{}{
+								"facet":       aff.Facet,
+								"score":       int(aff.GetScore()),
+								"disjunctive": aff.GetDisjunctive(),
+							})
+						}
+					}
 				}
 				paramsData["automatic_optional_facet_filters"] = automaticOptionalFacetFilters
 
@@ -468,13 +485,14 @@ func refreshRuleState(ctx context.Context, d *schema.ResourceData, m interface{}
 		var promotedObjects []interface{}
 		for _, p := range rule.Consequence.Promote {
 			promotedObject := map[string]interface{}{}
-			if p.ObjectID != "" {
-				promotedObject["object_ids"] = []string{p.ObjectID}
+			if p.PromoteObjectID != nil {
+				promotedObject["object_ids"] = []string{p.PromoteObjectID.ObjectID}
+				promotedObject["position"] = int(p.PromoteObjectID.Position)
 			}
-			if len(p.ObjectIDs) > 0 {
-				promotedObject["object_ids"] = p.ObjectIDs
+			if p.PromoteObjectIDs != nil {
+				promotedObject["object_ids"] = p.PromoteObjectIDs.ObjectIDs
+				promotedObject["position"] = int(p.PromoteObjectIDs.Position)
 			}
-			promotedObject["position"] = p.Position
 			promotedObjects = append(promotedObjects, promotedObject)
 		}
 		consequence["promote"] = promotedObjects
@@ -486,16 +504,27 @@ func refreshRuleState(ctx context.Context, d *schema.ResourceData, m interface{}
 		consequence["hide"] = hiddenObjectIDs
 
 		if rule.Consequence.UserData != nil {
-			consequence["user_data"] = rule.Consequence.UserData
+			userDataJSON, err := json.Marshal(rule.Consequence.UserData)
+			if err != nil {
+				return fmt.Errorf("failed to marshal consequence userData: %w", err)
+			}
+			consequence["user_data"] = string(userDataJSON)
 		}
 	}
 
 	var validty []interface{}
 	for _, timeRange := range rule.Validity {
+		from := time.Unix(timeRange.GetFrom(), 0).UTC().Format(time.RFC3339)
+		until := time.Unix(timeRange.GetUntil(), 0).UTC().Format(time.RFC3339)
 		validty = append(validty, map[string]string{
-			"from":  timeRange.From.In(time.UTC).Format(time.RFC3339),
-			"until": timeRange.Until.In(time.UTC).Format(time.RFC3339),
+			"from":  from,
+			"until": until,
 		})
+	}
+
+	enabled := true
+	if rule.Enabled != nil {
+		enabled = *rule.Enabled
 	}
 
 	values := map[string]interface{}{
@@ -503,8 +532,8 @@ func refreshRuleState(ctx context.Context, d *schema.ResourceData, m interface{}
 		"object_id":   rule.ObjectID,
 		"conditions":  conditions,
 		"consequence": []interface{}{consequence},
-		"description": rule.Description,
-		"enabled":     rule.Enabled.Get(),
+		"description": rule.GetDescription(),
+		"enabled":     enabled,
 		"validity":    validty,
 	}
 	if err := setValues(d, values); err != nil {
@@ -527,13 +556,13 @@ func isParamsJSONSet(d *schema.ResourceData) bool {
 	return ok
 }
 
-func mapToRule(d *schema.ResourceData) (search.Rule, error) {
-	rule := search.Rule{
+func mapToRule(d *schema.ResourceData) (*search.Rule, error) {
+	rule := &search.Rule{
 		ObjectID: d.Get("object_id").(string),
 	}
 
 	if v, ok := d.GetOk("conditions"); ok {
-		unmarshalConditions(v, &rule)
+		unmarshalConditions(v, rule)
 	}
 	var err error
 	rule.Consequence, err = unmarshalConsequence(d.Get("consequence"))
@@ -541,10 +570,12 @@ func mapToRule(d *schema.ResourceData) (search.Rule, error) {
 		return rule, err
 	}
 	if v, ok := d.GetOk("description"); ok {
-		rule.Description = v.(string)
+		s := v.(string)
+		rule.Description = &s
 	}
 	if v, ok := d.GetOk("enabled"); ok {
-		rule.Enabled = opt.Enabled(v.(bool))
+		b := v.(bool)
+		rule.Enabled = &b
 	}
 	if v, ok := d.GetOk("validity"); ok {
 		rule.Validity = unmarshalValidity(v)
@@ -559,25 +590,25 @@ func unmarshalConditions(configured interface{}, rule *search.Rule) {
 		return
 	}
 
-	var conditions []search.RuleCondition
+	var conditions []search.Condition
 	for _, conditionInterface := range l {
-		ruleCondition := search.RuleCondition{}
+		ruleCondition := search.Condition{}
 		c := conditionInterface.(map[string]interface{})
 		if v, ok := c["pattern"]; ok {
-			ruleCondition.Pattern = v.(string)
+			s := v.(string)
+			ruleCondition.Pattern = &s
 		}
 		if v, ok := c["anchoring"]; ok {
-			ruleCondition.Anchoring = search.RulePatternAnchoring(v.(string))
+			a := search.Anchoring(v.(string))
+			ruleCondition.Anchoring = &a
 		}
 		if v, ok := c["context"]; ok {
-			ruleCondition.Context = v.(string)
+			s := v.(string)
+			ruleCondition.Context = &s
 		}
 		if v, ok := c["alternatives"]; ok {
-			if v.(bool) {
-				ruleCondition.Alternatives = search.AlternativesEnabled()
-			} else {
-				ruleCondition.Alternatives = search.AlternativesDisabled()
-			}
+			b := v.(bool)
+			ruleCondition.Alternatives = &b
 		}
 		conditions = append(conditions, ruleCondition)
 	}
@@ -585,14 +616,14 @@ func unmarshalConditions(configured interface{}, rule *search.Rule) {
 	rule.Conditions = conditions
 }
 
-func unmarshalConsequence(configured interface{}) (search.RuleConsequence, error) {
+func unmarshalConsequence(configured interface{}) (search.Consequence, error) {
 	l := configured.([]interface{})
 	if len(l) == 0 || l[0] == nil {
-		return search.RuleConsequence{}, nil
+		return search.Consequence{}, nil
 	}
 
 	config := l[0].(map[string]interface{})
-	consequence := search.RuleConsequence{}
+	consequence := search.Consequence{}
 	if v, ok := config["params"]; ok {
 		consequence.Params = unmarshalConsequenceParams(v)
 	}
@@ -600,36 +631,43 @@ func unmarshalConsequence(configured interface{}) (search.RuleConsequence, error
 		var err error
 		consequence.Params, err = unmarshalConsequenceParamsJSON(v)
 		if err != nil {
-			return search.RuleConsequence{}, err
+			return search.Consequence{}, err
 		}
 	}
 	if v, ok := config["promote"]; ok {
-		var promotedObjects []search.PromotedObject
+		var promotes []search.Promote
 		for _, v := range v.([]interface{}) {
 			promotedObjectData := v.(map[string]interface{})
-			promotedObject := search.PromotedObject{
-				ObjectIDs: castStringSet(promotedObjectData["object_ids"]),
-				Position:  promotedObjectData["position"].(int),
-			}
-			promotedObjects = append(promotedObjects, promotedObject)
+			objectIDs := castStringSet(promotedObjectData["object_ids"])
+			position := int32(promotedObjectData["position"].(int))
+			promote := search.PromoteObjectIDsAsPromote(
+				search.NewPromoteObjectIDs(objectIDs, position),
+			)
+			promotes = append(promotes, *promote)
 		}
-		consequence.Promote = promotedObjects
+		consequence.Promote = promotes
 	}
 	if v, ok := config["hide"]; ok {
-		var hide []search.HiddenObject
+		var hide []search.ConsequenceHide
 		for _, objectID := range castStringSet(v) {
-			hide = append(hide, search.HiddenObject{ObjectID: objectID})
+			hide = append(hide, search.ConsequenceHide{ObjectID: objectID})
 		}
 		consequence.Hide = hide
 	}
 	if v, ok := config["user_data"]; ok {
-		consequence.UserData = v.(string)
+		s := v.(string)
+		if s != "" {
+			var userData map[string]any
+			if err := json.Unmarshal([]byte(s), &userData); err != nil {
+				return search.Consequence{}, fmt.Errorf("failed to unmarshal user_data: %w", err)
+			}
+			consequence.UserData = userData
+		}
 	}
-	consequence.UserData = nil
 	return consequence, nil
 }
 
-func unmarshalConsequenceParams(configured interface{}) *search.RuleParams {
+func unmarshalConsequenceParams(configured interface{}) *search.ConsequenceParams {
 	l := configured.([]interface{})
 	if len(l) == 0 || l[0] == nil {
 		return nil
@@ -637,38 +675,57 @@ func unmarshalConsequenceParams(configured interface{}) *search.RuleParams {
 
 	paramsData := l[0].(map[string]interface{})
 
-	params := search.RuleParams{}
+	params := search.ConsequenceParams{}
 	if v, ok := paramsData["query"]; ok {
-		params.Query = search.NewRuleQuerySimple(v.(string))
+		s := v.(string)
+		if s != "" {
+			params.Query = search.StringAsConsequenceQuery(s)
+		}
 	}
 	if v, ok := paramsData["object_query"]; ok {
-		var edits []search.QueryEdit
+		var edits []search.Edit
 		for _, e := range v.([]interface{}) {
 			editData := e.(map[string]interface{})
-			edit := search.QueryEdit{
-				Type:   search.QueryEditType(editData["type"].(string)),
-				Delete: editData["delete"].(string),
+			editType := search.EditType(editData["type"].(string))
+			deleteStr := editData["delete"].(string)
+			edit := search.Edit{
+				Type:   &editType,
+				Delete: &deleteStr,
 			}
 			if insert, ok := editData["insert"]; ok {
-				edit.Insert = insert.(string)
+				s := insert.(string)
+				if s != "" {
+					edit.Insert = &s
+				}
 			}
 			edits = append(edits, edit)
 		}
-		params.Query = search.NewRuleQueryObject(search.RuleQueryObjectQuery{Edits: edits})
+		params.Query = search.ConsequenceQueryObjectAsConsequenceQuery(
+			&search.ConsequenceQueryObject{Edits: edits},
+		)
 	}
 	if v, ok := paramsData["automatic_facet_filters"]; ok {
-		params.AutomaticFacetFilters = unmarshalAutomaticFacetFilters(v)
+		filters := unmarshalAutomaticFacetFilters(v)
+		if len(filters) > 0 {
+			params.AutomaticFacetFilters = search.ArrayOfAutomaticFacetFilterAsAutomaticFacetFilters(filters)
+		}
 	}
 	if v, ok := paramsData["automatic_optional_facet_filters"]; ok {
-		params.AutomaticOptionalFacetFilters = unmarshalAutomaticFacetFilters(v)
+		filters := unmarshalAutomaticFacetFilters(v)
+		if len(filters) > 0 {
+			params.AutomaticOptionalFacetFilters = search.ArrayOfAutomaticFacetFilterAsAutomaticFacetFilters(filters)
+		}
 	}
 
 	return &params
 }
 
-func unmarshalConsequenceParamsJSON(configured interface{}) (*search.RuleParams, error) {
+func unmarshalConsequenceParamsJSON(configured interface{}) (*search.ConsequenceParams, error) {
 	paramsJSON := configured.(string)
-	params := search.RuleParams{}
+	if paramsJSON == "" {
+		return nil, nil
+	}
+	params := search.ConsequenceParams{}
 	if err := json.Unmarshal([]byte(paramsJSON), &params); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal consequence params: %w", err)
 	}
@@ -679,10 +736,12 @@ func unmarshalAutomaticFacetFilters(configured interface{}) []search.AutomaticFa
 	var automaticFacetFilters []search.AutomaticFacetFilter
 	for _, v := range configured.([]interface{}) {
 		data := v.(map[string]interface{})
+		score := int32(data["score"].(int))
+		disjunctive := data["disjunctive"].(bool)
 		aff := search.AutomaticFacetFilter{
 			Facet:       data["facet"].(string),
-			Score:       data["score"].(int),
-			Disjunctive: data["disjunctive"].(bool),
+			Score:       &score,
+			Disjunctive: &disjunctive,
 		}
 		automaticFacetFilters = append(automaticFacetFilters, aff)
 	}
@@ -698,11 +757,13 @@ func unmarshalValidity(configured interface{}) []search.TimeRange {
 	var timeRanges []search.TimeRange
 	for _, timeRangeData := range l {
 		timeRange := timeRangeData.(map[string]interface{})
-		from, _ := time.Parse(time.RFC3339, timeRange["from"].(string))
-		until, _ := time.Parse(time.RFC3339, timeRange["until"].(string))
+		fromTime, _ := time.Parse(time.RFC3339, timeRange["from"].(string))
+		untilTime, _ := time.Parse(time.RFC3339, timeRange["until"].(string))
+		fromUnix := fromTime.Unix()
+		untilUnix := untilTime.Unix()
 		timeRanges = append(timeRanges, search.TimeRange{
-			From:  from,
-			Until: until,
+			From:  &fromUnix,
+			Until: &untilUnix,
 		})
 	}
 

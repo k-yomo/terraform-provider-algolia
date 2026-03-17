@@ -2,13 +2,12 @@ package provider
 
 import (
 	"fmt"
-	"net/http"
 	"regexp"
 	"testing"
 
-	"github.com/algolia/algoliasearch-client-go/v3/algolia/errs"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-provider-algolia/internal/algoliautil"
 )
 
 func TestAccResourceAPIKey(t *testing.T) {
@@ -85,11 +84,13 @@ func testAccCheckApiKeyDestroy(s *terraform.State) error {
 			continue
 		}
 
-		_, err := apiClient.searchClient.GetAPIKey(rs.Primary.ID)
+		_, err := apiClient.searchClient.GetApiKey(
+			apiClient.searchClient.NewApiGetApiKeyRequest(rs.Primary.ID),
+		)
 		if err == nil {
 			return fmt.Errorf("api key '%s' still exists", rs.Primary.ID)
 		}
-		if _, ok := errs.IsAlgoliaErrWithCode(err, http.StatusNotFound); !ok {
+		if !algoliautil.IsNotFoundError(err) {
 			return err
 		}
 	}

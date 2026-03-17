@@ -1,14 +1,9 @@
 package algoliautil
 
-import "github.com/algolia/algoliasearch-client-go/v3/algolia/region"
+import "slices"
 
-var ValidRegionStrings = []string{string(region.US), string(region.EU), string(region.DE)}
+var ValidRegionStrings = []string{"us", "eu", "de"}
 
 func IsValidRegion(r string) bool {
-	for _, validRegionStr := range ValidRegionStrings {
-		if r == validRegionStr {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(ValidRegionStrings, r)
 }

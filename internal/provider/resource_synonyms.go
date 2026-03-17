@@ -3,9 +3,8 @@ package provider
 import (
 	"context"
 	"fmt"
-	"io"
 
-	"github.com/algolia/algoliasearch-client-go/v3/algolia/search"
+	"github.com/algolia/algoliasearch-client-go/v4/algolia/search"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -95,11 +94,13 @@ func resourceSynonymsCreate(ctx context.Context, d *schema.ResourceData, m inter
 	apiClient := m.(*apiClient)
 
 	indexName := d.Get("index_name").(string)
-	res, err := apiClient.searchClient.InitIndex(indexName).ReplaceAllSynonyms(mapToSynonyms(d), ctx)
+	req := apiClient.searchClient.NewApiSaveSynonymsRequest(indexName, mapToSynonyms(d))
+	req = req.WithReplaceExistingSynonyms(true)
+	res, err := apiClient.searchClient.SaveSynonyms(req)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	if err = res.Wait(); err != nil {
+	if _, err = apiClient.searchClient.WaitForTask(indexName, res.TaskID); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -119,11 +120,13 @@ func resourceSynonymsUpdate(ctx context.Context, d *schema.ResourceData, m inter
 	apiClient := m.(*apiClient)
 
 	indexName := d.Get("index_name").(string)
-	res, err := apiClient.searchClient.InitIndex(indexName).ReplaceAllSynonyms(mapToSynonyms(d), ctx)
+	req := apiClient.searchClient.NewApiSaveSynonymsRequest(indexName, mapToSynonyms(d))
+	req = req.WithReplaceExistingSynonyms(true)
+	res, err := apiClient.searchClient.SaveSynonyms(req)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	if err = res.Wait(); err != nil {
+	if _, err = apiClient.searchClient.WaitForTask(indexName, res.TaskID); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -135,11 +138,11 @@ func resourceSynonymsUpdate(ctx context.Context, d *schema.ResourceData, m inter
 func resourceSynonymsDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	apiClient := m.(*apiClient)
 
-	res, err := apiClient.searchClient.InitIndex(d.Id()).ClearSynonyms(ctx)
+	res, err := apiClient.searchClient.ClearSynonyms(apiClient.searchClient.NewApiClearSynonymsRequest(d.Id()))
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	if err = res.Wait(); err != nil {
+	if _, err = apiClient.searchClient.WaitForTask(d.Id(), res.TaskID); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -161,49 +164,64 @@ func refreshSynonymsState(ctx context.Context, d *schema.ResourceData, m interfa
 	apiClient := m.(*apiClient)
 
 	indexName := d.Id()
-	iter, err := apiClient.searchClient.InitIndex(indexName).BrowseSynonyms(ctx)
-	if err != nil {
-		if algoliautil.IsNotFoundError(err) {
-			tflog.Warn(ctx, fmt.Sprintf("synonyms for (%s) not found, removing from state", d.Id()))
-			d.SetId("")
-			return nil
+
+	var allSynonymHits []search.SynonymHit
+	var page int32
+
+	for {
+		hitsPerPage := int32(1000)
+		params := search.NewSearchSynonymsParams(
+			search.WithSearchSynonymsParamsPage(page),
+			search.WithSearchSynonymsParamsHitsPerPage(hitsPerPage),
+		)
+		req := apiClient.searchClient.NewApiSearchSynonymsRequest(indexName).WithSearchSynonymsParams(params)
+		res, err := apiClient.searchClient.SearchSynonyms(req)
+		if err != nil {
+			if algoliautil.IsNotFoundError(err) {
+				tflog.Warn(ctx, fmt.Sprintf("synonyms for (%s) not found, removing from state", d.Id()))
+				d.SetId("")
+				return nil
+			}
+			return err
 		}
-		return err
+
+		allSynonymHits = append(allSynonymHits, res.Hits...)
+
+		if len(res.Hits) < int(hitsPerPage) {
+			break
+		}
+		page++
 	}
 
 	var synonyms []interface{}
-	for {
-		synonym, err := iter.Next()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return err
-		}
+	for _, synonym := range allSynonymHits {
 		synonymData := map[string]interface{}{
-			"object_id": synonym.ObjectID(),
-			"type":      string(synonym.Type()),
+			"object_id": synonym.ObjectID,
+			"type":      string(synonym.Type),
 		}
-		switch synonym.Type() {
-		case search.RegularSynonymType:
-			rs := synonym.(search.RegularSynonym)
-			synonymData["synonyms"] = rs.Synonyms
-		case search.OneWaySynonymType:
-			ows := synonym.(search.OneWaySynonym)
-			synonymData["input"] = ows.Input
-			synonymData["synonyms"] = ows.Synonyms
-		case search.AltCorrection1Type:
-			ac1 := synonym.(search.AltCorrection1)
-			synonymData["word"] = ac1.Word
-			synonymData["corrections"] = ac1.Corrections
-		case search.AltCorrection2Type:
-			ac2 := synonym.(search.AltCorrection2)
-			synonymData["word"] = ac2.Word
-			synonymData["corrections"] = ac2.Corrections
-		case search.PlaceholderType:
-			p := synonym.(search.Placeholder)
-			synonymData["placeholder"] = p.Placeholder
-			synonymData["replacements"] = p.Replacements
+		switch synonym.Type {
+		case search.SYNONYM_TYPE_SYNONYM:
+			synonymData["synonyms"] = synonym.Synonyms
+		case search.SYNONYM_TYPE_ONE_WAY_SYNONYM, search.SYNONYM_TYPE_ONEWAYSYNONYM:
+			if synonym.Input != nil {
+				synonymData["input"] = *synonym.Input
+			}
+			synonymData["synonyms"] = synonym.Synonyms
+		case search.SYNONYM_TYPE_ALT_CORRECTION1, search.SYNONYM_TYPE_ALTCORRECTION1:
+			if synonym.Word != nil {
+				synonymData["word"] = *synonym.Word
+			}
+			synonymData["corrections"] = synonym.Corrections
+		case search.SYNONYM_TYPE_ALT_CORRECTION2, search.SYNONYM_TYPE_ALTCORRECTION2:
+			if synonym.Word != nil {
+				synonymData["word"] = *synonym.Word
+			}
+			synonymData["corrections"] = synonym.Corrections
+		case search.SYNONYM_TYPE_PLACEHOLDER:
+			if synonym.Placeholder != nil {
+				synonymData["placeholder"] = *synonym.Placeholder
+			}
+			synonymData["replacements"] = synonym.Replacements
 		}
 		synonyms = append(synonyms, synonymData)
 	}
@@ -218,31 +236,45 @@ func refreshSynonymsState(ctx context.Context, d *schema.ResourceData, m interfa
 	return nil
 }
 
-func mapToSynonyms(d *schema.ResourceData) []search.Synonym {
+func mapToSynonyms(d *schema.ResourceData) []search.SynonymHit {
 	l := d.Get("synonyms").(*schema.Set)
 	if l.Len() == 0 || l.List()[0] == nil {
 		return nil
 	}
 
-	var synonyms []search.Synonym
+	var synonyms []search.SynonymHit
 	for _, v := range l.List() {
 		synonymData := v.(map[string]interface{})
 		objectID := synonymData["object_id"].(string)
+		synonymType := search.SynonymType(synonymData["type"].(string))
 
-		var synonym search.Synonym
-		switch search.SynonymType(synonymData["type"].(string)) {
-		case search.RegularSynonymType:
-			synonym = search.NewRegularSynonym(objectID, castStringSet(synonymData["synonyms"])...)
-		case search.OneWaySynonymType:
-			synonym = search.NewOneWaySynonym(objectID, synonymData["input"].(string), castStringSet(synonymData["synonyms"])...)
-		case search.AltCorrection1Type:
-			synonym = search.NewAltCorrection1(objectID, synonymData["word"].(string), castStringSet(synonymData["corrections"])...)
-		case search.AltCorrection2Type:
-			synonym = search.NewAltCorrection2(objectID, synonymData["word"].(string), castStringSet(synonymData["corrections"])...)
-		case search.PlaceholderType:
-			synonym = search.NewPlaceholder(objectID, synonymData["placeholder"].(string), castStringSet(synonymData["replacements"])...)
+		hit := search.SynonymHit{
+			ObjectID: objectID,
+			Type:     synonymType,
 		}
-		synonyms = append(synonyms, synonym)
+
+		switch synonymType {
+		case search.SYNONYM_TYPE_SYNONYM:
+			hit.Synonyms = castStringSet(synonymData["synonyms"])
+		case search.SYNONYM_TYPE_ONE_WAY_SYNONYM, search.SYNONYM_TYPE_ONEWAYSYNONYM:
+			input := synonymData["input"].(string)
+			hit.Input = &input
+			hit.Synonyms = castStringSet(synonymData["synonyms"])
+		case search.SYNONYM_TYPE_ALT_CORRECTION1, search.SYNONYM_TYPE_ALTCORRECTION1:
+			word := synonymData["word"].(string)
+			hit.Word = &word
+			hit.Corrections = castStringSet(synonymData["corrections"])
+		case search.SYNONYM_TYPE_ALT_CORRECTION2, search.SYNONYM_TYPE_ALTCORRECTION2:
+			word := synonymData["word"].(string)
+			hit.Word = &word
+			hit.Corrections = castStringSet(synonymData["corrections"])
+		case search.SYNONYM_TYPE_PLACEHOLDER:
+			placeholder := synonymData["placeholder"].(string)
+			hit.Placeholder = &placeholder
+			hit.Replacements = castStringSet(synonymData["replacements"])
+		}
+
+		synonyms = append(synonyms, hit)
 	}
 
 	return synonyms
