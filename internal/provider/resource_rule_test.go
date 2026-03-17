@@ -2,12 +2,11 @@ package provider
 
 import (
 	"fmt"
-	"net/http"
 	"testing"
 
-	"github.com/algolia/algoliasearch-client-go/v3/algolia/errs"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-provider-algolia/internal/algoliautil"
 )
 
 func TestAccResourceRule(t *testing.T) {
@@ -134,11 +133,13 @@ func testAccCheckRuleDestroy(s *terraform.State) error {
 			continue
 		}
 
-		_, err := apiClient.searchClient.InitIndex(rs.Primary.Attributes["index_name"]).GetRule(rs.Primary.ID)
+		_, err := apiClient.searchClient.GetRule(
+			apiClient.searchClient.NewApiGetRuleRequest(rs.Primary.Attributes["index_name"], rs.Primary.ID),
+		)
 		if err == nil {
 			return fmt.Errorf("rule '%s' still exists", rs.Primary.ID)
 		}
-		if _, ok := errs.IsAlgoliaErrWithCode(err, http.StatusNotFound); !ok {
+		if !algoliautil.IsNotFoundError(err) {
 			return err
 		}
 	}

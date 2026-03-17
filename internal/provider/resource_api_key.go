@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/algolia/algoliasearch-client-go/v3/algolia/search"
+	"github.com/algolia/algoliasearch-client-go/v4/algolia/search"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -80,14 +80,14 @@ This parameter can be used to protect you from attempts at retrieving your entir
 				Elem:        &schema.Schema{Type: schema.TypeString},
 				Set:         schema.HashString,
 				Optional:    true,
-				Description: "List of targeted indices. You can target all indices starting with a prefix or ending with a suffix using the ‘*’ character. For example, “dev_*” matches all indices starting with “dev_” and “*_dev” matches all indices ending with “_dev”.",
+				Description: "List of targeted indices. You can target all indices starting with a prefix or ending with a suffix using the \u2018*\u2019 character. For example, \u201cdev_*\u201d matches all indices starting with \u201cdev_\u201d and \u201c*_dev\u201d matches all indices ending with \u201c_dev\u201d.",
 			},
 			"referers": {
 				Type:        schema.TypeSet,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 				Set:         schema.HashString,
 				Optional:    true,
-				Description: "List of referrers that can perform an operation. You can use the “*” (asterisk) character as a wildcard to match subdomains, or all pages of a website. For example, `\"https://algolia.com/\\*\"` matches all referrers starting with `\"https://algolia.com/\"`, and `\"\\*.algolia.com\"` matches all referrers ending with `\".algolia.com\"`. If you want to allow all possible referrers from the `algolia.com` domain, you can use `\"\\*algolia.com/\\*\"`.",
+				Description: "List of referrers that can perform an operation. You can use the \"*\" (asterisk) character as a wildcard to match subdomains, or all pages of a website. For example, `\"https://algolia.com/\\*\"` matches all referrers starting with `\"https://algolia.com/\"`, and `\"\\*.algolia.com\"` matches all referrers ending with `\".algolia.com\"`. If you want to allow all possible referrers from the `algolia.com` domain, you can use `\"\\*algolia.com/\\*\"`.",
 			},
 			"description": {
 				Type:        schema.TypeString,
@@ -106,11 +106,15 @@ This parameter can be used to protect you from attempts at retrieving your entir
 func resourceAPIKeyCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	apiClient := m.(*apiClient)
 
-	res, err := apiClient.searchClient.AddAPIKey(mapToAPIKey(d), ctx)
+	apiKey := mapToAPIKey(d)
+	res, err := apiClient.searchClient.AddApiKey(
+		apiClient.searchClient.NewApiAddApiKeyRequest(apiKey),
+		search.WithContext(ctx),
+	)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	if err = res.Wait(); err != nil {
+	if _, err = apiClient.searchClient.WaitForApiKey(res.Key, search.API_KEY_OPERATION_ADD, search.WithContext(ctx)); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -131,11 +135,16 @@ func resourceAPIKeyRead(ctx context.Context, d *schema.ResourceData, m interface
 func resourceAPIKeyUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	apiClient := m.(*apiClient)
 
-	res, err := apiClient.searchClient.UpdateAPIKey(mapToAPIKey(d), ctx)
+	keyValue := d.Get("key").(string)
+	apiKey := mapToAPIKey(d)
+	_, err := apiClient.searchClient.UpdateApiKey(
+		apiClient.searchClient.NewApiUpdateApiKeyRequest(keyValue, apiKey),
+		search.WithContext(ctx),
+	)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	if err = res.Wait(); err != nil {
+	if _, err = apiClient.searchClient.WaitForApiKey(keyValue, search.API_KEY_OPERATION_UPDATE, search.WithApiKey(apiKey), search.WithContext(ctx)); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -145,11 +154,15 @@ func resourceAPIKeyUpdate(ctx context.Context, d *schema.ResourceData, m interfa
 func resourceAPIKeyDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	apiClient := m.(*apiClient)
 
-	res, err := apiClient.searchClient.DeleteAPIKey(d.Get("key").(string), ctx)
+	keyStr := d.Get("key").(string)
+	_, err := apiClient.searchClient.DeleteApiKey(
+		apiClient.searchClient.NewApiDeleteApiKeyRequest(keyStr),
+		search.WithContext(ctx),
+	)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	if err = res.Wait(); err != nil {
+	if _, err = apiClient.searchClient.WaitForApiKey(keyStr, search.API_KEY_OPERATION_DELETE, search.WithContext(ctx)); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -172,7 +185,10 @@ func refreshAPIKeyState(ctx context.Context, d *schema.ResourceData, m interface
 	apiClient := m.(*apiClient)
 
 	keyID := d.Get("key").(string)
-	key, err := apiClient.searchClient.GetAPIKey(keyID, ctx)
+	key, err := apiClient.searchClient.GetApiKey(
+		apiClient.searchClient.NewApiGetApiKeyRequest(keyID),
+		search.WithContext(ctx),
+	)
 	if err != nil {
 		if algoliautil.IsNotFoundError(err) {
 			tflog.Warn(ctx, fmt.Sprintf("api key (%s) not found, removing from state", d.Id()))
@@ -182,17 +198,22 @@ func refreshAPIKeyState(ctx context.Context, d *schema.ResourceData, m interface
 		return err
 	}
 
-	d.SetId(strconv.FormatInt(key.CreatedAt.Unix(), 10))
+	d.SetId(strconv.FormatInt(key.CreatedAt, 10))
+
+	acl := make([]string, len(key.Acl))
+	for i, a := range key.Acl {
+		acl[i] = string(a)
+	}
 
 	values := map[string]interface{}{
 		"key":                         keyID,
-		"acl":                         key.ACL,
-		"max_hits_per_query":          key.MaxHitsPerQuery,
-		"max_queries_per_ip_per_hour": key.MaxQueriesPerIPPerHour,
+		"acl":                         acl,
+		"max_hits_per_query":          int(key.GetMaxHitsPerQuery()),
+		"max_queries_per_ip_per_hour": int(key.GetMaxQueriesPerIPPerHour()),
 		"referers":                    key.Referers,
-		"description":                 key.Description,
+		"description":                 key.GetDescription(),
 		"indexes":                     key.Indexes,
-		"created_at":                  key.CreatedAt.Unix(),
+		"created_at":                  key.CreatedAt,
 	}
 	// we can't set from key.Validity since it is remaining valid time and the value changes every second.
 	// TODO: fix to work with import
@@ -206,21 +227,33 @@ func refreshAPIKeyState(ctx context.Context, d *schema.ResourceData, m interface
 	return nil
 }
 
-func mapToAPIKey(d *schema.ResourceData) search.Key {
-	var validity time.Duration
+func mapToAPIKey(d *schema.ResourceData) *search.ApiKey {
+	var validity *int32
 	if expiresAtRFC3339, ok := d.GetOk("expires_at"); ok && expiresAtRFC3339 != "" {
 		t, _ := time.Parse(time.RFC3339, expiresAtRFC3339.(string))
-		validity = time.Duration(int(t.Unix())-int(time.Now().Unix())) * time.Second
+		v := int32(t.Unix() - time.Now().Unix())
+		validity = &v
 	}
 
-	return search.Key{
-		Value:                  d.Get("key").(string),
-		ACL:                    castStringSet(d.Get("acl")),
-		Validity:               validity,
-		MaxHitsPerQuery:        d.Get("max_hits_per_query").(int),
-		MaxQueriesPerIPPerHour: d.Get("max_queries_per_ip_per_hour").(int),
-		Indexes:                castStringSet(d.Get("indexes")),
-		Referers:               castStringSet(d.Get("referers")),
-		Description:            d.Get("description").(string),
+	aclStrings := castStringSet(d.Get("acl"))
+	acl := make([]search.Acl, len(aclStrings))
+	for i, s := range aclStrings {
+		acl[i] = search.Acl(s)
 	}
+
+	maxHitsPerQuery := int32(d.Get("max_hits_per_query").(int))
+	maxQueriesPerIPPerHour := int32(d.Get("max_queries_per_ip_per_hour").(int))
+	description := d.Get("description").(string)
+
+	apiKey := &search.ApiKey{
+		Acl:                    acl,
+		Description:            &description,
+		Indexes:                castStringSet(d.Get("indexes")),
+		MaxHitsPerQuery:        &maxHitsPerQuery,
+		MaxQueriesPerIPPerHour: &maxQueriesPerIPPerHour,
+		Referers:               castStringSet(d.Get("referers")),
+		Validity:               validity,
+	}
+
+	return apiKey
 }
