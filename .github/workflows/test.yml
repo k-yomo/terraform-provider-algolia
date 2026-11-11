@@ -15,8 +15,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-    - uses: actions/checkout@v6
-    - uses: actions/setup-go@v6
+    - uses: actions/checkout@v7
+    - uses: actions/setup-go@v7
       with:
         go-version-file: 'go.mod'
         cache: true
@@ -33,12 +33,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-go@v6
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
         with:
           go-version-file: 'go.mod'
           cache: true
-      - uses: hashicorp/setup-terraform@v3
+      - uses: hashicorp/setup-terraform@v4
 
       - name: Get dependencies
         run: go mod download
@@ -46,7 +46,7 @@ jobs:
       - name: Lint
         uses: golangci/golangci-lint-action@v9
         with:
-          version: v2.1.6
+          version: v2.15.0
 
       - name: Docs check
         run: make docs-check
@@ -64,8 +64,8 @@ jobs:
           - '1.4.6'
           - '1.5.1'
     steps:
-    - uses: actions/checkout@v6
-    - uses: actions/setup-go@v6
+    - uses: actions/checkout@v7
+    - uses: actions/setup-go@v7
       with:
         go-version-file: 'go.mod'
         cache: true
@@ -85,7 +85,7 @@ jobs:
         go test -v -coverprofile=coverage.out ./internal/...
 
     - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v5
+      uses: codecov/codecov-action@v7
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         file: ./coverage.out

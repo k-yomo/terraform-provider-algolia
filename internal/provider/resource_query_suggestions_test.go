@@ -96,6 +96,10 @@ func testAccResourceQuerySuggestionsUpdate(indexName, sourceIndexName string) st
 resource "algolia_index" "` + sourceIndexName + `" {
   name = "` + sourceIndexName + `"
   deletion_protection = false
+
+  attributes_config {
+    attributes_for_faceting = ["brand", "category"]
+  }
 }
 
 resource "algolia_query_suggestions" "` + indexName + `" {
