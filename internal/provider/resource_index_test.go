@@ -7,6 +7,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-provider-algolia/internal/algoliautil"
 )
 
 // TODO: Cover all fields
@@ -212,12 +213,14 @@ func testAccCheckIndexDestroy(s *terraform.State) error {
 			continue
 		}
 
-		exists, err := apiClient.searchClient.InitIndex(rs.Primary.ID).Exists()
-		if err != nil {
-			return err
-		}
-		if exists {
+		_, err := apiClient.searchClient.GetSettings(
+			apiClient.searchClient.NewApiGetSettingsRequest(rs.Primary.ID),
+		)
+		if err == nil {
 			return fmt.Errorf("index '%s' still exists", rs.Primary.ID)
+		}
+		if !algoliautil.IsNotFoundError(err) {
+			return err
 		}
 	}
 

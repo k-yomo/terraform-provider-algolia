@@ -27,7 +27,11 @@ func newTestAlgoliaProvider() *schema.Provider {
 }
 
 func newTestAPIClient() *apiClient {
-	return newAPIClient(os.Getenv("ALGOLIA_APP_ID"), os.Getenv("ALGOLIA_API_KEY"), "test")
+	client, err := newAPIClient(os.Getenv("ALGOLIA_APP_ID"), os.Getenv("ALGOLIA_API_KEY"), "test")
+	if err != nil {
+		panic(err)
+	}
+	return client
 }
 
 func testAccPreCheck(t *testing.T) {

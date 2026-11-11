@@ -70,3 +70,35 @@ func jsonBytesEqual(a, b []byte) (bool, error) {
 func mapsEqual(m1, m2 interface{}) bool {
 	return reflect.DeepEqual(m2, m1)
 }
+
+// derefInt32 returns the value of a *int32 or a default if nil.
+func derefInt32(p *int32, def int32) int {
+	if p != nil {
+		return int(*p)
+	}
+	return int(def)
+}
+
+// derefBool returns the value of a *bool or a default if nil.
+func derefBool(p *bool, def bool) bool {
+	if p != nil {
+		return *p
+	}
+	return def
+}
+
+// derefString returns the value of a *string or a default if nil.
+func derefString(p *string, def string) string {
+	if p != nil {
+		return *p
+	}
+	return def
+}
+
+// defaultStringSlice returns the slice if non-nil, or the default.
+func defaultStringSlice(s []string, def []string) []string {
+	if s != nil {
+		return s
+	}
+	return def
+}

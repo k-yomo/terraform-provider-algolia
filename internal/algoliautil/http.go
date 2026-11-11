@@ -7,8 +7,9 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"strings"
+	"time"
 
-	"github.com/algolia/algoliasearch-client-go/v3/algolia/transport"
+	"github.com/algolia/algoliasearch-client-go/v4/algolia/transport"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
@@ -17,14 +18,14 @@ type DebugRequester struct {
 }
 
 func NewDebugRequester() *DebugRequester {
-	httpClient := transport.DefaultHTTPClient()
+	httpClient := transport.DefaultHTTPClient(nil)
 	httpClient.Transport = newDebugTransport(httpClient.Transport)
 	return &DebugRequester{
 		Client: httpClient,
 	}
 }
 
-func (d *DebugRequester) Request(req *http.Request) (*http.Response, error) {
+func (d *DebugRequester) Request(req *http.Request, timeout time.Duration, connectTimeout time.Duration) (*http.Response, error) {
 	return d.Client.Do(req)
 }
 

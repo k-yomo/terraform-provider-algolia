@@ -5,7 +5,9 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/algolia/algoliasearch-client-go/v3/algolia/errs"
+	"github.com/algolia/algoliasearch-client-go/v4/algolia/errs"
+	suggestions "github.com/algolia/algoliasearch-client-go/v4/algolia/query-suggestions"
+	"github.com/algolia/algoliasearch-client-go/v4/algolia/search"
 )
 
 func TestIsRetryableError(t *testing.T) {
@@ -22,7 +24,17 @@ func TestIsRetryableError(t *testing.T) {
 		{
 			name: "returns true if not found error",
 			args: args{
-				err: errs.AlgoliaErr{
+				err: &search.APIError{
+					Message: "not found",
+					Status:  http.StatusNotFound,
+				},
+			},
+			want: true,
+		},
+		{
+			name: "returns true if query suggestions not found error",
+			args: args{
+				err: &suggestions.APIError{
 					Message: "not found",
 					Status:  http.StatusNotFound,
 				},
@@ -32,7 +44,7 @@ func TestIsRetryableError(t *testing.T) {
 		{
 			name: "returns true if no more host error",
 			args: args{
-				err: errs.NewNoMoreHostToTryError(),
+				err: errs.ErrNoMoreHostToTry,
 			},
 			want: true,
 		},
@@ -65,7 +77,7 @@ func TestIsNotFoundError(t *testing.T) {
 		{
 			name: "returns true if not found error",
 			args: args{
-				err: errs.AlgoliaErr{
+				err: &search.APIError{
 					Message: "not found",
 					Status:  http.StatusNotFound,
 				},
@@ -75,7 +87,7 @@ func TestIsNotFoundError(t *testing.T) {
 		{
 			name: "returns false if not found error",
 			args: args{
-				err: errs.AlgoliaErr{
+				err: &search.APIError{
 					Message: "bad request",
 					Status:  http.StatusBadRequest,
 				},

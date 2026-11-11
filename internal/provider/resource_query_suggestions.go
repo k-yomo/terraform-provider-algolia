@@ -5,8 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/algolia/algoliasearch-client-go/v3/algolia/region"
-	"github.com/algolia/algoliasearch-client-go/v3/algolia/suggestions"
+	suggestions "github.com/algolia/algoliasearch-client-go/v4/algolia/query-suggestions"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -37,7 +36,7 @@ func resourceQuerySuggestions() *schema.Resource {
 				Type:         schema.TypeString,
 				Optional:     true,
 				ForceNew:     true,
-				Default:      region.US,
+				Default:      "us",
 				ValidateFunc: validation.StringInSlice(algoliautil.ValidRegionStrings, false),
 				Description:  `Region to create the index in. "us", "eu", "de" are supported. Defaults to "us" when not specified.`,
 			},
@@ -103,7 +102,7 @@ func resourceQuerySuggestions() *schema.Resource {
 								Type: schema.TypeList,
 								Elem: &schema.Schema{Type: schema.TypeString},
 							},
-							Description: `List of facet attributes used to generate Query Suggestions. The resulting suggestions are every combination of the facets in the nested list 
+							Description: `List of facet attributes used to generate Query Suggestions. The resulting suggestions are every combination of the facets in the nested list
 (e.g., (facetA and facetB) and facetC).
 ` + "```" + `
 [
@@ -144,10 +143,14 @@ func resourceQuerySuggestions() *schema.Resource {
 }
 
 func resourceQuerySuggestionsCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	suggestionsClient := newSuggestionsClient(d, m)
+	suggestionsClient, err := newSuggestionsClient(d, m)
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
 	indexName := d.Get("index_name").(string)
-	err := suggestionsClient.CreateConfig(mapToQuerySuggestionsIndexConfig(d), ctx)
+	configWithIndex := mapToQuerySuggestionsConfigWithIndex(d)
+	_, err = suggestionsClient.CreateConfig(suggestionsClient.NewApiCreateConfigRequest(&configWithIndex), suggestions.WithContext(ctx))
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -165,10 +168,14 @@ func resourceQuerySuggestionsRead(ctx context.Context, d *schema.ResourceData, m
 }
 
 func resourceQuerySuggestionsUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	suggestionsClient := newSuggestionsClient(d, m)
+	suggestionsClient, err := newSuggestionsClient(d, m)
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
 	indexName := d.Get("index_name").(string)
-	err := suggestionsClient.UpdateConfig(mapToQuerySuggestionsIndexConfig(d), ctx)
+	config := mapToQuerySuggestionsConfig(d)
+	_, err = suggestionsClient.UpdateConfig(suggestionsClient.NewApiUpdateConfigRequest(indexName, &config), suggestions.WithContext(ctx))
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -179,10 +186,13 @@ func resourceQuerySuggestionsUpdate(ctx context.Context, d *schema.ResourceData,
 }
 
 func resourceQuerySuggestionsDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	suggestionsClient := newSuggestionsClient(d, m)
+	suggestionsClient, err := newSuggestionsClient(d, m)
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
 	indexName := d.Get("index_name").(string)
-	err := suggestionsClient.DeleteConfig(indexName, ctx)
+	_, err = suggestionsClient.DeleteConfig(suggestionsClient.NewApiDeleteConfigRequest(indexName), suggestions.WithContext(ctx))
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -209,14 +219,17 @@ func resourceQuerySuggestionsStateContext(ctx context.Context, d *schema.Resourc
 }
 
 func refreshQuerySuggestionsState(ctx context.Context, d *schema.ResourceData, m interface{}) error {
-	suggestionsClient := newSuggestionsClient(d, m)
+	suggestionsClient, err := newSuggestionsClient(d, m)
+	if err != nil {
+		return err
+	}
 
 	indexName := d.Id()
 
-	var querySuggestionsIndexConfig *suggestions.IndexConfiguration
-	err := retry.RetryContext(ctx, 1*time.Minute, func() *retry.RetryError {
+	var querySuggestionsIndexConfig *suggestions.ConfigurationResponse
+	err = retry.RetryContext(ctx, 1*time.Minute, func() *retry.RetryError {
 		var err error
-		querySuggestionsIndexConfig, err = suggestionsClient.GetConfig(indexName, ctx)
+		querySuggestionsIndexConfig, err = suggestionsClient.GetConfig(suggestionsClient.NewApiGetConfigRequest(indexName), suggestions.WithContext(ctx))
 
 		if d.IsNewResource() && algoliautil.IsRetryableError(err) {
 			return retry.RetryableError(err)
@@ -241,25 +254,38 @@ func refreshQuerySuggestionsState(ctx context.Context, d *schema.ResourceData, m
 		var facets []map[string]interface{}
 		for _, f := range sourceIndex.Facets {
 			facets = append(facets, map[string]interface{}{
-				"attribute": f["attribute"],
-				"amount":    f["amount"],
+				"attribute": f.GetAttribute(),
+				"amount":    int(f.GetAmount()),
 			})
+		}
+		minHits := 0
+		if sourceIndex.MinHits != nil {
+			minHits = int(*sourceIndex.MinHits)
+		}
+		minLetters := 0
+		if sourceIndex.MinLetters != nil {
+			minLetters = int(*sourceIndex.MinLetters)
 		}
 		sourceIndices = append(sourceIndices, map[string]interface{}{
 			"index_name":     sourceIndex.IndexName,
 			"analytics_tags": sourceIndex.AnalyticsTags,
 			"facets":         facets,
-			"min_hits":       sourceIndex.MinHits,
-			"min_letters":    sourceIndex.MinLetters,
+			"min_hits":       minHits,
+			"min_letters":    minLetters,
 			"generate":       sourceIndex.Generate,
 			"external":       sourceIndex.External,
 		})
 	}
 
+	var languages []string
+	if querySuggestionsIndexConfig.Languages.ArrayOfString != nil {
+		languages = *querySuggestionsIndexConfig.Languages.ArrayOfString
+	}
+
 	values := map[string]interface{}{
 		"index_name":     querySuggestionsIndexConfig.IndexName,
 		"source_indices": sourceIndices,
-		"languages":      querySuggestionsIndexConfig.Languages.StringArray,
+		"languages":      languages,
 		"exclude":        querySuggestionsIndexConfig.Exclude,
 	}
 	if err := setValues(d, values); err != nil {
@@ -269,30 +295,48 @@ func refreshQuerySuggestionsState(ctx context.Context, d *schema.ResourceData, m
 	return nil
 }
 
-func mapToQuerySuggestionsIndexConfig(d *schema.ResourceData) suggestions.IndexConfiguration {
-	indexConfig := suggestions.IndexConfiguration{
+func mapToQuerySuggestionsConfigWithIndex(d *schema.ResourceData) suggestions.ConfigurationWithIndex {
+	config := suggestions.ConfigurationWithIndex{
 		IndexName: d.Get("index_name").(string),
 	}
 
 	if v, ok := d.GetOk("source_indices"); ok {
-		unmarshalSourceIndices(v, &indexConfig)
+		config.SourceIndices = unmarshalSourceIndices(v)
 	}
 
 	if v, ok := d.GetOk("languages"); ok {
-		indexConfig.Languages = suggestions.BoolOrStringArray{StringArray: castStringSet(v)}
+		config.Languages = suggestions.ArrayOfStringAsLanguages(castStringSet(v))
 	}
 
 	if v, ok := d.GetOk("exclude"); ok {
-		indexConfig.Exclude = castStringSet(v)
+		config.Exclude = castStringSet(v)
 	}
 
-	return indexConfig
+	return config
 }
 
-func unmarshalSourceIndices(configured interface{}, indexConfig *suggestions.IndexConfiguration) {
+func mapToQuerySuggestionsConfig(d *schema.ResourceData) suggestions.Configuration {
+	config := suggestions.Configuration{}
+
+	if v, ok := d.GetOk("source_indices"); ok {
+		config.SourceIndices = unmarshalSourceIndices(v)
+	}
+
+	if v, ok := d.GetOk("languages"); ok {
+		config.Languages = suggestions.ArrayOfStringAsLanguages(castStringSet(v))
+	}
+
+	if v, ok := d.GetOk("exclude"); ok {
+		config.Exclude = castStringSet(v)
+	}
+
+	return config
+}
+
+func unmarshalSourceIndices(configured interface{}) []suggestions.SourceIndex {
 	l := configured.([]interface{})
 	if len(l) == 0 || l[0] == nil {
-		return
+		return nil
 	}
 
 	sourceIndices := make([]suggestions.SourceIndex, 0, len(l))
@@ -305,18 +349,24 @@ func unmarshalSourceIndices(configured interface{}, indexConfig *suggestions.Ind
 			sourceIndex.AnalyticsTags = castStringSet(v)
 		}
 		if v, ok := sourceIndexMap["facets"]; ok {
-			var facets []map[string]interface{}
+			var facets []suggestions.Facet
 			for _, facet := range v.([]interface{}) {
-				facets = append(facets, castInterfaceMap(facet))
+				facetMap := castInterfaceMap(facet)
+				attr := facetMap["attribute"].(string)
+				amt := int32(facetMap["amount"].(int))
+				facets = append(facets, suggestions.Facet{
+					Attribute: &attr,
+					Amount:    &amt,
+				})
 			}
 			sourceIndex.Facets = facets
 		}
 		if v, ok := sourceIndexMap["min_hits"]; ok {
-			minHits := v.(int)
+			minHits := int32(v.(int))
 			sourceIndex.MinHits = &minHits
 		}
 		if v, ok := sourceIndexMap["min_letters"]; ok {
-			minLetters := v.(int)
+			minLetters := int32(v.(int))
 			sourceIndex.MinLetters = &minLetters
 		}
 		if v, ok := sourceIndexMap["generate"]; ok {
@@ -331,11 +381,11 @@ func unmarshalSourceIndices(configured interface{}, indexConfig *suggestions.Ind
 		}
 		sourceIndices = append(sourceIndices, sourceIndex)
 	}
-	indexConfig.SourceIndices = sourceIndices
+	return sourceIndices
 }
 
-func newSuggestionsClient(d *schema.ResourceData, m interface{}) *suggestions.Client {
+func newSuggestionsClient(d *schema.ResourceData, m interface{}) (*suggestions.APIClient, error) {
 	apiClient := m.(*apiClient)
-	r := region.Region(d.Get("region").(string))
+	r := suggestions.Region(d.Get("region").(string))
 	return apiClient.newSuggestionsClient(r)
 }

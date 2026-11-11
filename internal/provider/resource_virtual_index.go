@@ -6,8 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/algolia/algoliasearch-client-go/v3/algolia/opt"
-	"github.com/algolia/algoliasearch-client-go/v3/algolia/search"
+	"github.com/algolia/algoliasearch-client-go/v4/algolia/search"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-provider-algolia/internal/algoliautil"
@@ -567,40 +566,38 @@ func resourceVirtualIndexCreate(ctx context.Context, d *schema.ResourceData, m i
 	indexName := d.Get("name").(string)
 
 	primaryIndexName := d.Get("primary_index_name").(string)
-	primaryIndex := apiClient.searchClient.InitIndex(primaryIndexName)
 
 	// Modifying the primary's replica setting on primary can cause problems if other replicas
 	// are modifying it at the same time. Lock the primary until we're done in order to prevent that.
 	mutexKV.Lock(ctx, algoliaIndexMutexKey(apiClient.appID, primaryIndexName))
-	primaryIndexSettings, err := primaryIndex.GetSettings(ctx)
+	primaryIndexSettings, err := apiClient.searchClient.GetSettings(apiClient.searchClient.NewApiGetSettingsRequest(primaryIndexName), search.WithContext(ctx))
 	if err != nil {
 		mutexKV.Unlock(ctx, algoliaIndexMutexKey(apiClient.appID, primaryIndexName))
 		return diag.FromErr(err)
 	}
-	replicas := primaryIndexSettings.Replicas.Get()
+	replicas := primaryIndexSettings.GetReplicas()
 	if !algoliautil.IndexExistsInReplicas(replicas, indexName, true) {
 
-		newReplicas := append(primaryIndexSettings.Replicas.Get(), fmt.Sprintf("virtual(%s)", indexName))
-		res, err := primaryIndex.SetSettings(search.Settings{
-			Replicas: opt.Replicas(newReplicas...),
-		})
+		newReplicas := append(primaryIndexSettings.GetReplicas(), fmt.Sprintf("virtual(%s)", indexName))
+		replicaSettings := search.IndexSettings{Replicas: newReplicas}
+		res, err := apiClient.searchClient.SetSettings(apiClient.searchClient.NewApiSetSettingsRequest(primaryIndexName, &replicaSettings), search.WithContext(ctx))
 		if err != nil {
 			mutexKV.Unlock(ctx, algoliaIndexMutexKey(apiClient.appID, primaryIndexName))
 			return diag.FromErr(err)
 		}
-		if err := res.Wait(); err != nil {
+		if _, err := apiClient.searchClient.WaitForTask(primaryIndexName, res.TaskID); err != nil {
 			mutexKV.Unlock(ctx, algoliaIndexMutexKey(apiClient.appID, primaryIndexName))
 			return diag.FromErr(err)
 		}
 	}
 	mutexKV.Unlock(ctx, algoliaIndexMutexKey(apiClient.appID, primaryIndexName))
 
-	index := apiClient.searchClient.InitIndex(indexName)
-	res, err := index.SetSettings(mapToVirtualIndexSettings(d))
+	settings := mapToVirtualIndexSettings(d)
+	res, err := apiClient.searchClient.SetSettings(apiClient.searchClient.NewApiSetSettingsRequest(indexName, &settings), search.WithContext(ctx))
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	if err = res.Wait(); err != nil {
+	if _, err = apiClient.searchClient.WaitForTask(indexName, res.TaskID); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -619,12 +616,13 @@ func resourceVirtualIndexRead(ctx context.Context, d *schema.ResourceData, m int
 func resourceVirtualIndexUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	apiClient := m.(*apiClient)
 
-	index := apiClient.searchClient.InitIndex(d.Id())
-	res, err := index.SetSettings(mapToVirtualIndexSettings(d))
+	indexName := d.Id()
+	settings := mapToVirtualIndexSettings(d)
+	res, err := apiClient.searchClient.SetSettings(apiClient.searchClient.NewApiSetSettingsRequest(indexName, &settings), search.WithContext(ctx))
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	if err = res.Wait(); err != nil {
+	if _, err = apiClient.searchClient.WaitForTask(indexName, res.TaskID); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -645,29 +643,43 @@ func resourceVirtualIndexDelete(ctx context.Context, d *schema.ResourceData, m i
 	mutexKV.Lock(ctx, algoliaIndexMutexKey(apiClient.appID, primaryIndexName))
 	defer mutexKV.Unlock(ctx, algoliaIndexMutexKey(apiClient.appID, primaryIndexName))
 
-	primaryIndex := apiClient.searchClient.InitIndex(primaryIndexName)
-	primaryIndexSettings, err := primaryIndex.GetSettings(ctx)
+	primaryIndexSettings, err := apiClient.searchClient.GetSettings(apiClient.searchClient.NewApiGetSettingsRequest(primaryIndexName), search.WithContext(ctx))
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	if algoliautil.IndexExistsInReplicas(primaryIndexSettings.Replicas.Get(), indexName, true) {
-		newReplicas := algoliautil.RemoveIndexFromReplicas(primaryIndexSettings.Replicas.Get(), indexName, true)
-		updateReplicasRes, err := primaryIndex.SetSettings(search.Settings{
-			Replicas: opt.Replicas(newReplicas...),
-		})
+	if algoliautil.IndexExistsInReplicas(primaryIndexSettings.GetReplicas(), indexName, true) {
+		newReplicas := algoliautil.RemoveIndexFromReplicas(primaryIndexSettings.GetReplicas(), indexName, true)
+		replicaSettings := search.IndexSettings{Replicas: newReplicas}
+		updateReplicasRes, err := apiClient.searchClient.SetSettings(apiClient.searchClient.NewApiSetSettingsRequest(primaryIndexName, &replicaSettings), search.WithContext(ctx))
 		if err != nil {
 			return diag.FromErr(err)
 		}
-		if err := updateReplicasRes.Wait(); err != nil {
+		if _, err := apiClient.searchClient.WaitForTask(primaryIndexName, updateReplicasRes.TaskID); err != nil {
 			return diag.FromErr(err)
 		}
 	}
-	index := apiClient.searchClient.InitIndex(indexName)
-	deleteIndexRes, err := index.Delete(ctx)
-	if err != nil {
-		return diag.FromErr(err)
+	// Retry the delete with backoff: after detaching a virtual replica from its primary,
+	// the Algolia API may briefly return 403 due to eventual consistency.
+	var deleteErr error
+	var deleteIndexRes *search.DeletedAtResponse
+	for i := 0; i < 10; i++ {
+		deleteIndexRes, deleteErr = apiClient.searchClient.DeleteIndex(apiClient.searchClient.NewApiDeleteIndexRequest(indexName), search.WithContext(ctx))
+		if deleteErr == nil {
+			break
+		}
+		if !algoliautil.IsForbiddenError(deleteErr) {
+			return diag.FromErr(deleteErr)
+		}
+		select {
+		case <-ctx.Done():
+			return diag.FromErr(ctx.Err())
+		case <-time.After(time.Duration(i+1) * time.Second):
+		}
 	}
-	if err := deleteIndexRes.Wait(ctx); err != nil {
+	if deleteErr != nil {
+		return diag.FromErr(deleteErr)
+	}
+	if _, err := apiClient.searchClient.WaitForTask(indexName, deleteIndexRes.TaskID); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -685,8 +697,8 @@ func resourceVirtualIndexStateContext(ctx context.Context, d *schema.ResourceDat
 func refreshVirtualIndexState(ctx context.Context, d *schema.ResourceData, m interface{}) error {
 	apiClient := m.(*apiClient)
 
-	index := apiClient.searchClient.InitIndex(d.Id())
-	settings, err := index.GetSettings(ctx)
+	indexName := d.Id()
+	settings, err := apiClient.searchClient.GetSettings(apiClient.searchClient.NewApiGetSettingsRequest(indexName), search.WithContext(ctx))
 	if err != nil {
 		if algoliautil.IsNotFoundError(err) {
 			tflog.Warn(ctx, fmt.Sprintf("virtual index (%s) not found, removing from state", d.Id()))
@@ -697,112 +709,170 @@ func refreshVirtualIndexState(ctx context.Context, d *schema.ResourceData, m int
 	}
 
 	var typoTolerance string
-	if b, s := settings.TypoTolerance.Get(); s != "" {
-		typoTolerance = s
+	typoTol := settings.GetTypoTolerance()
+	if typoTol.TypoToleranceEnum != nil {
+		typoTolerance = string(*typoTol.TypoToleranceEnum)
+	} else if typoTol.Bool != nil {
+		typoTolerance = strconv.FormatBool(*typoTol.Bool)
 	} else {
-		typoTolerance = strconv.FormatBool(b)
+		typoTolerance = "true"
 	}
 
 	var ignorePlurals, ignorePluralsFor interface{}
-	if ignore, languages := settings.IgnorePlurals.Get(); len(languages) > 0 {
-		ignorePluralsFor = languages
-	} else {
-		ignorePlurals = ignore
+	ip := settings.GetIgnorePlurals()
+	if ip.ArrayOfSupportedLanguage != nil && len(*ip.ArrayOfSupportedLanguage) > 0 {
+		langs := make([]string, len(*ip.ArrayOfSupportedLanguage))
+		for i, l := range *ip.ArrayOfSupportedLanguage {
+			langs[i] = string(l)
+		}
+		ignorePluralsFor = langs
+	} else if ip.Bool != nil {
+		ignorePlurals = *ip.Bool
 	}
 
 	var removeStopWords, removeStopWordsFor interface{}
-	if remove, languages := settings.RemoveStopWords.Get(); len(languages) > 0 {
-		removeStopWordsFor = languages
-	} else {
-		removeStopWords = remove
+	rsw := settings.GetRemoveStopWords()
+	if rsw.ArrayOfSupportedLanguage != nil && len(*rsw.ArrayOfSupportedLanguage) > 0 {
+		langs := make([]string, len(*rsw.ArrayOfSupportedLanguage))
+		for i, l := range *rsw.ArrayOfSupportedLanguage {
+			langs[i] = string(l)
+		}
+		removeStopWordsFor = langs
+	} else if rsw.Bool != nil {
+		removeStopWords = *rsw.Bool
 	}
 
 	var decompoundedAttributes []interface{}
-	for language, attributes := range settings.DecompoundedAttributes.Get() {
-		decompoundedAttributes = append(decompoundedAttributes, map[string]interface{}{
-			"language":   language,
-			"attributes": attributes,
-		})
+	for language, attrs := range settings.GetDecompoundedAttributes() {
+		if attrList, ok := attrs.([]interface{}); ok {
+			strAttrs := make([]string, len(attrList))
+			for i, a := range attrList {
+				strAttrs[i] = fmt.Sprintf("%v", a)
+			}
+			decompoundedAttributes = append(decompoundedAttributes, map[string]interface{}{
+				"language":   language,
+				"attributes": strAttrs,
+			})
+		}
+	}
+
+	// Convert typed slices to []string
+	aae := settings.GetAlternativesAsExact()
+	aaeStrs := make([]string, len(aae))
+	for i, a := range aae {
+		aaeStrs[i] = string(a)
+	}
+
+	asf := settings.GetAdvancedSyntaxFeatures()
+	asfStrs := make([]string, len(asf))
+	for i, a := range asf {
+		asfStrs[i] = string(a)
+	}
+
+	ql := settings.GetQueryLanguages()
+	qlStrs := make([]string, len(ql))
+	for i, l := range ql {
+		qlStrs[i] = string(l)
+	}
+
+	il := settings.GetIndexLanguages()
+	ilStrs := make([]string, len(il))
+	for i, l := range il {
+		ilStrs[i] = string(l)
+	}
+
+	ow := settings.GetOptionalWords()
+	var optionalWordsVal []string
+	if ow.ArrayOfString != nil {
+		optionalWordsVal = *ow.ArrayOfString
 	}
 
 	values := map[string]interface{}{
 		"name":               d.Id(),
-		"primary_index_name": settings.Primary.Get(),
+		"primary_index_name": settings.GetPrimary(),
 		"attributes_config": []interface{}{map[string]interface{}{
-			"searchable_attributes":    settings.SearchableAttributes.Get(),
-			"attributes_for_faceting":  settings.AttributesForFaceting.Get(),
-			"unretrievable_attributes": settings.UnretrievableAttributes.Get(),
-			"attributes_to_retrieve":   settings.AttributesToRetrieve.Get(),
+			"searchable_attributes":    settings.GetSearchableAttributes(),
+			"attributes_for_faceting":  settings.GetAttributesForFaceting(),
+			"unretrievable_attributes": settings.GetUnretrievableAttributes(),
+			"attributes_to_retrieve":   defaultStringSlice(settings.AttributesToRetrieve, []string{"*"}),
 		}},
 		"ranking_config": []interface{}{map[string]interface{}{
-			"ranking":              settings.Ranking.Get(),
-			"custom_ranking":       settings.CustomRanking.Get(),
-			"relevancy_strictness": settings.RelevancyStrictness.Get(),
+			"ranking":              settings.GetRanking(),
+			"custom_ranking":       settings.GetCustomRanking(),
+			"relevancy_strictness": derefInt32(settings.RelevancyStrictness, 100),
 		}},
 		"faceting_config": []interface{}{map[string]interface{}{
-			"max_values_per_facet": settings.MaxValuesPerFacet.Get(),
-			"sort_facet_values_by": settings.SortFacetValuesBy.Get(),
+			"max_values_per_facet": derefInt32(settings.MaxValuesPerFacet, 100),
+			"sort_facet_values_by": derefString(settings.SortFacetValuesBy, "count"),
 		}},
 		"highlight_and_snippet_config": []interface{}{map[string]interface{}{
-			"attributes_to_highlight":               settings.AttributesToHighlight.Get(),
-			"attributes_to_snippet":                 settings.AttributesToSnippet.Get(),
-			"highlight_pre_tag":                     settings.HighlightPreTag.Get(),
-			"highlight_post_tag":                    settings.HighlightPostTag.Get(),
-			"snippet_ellipsis_text":                 settings.SnippetEllipsisText.Get(),
-			"restrict_highlight_and_snippet_arrays": settings.RestrictHighlightAndSnippetArrays.Get(),
+			"attributes_to_highlight":               settings.GetAttributesToHighlight(),
+			"attributes_to_snippet":                 settings.GetAttributesToSnippet(),
+			"highlight_pre_tag":                     derefString(settings.HighlightPreTag, "<em>"),
+			"highlight_post_tag":                    derefString(settings.HighlightPostTag, "</em>"),
+			"snippet_ellipsis_text":                 derefString(settings.SnippetEllipsisText, "…"),
+			"restrict_highlight_and_snippet_arrays": derefBool(settings.RestrictHighlightAndSnippetArrays, false),
 		}},
 		"pagination_config": []interface{}{map[string]interface{}{
-			"hits_per_page":         settings.HitsPerPage.Get(),
-			"pagination_limited_to": settings.PaginationLimitedTo.Get(),
+			"hits_per_page":         derefInt32(settings.HitsPerPage, 200),
+			"pagination_limited_to": derefInt32(settings.PaginationLimitedTo, 1000),
 		}},
 		"typos_config": []interface{}{map[string]interface{}{
-			"min_word_size_for_1_typo":             settings.MinWordSizefor1Typo.Get(),
-			"min_word_size_for_2_typos":            settings.MinWordSizefor2Typos.Get(),
+			"min_word_size_for_1_typo":             derefInt32(settings.MinWordSizefor1Typo, 4),
+			"min_word_size_for_2_typos":            derefInt32(settings.MinWordSizefor2Typos, 8),
 			"typo_tolerance":                       typoTolerance,
-			"allow_typos_on_numeric_tokens":        settings.AllowTyposOnNumericTokens.Get(),
-			"disable_typo_tolerance_on_attributes": settings.DisableTypoToleranceOnAttributes.Get(),
-			"disable_typo_tolerance_on_words":      settings.DisableTypoToleranceOnWords.Get(),
-			"separators_to_index":                  settings.SeparatorsToIndex.Get(),
+			"allow_typos_on_numeric_tokens":        derefBool(settings.AllowTyposOnNumericTokens, true),
+			"disable_typo_tolerance_on_attributes": settings.GetDisableTypoToleranceOnAttributes(),
+			"disable_typo_tolerance_on_words":      settings.GetDisableTypoToleranceOnWords(),
+			"separators_to_index":                  settings.GetSeparatorsToIndex(),
 		}},
 		"languages_config": []interface{}{map[string]interface{}{
 			"ignore_plurals":                ignorePlurals,
 			"ignore_plurals_for":            ignorePluralsFor,
-			"attributes_to_transliterate":   settings.AttributesToTransliterate.Get(),
+			"attributes_to_transliterate":   settings.GetAttributesToTransliterate(),
 			"remove_stop_words":             removeStopWords,
 			"remove_stop_words_for":         removeStopWordsFor,
-			"camel_case_attributes":         settings.CamelCaseAttributes.Get(),
+			"camel_case_attributes":         settings.GetCamelCaseAttributes(),
 			"decompounded_attributes":       decompoundedAttributes,
-			"keep_diacritics_on_characters": settings.KeepDiacriticsOnCharacters.Get(),
-			"custom_normalization":          settings.CustomNormalization.Get()["default"],
-			"query_languages":               settings.QueryLanguages.Get(),
-			"index_languages":               settings.IndexLanguages.Get(),
-			"decompound_query":              settings.DecompoundQuery.Get(),
+			"keep_diacritics_on_characters": settings.GetKeepDiacriticsOnCharacters(),
+			"custom_normalization":          settings.GetCustomNormalization()["default"],
+			"query_languages":               qlStrs,
+			"index_languages":               ilStrs,
+			"decompound_query":              derefBool(settings.DecompoundQuery, true),
 		}},
-		"enable_rules":           settings.EnableRules.Get(),
-		"enable_personalization": settings.EnablePersonalization.Get(),
+		"enable_rules":           derefBool(settings.EnableRules, true),
+		"enable_personalization": derefBool(settings.EnablePersonalization, false),
 		"query_strategy_config": []interface{}{map[string]interface{}{
-			"query_type":                   settings.QueryType.Get(),
-			"remove_words_if_no_results":   settings.RemoveWordsIfNoResults.Get(),
-			"advanced_syntax":              settings.AdvancedSyntax.Get(),
-			"optional_words":               settings.OptionalWords.Get(),
-			"disable_prefix_on_attributes": settings.DisablePrefixOnAttributes.Get(),
-			"disable_exact_on_attributes":  settings.DisableExactOnAttributes.Get(),
-			"exact_on_single_word_query":   settings.ExactOnSingleWordQuery.Get(),
-			"alternatives_as_exact":        settings.AlternativesAsExact.Get(),
-			"advanced_syntax_features":     settings.AdvancedSyntaxFeatures.Get(),
+			"query_type":                   derefString((*string)(settings.QueryType), "prefixLast"),
+			"remove_words_if_no_results":   derefString((*string)(settings.RemoveWordsIfNoResults), "none"),
+			"advanced_syntax":              derefBool(settings.AdvancedSyntax, false),
+			"optional_words":               optionalWordsVal,
+			"disable_prefix_on_attributes": settings.GetDisablePrefixOnAttributes(),
+			"disable_exact_on_attributes":  settings.GetDisableExactOnAttributes(),
+			"exact_on_single_word_query":   derefString((*string)(settings.ExactOnSingleWordQuery), "attribute"),
+			"alternatives_as_exact":        aaeStrs,
+			"advanced_syntax_features":     asfStrs,
 		}},
 		"performance_config": []interface{}{map[string]interface{}{
-			"numeric_attributes_for_filtering":   settings.NumericAttributesForFiltering.Get(),
-			"allow_compression_of_integer_array": settings.AllowCompressionOfIntegerArray.Get(),
+			"numeric_attributes_for_filtering":   settings.GetNumericAttributesForFiltering(),
+			"allow_compression_of_integer_array": settings.GetAllowCompressionOfIntegerArray(),
 		}},
 		"advanced_config": []interface{}{map[string]interface{}{
-			"attribute_for_distinct":        settings.AttributeForDistinct.Get(),
-			"distinct":                      func() int { _, i := settings.Distinct.Get(); return i }(),
-			"replace_synonyms_in_highlight": settings.ReplaceSynonymsInHighlight.Get(),
-			"min_proximity":                 settings.MinProximity.Get(),
-			"response_fields":               settings.ResponseFields.Get(),
-			"max_facet_hits":                settings.MaxFacetHits.Get(),
-			"attribute_criteria_computed_by_min_proximity": settings.AttributeCriteriaComputedByMinProximity.Get(),
+			"attribute_for_distinct": settings.GetAttributeForDistinct(),
+			"distinct": func() int {
+				d := settings.GetDistinct()
+				if d.Int32 != nil {
+					return int(*d.Int32)
+				} else if d.Bool != nil && *d.Bool {
+					return 1
+				}
+				return 0
+			}(),
+			"replace_synonyms_in_highlight":                derefBool(settings.ReplaceSynonymsInHighlight, false),
+			"min_proximity":                                derefInt32(settings.MinProximity, 1),
+			"response_fields":                              defaultStringSlice(settings.ResponseFields, []string{"*"}),
+			"max_facet_hits":                               derefInt32(settings.MaxFacetHits, 10),
+			"attribute_criteria_computed_by_min_proximity": derefBool(settings.AttributeCriteriaComputedByMinProximity, false),
 		}},
 	}
 	if err := setValues(d, values); err != nil {
@@ -812,8 +882,8 @@ func refreshVirtualIndexState(ctx context.Context, d *schema.ResourceData, m int
 	return nil
 }
 
-func mapToVirtualIndexSettings(d *schema.ResourceData) search.Settings {
-	settings := search.Settings{}
+func mapToVirtualIndexSettings(d *schema.ResourceData) search.IndexSettings {
+	settings := search.IndexSettings{}
 	if v, ok := d.GetOk("attributes_config"); ok {
 		unmarshalAttributesConfig(v, &settings, true)
 	}
@@ -836,10 +906,12 @@ func mapToVirtualIndexSettings(d *schema.ResourceData) search.Settings {
 		unmarshalLanguagesConfig(v, &settings, true)
 	}
 	if v, ok := d.GetOk("enable_rules"); ok {
-		settings.EnableRules = opt.EnableRules(v.(bool))
+		b := v.(bool)
+		settings.EnableRules = &b
 	}
 	if v, ok := d.GetOk("enable_personalization"); ok {
-		settings.EnablePersonalization = opt.EnablePersonalization(v.(bool))
+		b := v.(bool)
+		settings.EnablePersonalization = &b
 	}
 	if v, ok := d.GetOk("query_strategy_config"); ok {
 		unmarshalQueryStrategyConfig(v, &settings, true)

@@ -2,11 +2,11 @@ package provider
 
 import (
 	"context"
+	"fmt"
 
-	"github.com/algolia/algoliasearch-client-go/v3/algolia/region"
-	"github.com/algolia/algoliasearch-client-go/v3/algolia/search"
-	"github.com/algolia/algoliasearch-client-go/v3/algolia/suggestions"
-	"github.com/algolia/algoliasearch-client-go/v3/algolia/transport"
+	suggestions "github.com/algolia/algoliasearch-client-go/v4/algolia/query-suggestions"
+	"github.com/algolia/algoliasearch-client-go/v4/algolia/search"
+	"github.com/algolia/algoliasearch-client-go/v4/algolia/transport"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/logging"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -65,39 +65,51 @@ type apiClient struct {
 	apiKey    string
 	requester transport.Requester
 
-	searchClient *search.Client
+	searchClient *search.APIClient
 }
 
-func (a *apiClient) newSuggestionsClient(region region.Region) *suggestions.Client {
-	return suggestions.NewClientWithConfig(suggestions.Configuration{
-		AppID:          a.appID,
-		APIKey:         a.apiKey,
-		Region:         region,
-		ExtraUserAgent: a.userAgent,
-		Requester:      a.requester,
-	})
+func (a *apiClient) newSuggestionsClient(region suggestions.Region) (*suggestions.APIClient, error) {
+	cfg := suggestions.QuerySuggestionsConfiguration{
+		Configuration: transport.Configuration{
+			AppID:     a.appID,
+			ApiKey:    a.apiKey,
+			UserAgent: a.userAgent,
+			Requester: a.requester,
+		},
+		Region: region,
+	}
+	return suggestions.NewClientWithConfig(cfg)
 }
 
 func configure(version string, p *schema.Provider) func(context.Context, *schema.ResourceData) (interface{}, diag.Diagnostics) {
 	return func(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
 		userAgent := p.UserAgent("terraform-provider-algolia", version)
-		return newAPIClient(d.Get("app_id").(string), d.Get("api_key").(string), userAgent), nil
+		client, err := newAPIClient(d.Get("app_id").(string), d.Get("api_key").(string), userAgent)
+		if err != nil {
+			return nil, diag.FromErr(err)
+		}
+		return client, nil
 	}
 }
 
-func newAPIClient(appID, apiKey, userAgent string) *apiClient {
+func newAPIClient(appID, apiKey, userAgent string) (*apiClient, error) {
 	var algoliaRequester transport.Requester
 	if logging.IsDebugOrHigher() {
 		algoliaRequester = algoliautil.NewDebugRequester()
 	}
 
-	searchConfig := search.Configuration{
-		AppID:          appID,
-		APIKey:         apiKey,
-		ExtraUserAgent: userAgent,
-		Requester:      algoliaRequester,
+	searchConfig := search.SearchConfiguration{
+		Configuration: transport.Configuration{
+			AppID:     appID,
+			ApiKey:    apiKey,
+			UserAgent: userAgent,
+			Requester: algoliaRequester,
+		},
 	}
-	searchClient := search.NewClientWithConfig(searchConfig)
+	searchClient, err := search.NewClientWithConfig(searchConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create Algolia search client: %w", err)
+	}
 
 	return &apiClient{
 		appID:        appID,
@@ -105,5 +117,5 @@ func newAPIClient(appID, apiKey, userAgent string) *apiClient {
 		userAgent:    userAgent,
 		requester:    algoliaRequester,
 		searchClient: searchClient,
-	}
+	}, nil
 }

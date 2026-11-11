@@ -38,7 +38,7 @@ resource "algolia_rule" "example" {
 
 ### Required
 
-- `consequence` (Block List, Min: 1, Max: 1) Consequence of the Rule. 
+- `consequence` (Block List, Min: 1, Max: 1) Consequence of the Rule.
 At least one of the following object must be used:
 - params
 - promote
@@ -84,7 +84,7 @@ Optional:
 
 Required:
 
-- `facet` (String) Attribute to filter on. This must match a facet placeholder in the Rule’s pattern.
+- `facet` (String) Attribute to filter on. This must match a facet placeholder in the Rule's pattern.
 
 Optional:
 
@@ -97,7 +97,7 @@ Optional:
 
 Required:
 
-- `facet` (String) Attribute to filter on. This must match a facet placeholder in the Rule’s pattern.
+- `facet` (String) Attribute to filter on. This must match a facet placeholder in the Rule's pattern.
 
 Optional:
 
@@ -138,10 +138,10 @@ Optional:
 
 - `alternatives` (Boolean) Whether the `pattern` matches on plurals, synonyms, and typos.
 
-This parameter goes hand in hand with the `pattern`  parameter. If the `pattern` is “shoe” and `alternatives` is `true`, the `pattern` matches on “shoes”, as well as synonyms and typos of “shoe”.
+This parameter goes hand in hand with the `pattern`  parameter. If the `pattern` is “shoe” and `alternatives` is `true`, the `pattern` matches on \u201cshoes\u201d, as well as synonyms and typos of \u201cshoe\u201d.
 - `anchoring` (String) Whether the pattern parameter must match the beginning or the end of the query string, or both, or none.
 Possible values are `is`, `startsWith`, `endsWith` and `contains`.
-This parameter goes hand in hand with the `pattern` parameter. If you’re creating a Rule that depends on a specific query, you must specify the `pattern` and `anchoring`.
+This parameter goes hand in hand with the `pattern` parameter. If you're creating a Rule that depends on a specific query, you must specify the `pattern` and `anchoring`.
 
 Otherwise, you can omit both.
 - `context` (String) Rule context (format: `[A-Za-z0-9_-]+`). When specified, the Rule is only applied when the same context is specified at query time (using the `ruleContexts` parameter). When absent, the Rule is generic and always applies (provided that its other conditions are met, of course).
@@ -152,7 +152,7 @@ Query patterns are expressed as a string with a specific syntax. A pattern is a 
 - Literal: the world itself. Example: Algolia.
 Special characters (`*`, `{`, `}`, `:` and `\`) must be escaped by preceding them with a backslash (\) if they are to be treated as literals.
 
-This parameter goes hand in hand with the `anchoring` parameter. If you’re creating a Rule that depends on a specific query, you must specify the pattern and anchoring. The empty `""` pattern is only allowed when `anchoring` is set to `is`.
+This parameter goes hand in hand with the `anchoring` parameter. If you're creating a Rule that depends on a specific query, you must specify the pattern and anchoring. The empty `""` pattern is only allowed when `anchoring` is set to `is`.
 
 Otherwise, you can omit both.
 

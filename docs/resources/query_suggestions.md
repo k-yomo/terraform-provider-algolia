@@ -65,7 +65,7 @@ Optional:
 - `analytics_tags` (Set of String) A list of analytics tags to filter the popular searches per tag.
 - `external` (Set of String) A list of external indices to use to generate custom Query Suggestions.
 - `facets` (Block List) A list of facets to define as categories for the query suggestions. (see [below for nested schema](#nestedblock--source_indices--facets))
-- `generate` (List of List of String) List of facet attributes used to generate Query Suggestions. The resulting suggestions are every combination of the facets in the nested list 
+- `generate` (List of List of String) List of facet attributes used to generate Query Suggestions. The resulting suggestions are every combination of the facets in the nested list
 (e.g., (facetA and facetB) and facetC).
 ```
 [

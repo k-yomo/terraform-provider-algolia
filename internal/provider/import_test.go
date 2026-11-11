@@ -3,7 +3,7 @@ package provider
 import (
 	"testing"
 
-	"github.com/algolia/algoliasearch-client-go/v3/algolia/region"
+	suggestions "github.com/algolia/algoliasearch-client-go/v4/algolia/query-suggestions"
 )
 
 func Test_parseImportRegionAndId(t *testing.T) {
@@ -15,14 +15,14 @@ func Test_parseImportRegionAndId(t *testing.T) {
 	tests := []struct {
 		name       string
 		args       args
-		wantRegion region.Region
+		wantRegion suggestions.Region
 		wantID     string
 		wantErr    bool
 	}{
 		{
 			name:       "parse region and id",
 			args:       args{id: "eu/test"},
-			wantRegion: region.EU,
+			wantRegion: suggestions.EU,
 			wantID:     "test",
 		},
 		{

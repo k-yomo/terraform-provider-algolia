@@ -17,7 +17,7 @@ func IndexExistsInReplicas(replicas []string, indexName string, isVirtual bool) 
 func RemoveIndexFromReplicas(replicas []string, indexName string, isVirtual bool) []string {
 	replicaIndexName := getReplicaIndexName(indexName, isVirtual)
 
-	var newReplicas []string
+	newReplicas := make([]string, 0)
 	for _, replica := range replicas {
 		if replica == replicaIndexName {
 			continue
