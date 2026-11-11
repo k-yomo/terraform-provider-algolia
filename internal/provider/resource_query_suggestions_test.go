@@ -46,6 +46,7 @@ func testAccResourceQuerySuggestions(indexName string) string {
 	return fmt.Sprintf(`
 resource "algolia_index" "test" {
   name = "%s"
+  deletion_protection = false
 }
 
 resource "algolia_query_suggestions" "test" {

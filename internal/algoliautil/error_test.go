@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/algolia/algoliasearch-client-go/v4/algolia/errs"
+	suggestions "github.com/algolia/algoliasearch-client-go/v4/algolia/query-suggestions"
 	"github.com/algolia/algoliasearch-client-go/v4/algolia/search"
 )
 
@@ -24,6 +25,16 @@ func TestIsRetryableError(t *testing.T) {
 			name: "returns true if not found error",
 			args: args{
 				err: &search.APIError{
+					Message: "not found",
+					Status:  http.StatusNotFound,
+				},
+			},
+			want: true,
+		},
+		{
+			name: "returns true if query suggestions not found error",
+			args: args{
+				err: &suggestions.APIError{
 					Message: "not found",
 					Status:  http.StatusNotFound,
 				},

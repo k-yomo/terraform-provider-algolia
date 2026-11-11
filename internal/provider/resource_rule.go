@@ -604,7 +604,9 @@ func unmarshalConditions(configured interface{}, rule *search.Rule) {
 		}
 		if v, ok := c["context"]; ok {
 			s := v.(string)
-			ruleCondition.Context = &s
+			if s != "" {
+				ruleCondition.Context = &s
+			}
 		}
 		if v, ok := c["alternatives"]; ok {
 			b := v.(bool)

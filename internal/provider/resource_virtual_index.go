@@ -658,9 +658,26 @@ func resourceVirtualIndexDelete(ctx context.Context, d *schema.ResourceData, m i
 			return diag.FromErr(err)
 		}
 	}
-	deleteIndexRes, err := apiClient.searchClient.DeleteIndex(apiClient.searchClient.NewApiDeleteIndexRequest(indexName), search.WithContext(ctx))
-	if err != nil {
-		return diag.FromErr(err)
+	// Retry the delete with backoff: after detaching a virtual replica from its primary,
+	// the Algolia API may briefly return 403 due to eventual consistency.
+	var deleteErr error
+	var deleteIndexRes *search.DeletedAtResponse
+	for i := 0; i < 10; i++ {
+		deleteIndexRes, deleteErr = apiClient.searchClient.DeleteIndex(apiClient.searchClient.NewApiDeleteIndexRequest(indexName), search.WithContext(ctx))
+		if deleteErr == nil {
+			break
+		}
+		if !algoliautil.IsForbiddenError(deleteErr) {
+			return diag.FromErr(deleteErr)
+		}
+		select {
+		case <-ctx.Done():
+			return diag.FromErr(ctx.Err())
+		case <-time.After(time.Duration(i+1) * time.Second):
+		}
+	}
+	if deleteErr != nil {
+		return diag.FromErr(deleteErr)
 	}
 	if _, err := apiClient.searchClient.WaitForTask(indexName, deleteIndexRes.TaskID); err != nil {
 		return diag.FromErr(err)
@@ -777,34 +794,34 @@ func refreshVirtualIndexState(ctx context.Context, d *schema.ResourceData, m int
 			"searchable_attributes":    settings.GetSearchableAttributes(),
 			"attributes_for_faceting":  settings.GetAttributesForFaceting(),
 			"unretrievable_attributes": settings.GetUnretrievableAttributes(),
-			"attributes_to_retrieve":   settings.GetAttributesToRetrieve(),
+			"attributes_to_retrieve":   defaultStringSlice(settings.AttributesToRetrieve, []string{"*"}),
 		}},
 		"ranking_config": []interface{}{map[string]interface{}{
 			"ranking":              settings.GetRanking(),
 			"custom_ranking":       settings.GetCustomRanking(),
-			"relevancy_strictness": int(settings.GetRelevancyStrictness()),
+			"relevancy_strictness": derefInt32(settings.RelevancyStrictness, 100),
 		}},
 		"faceting_config": []interface{}{map[string]interface{}{
-			"max_values_per_facet": int(settings.GetMaxValuesPerFacet()),
-			"sort_facet_values_by": string(settings.GetSortFacetValuesBy()),
+			"max_values_per_facet": derefInt32(settings.MaxValuesPerFacet, 100),
+			"sort_facet_values_by": derefString(settings.SortFacetValuesBy, "count"),
 		}},
 		"highlight_and_snippet_config": []interface{}{map[string]interface{}{
 			"attributes_to_highlight":               settings.GetAttributesToHighlight(),
 			"attributes_to_snippet":                 settings.GetAttributesToSnippet(),
-			"highlight_pre_tag":                     settings.GetHighlightPreTag(),
-			"highlight_post_tag":                    settings.GetHighlightPostTag(),
-			"snippet_ellipsis_text":                 settings.GetSnippetEllipsisText(),
-			"restrict_highlight_and_snippet_arrays": settings.GetRestrictHighlightAndSnippetArrays(),
+			"highlight_pre_tag":                     derefString(settings.HighlightPreTag, "<em>"),
+			"highlight_post_tag":                    derefString(settings.HighlightPostTag, "</em>"),
+			"snippet_ellipsis_text":                 derefString(settings.SnippetEllipsisText, "…"),
+			"restrict_highlight_and_snippet_arrays": derefBool(settings.RestrictHighlightAndSnippetArrays, false),
 		}},
 		"pagination_config": []interface{}{map[string]interface{}{
-			"hits_per_page":         int(settings.GetHitsPerPage()),
-			"pagination_limited_to": int(settings.GetPaginationLimitedTo()),
+			"hits_per_page":         derefInt32(settings.HitsPerPage, 200),
+			"pagination_limited_to": derefInt32(settings.PaginationLimitedTo, 1000),
 		}},
 		"typos_config": []interface{}{map[string]interface{}{
-			"min_word_size_for_1_typo":             int(settings.GetMinWordSizefor1Typo()),
-			"min_word_size_for_2_typos":            int(settings.GetMinWordSizefor2Typos()),
+			"min_word_size_for_1_typo":             derefInt32(settings.MinWordSizefor1Typo, 4),
+			"min_word_size_for_2_typos":            derefInt32(settings.MinWordSizefor2Typos, 8),
 			"typo_tolerance":                       typoTolerance,
-			"allow_typos_on_numeric_tokens":        settings.GetAllowTyposOnNumericTokens(),
+			"allow_typos_on_numeric_tokens":        derefBool(settings.AllowTyposOnNumericTokens, true),
 			"disable_typo_tolerance_on_attributes": settings.GetDisableTypoToleranceOnAttributes(),
 			"disable_typo_tolerance_on_words":      settings.GetDisableTypoToleranceOnWords(),
 			"separators_to_index":                  settings.GetSeparatorsToIndex(),
@@ -821,18 +838,18 @@ func refreshVirtualIndexState(ctx context.Context, d *schema.ResourceData, m int
 			"custom_normalization":          settings.GetCustomNormalization()["default"],
 			"query_languages":               qlStrs,
 			"index_languages":               ilStrs,
-			"decompound_query":              settings.GetDecompoundQuery(),
+			"decompound_query":              derefBool(settings.DecompoundQuery, true),
 		}},
-		"enable_rules":           settings.GetEnableRules(),
-		"enable_personalization": settings.GetEnablePersonalization(),
+		"enable_rules":           derefBool(settings.EnableRules, true),
+		"enable_personalization": derefBool(settings.EnablePersonalization, false),
 		"query_strategy_config": []interface{}{map[string]interface{}{
-			"query_type":                   string(settings.GetQueryType()),
-			"remove_words_if_no_results":   string(settings.GetRemoveWordsIfNoResults()),
-			"advanced_syntax":              settings.GetAdvancedSyntax(),
+			"query_type":                   derefString((*string)(settings.QueryType), "prefixLast"),
+			"remove_words_if_no_results":   derefString((*string)(settings.RemoveWordsIfNoResults), "none"),
+			"advanced_syntax":              derefBool(settings.AdvancedSyntax, false),
 			"optional_words":               optionalWordsVal,
 			"disable_prefix_on_attributes": settings.GetDisablePrefixOnAttributes(),
 			"disable_exact_on_attributes":  settings.GetDisableExactOnAttributes(),
-			"exact_on_single_word_query":   string(settings.GetExactOnSingleWordQuery()),
+			"exact_on_single_word_query":   derefString((*string)(settings.ExactOnSingleWordQuery), "attribute"),
 			"alternatives_as_exact":        aaeStrs,
 			"advanced_syntax_features":     asfStrs,
 		}},
@@ -846,14 +863,16 @@ func refreshVirtualIndexState(ctx context.Context, d *schema.ResourceData, m int
 				d := settings.GetDistinct()
 				if d.Int32 != nil {
 					return int(*d.Int32)
+				} else if d.Bool != nil && *d.Bool {
+					return 1
 				}
 				return 0
 			}(),
-			"replace_synonyms_in_highlight": settings.GetReplaceSynonymsInHighlight(),
-			"min_proximity":                 int(settings.GetMinProximity()),
-			"response_fields":               settings.GetResponseFields(),
-			"max_facet_hits":                int(settings.GetMaxFacetHits()),
-			"attribute_criteria_computed_by_min_proximity": settings.GetAttributeCriteriaComputedByMinProximity(),
+			"replace_synonyms_in_highlight":                derefBool(settings.ReplaceSynonymsInHighlight, false),
+			"min_proximity":                                derefInt32(settings.MinProximity, 1),
+			"response_fields":                              defaultStringSlice(settings.ResponseFields, []string{"*"}),
+			"max_facet_hits":                               derefInt32(settings.MaxFacetHits, 10),
+			"attribute_criteria_computed_by_min_proximity": derefBool(settings.AttributeCriteriaComputedByMinProximity, false),
 		}},
 	}
 	if err := setValues(d, values); err != nil {

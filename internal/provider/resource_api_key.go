@@ -144,7 +144,10 @@ func resourceAPIKeyUpdate(ctx context.Context, d *schema.ResourceData, m interfa
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	if _, err = apiClient.searchClient.WaitForApiKey(keyValue, search.API_KEY_OPERATION_UPDATE, search.WithApiKey(apiKey), search.WithContext(ctx)); err != nil {
+	// Custom wait loop for UPDATE: the built-in WaitForApiKey compares Validity
+	// which is seconds-until-expiry and changes every second, causing infinite retries.
+	// We poll until the non-Validity fields match.
+	if err = waitForAPIKeyUpdate(ctx, apiClient.searchClient, keyValue, apiKey); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -225,6 +228,34 @@ func refreshAPIKeyState(ctx context.Context, d *schema.ResourceData, m interface
 	}
 
 	return nil
+}
+
+// waitForAPIKeyUpdate polls until the API key's non-Validity fields match the expected values.
+// This is needed because the built-in WaitForApiKey compares Validity (seconds-until-expiry)
+// which changes every second, causing the comparison to never succeed.
+func waitForAPIKeyUpdate(ctx context.Context, client *search.APIClient, key string, expected *search.ApiKey) error {
+	maxRetries := 50
+	for i := 0; i < maxRetries; i++ {
+		resp, err := client.GetApiKey(client.NewApiGetApiKeyRequest(key), search.WithContext(ctx))
+		if err != nil {
+			return err
+		}
+
+		if resp.GetDescription() == expected.GetDescription() &&
+			resp.GetQueryParameters() == expected.GetQueryParameters() &&
+			resp.GetMaxHitsPerQuery() == expected.GetMaxHitsPerQuery() &&
+			resp.GetMaxQueriesPerIPPerHour() == expected.GetMaxQueriesPerIPPerHour() {
+			return nil
+		}
+
+		delay := time.Duration(min(200*(i+1), 5000)) * time.Millisecond
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(delay):
+		}
+	}
+	return fmt.Errorf("timeout waiting for API key update after %d retries", maxRetries)
 }
 
 func mapToAPIKey(d *schema.ResourceData) *search.ApiKey {
