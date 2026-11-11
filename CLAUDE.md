@@ -80,5 +80,5 @@ Run `make generate` to regenerate docs after schema or example changes.
 ## Testing Notes
 
 - Acceptance tests create real Algolia resources and may incur costs
-- Tests are run against Terraform versions 1.3.9, 1.4.6, and 1.5.1 in CI
+- Tests are run against Terraform versions 1.5.7, 1.15.9, 1.16.7, and 1.17.2 in CI
 - Use `TF_LOG=DEBUG` for detailed provider logging

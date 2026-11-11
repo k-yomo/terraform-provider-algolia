@@ -815,7 +815,7 @@ func refreshVirtualIndexState(ctx context.Context, d *schema.ResourceData, m int
 		}},
 		"pagination_config": []interface{}{map[string]interface{}{
 			"hits_per_page":         derefInt32(settings.HitsPerPage, 200),
-			"pagination_limited_to": derefInt32(settings.PaginationLimitedTo, 1000),
+			"pagination_limited_to": derefInt64(settings.PaginationLimitedTo, 1000),
 		}},
 		"typos_config": []interface{}{map[string]interface{}{
 			"min_word_size_for_1_typo":             derefInt32(settings.MinWordSizefor1Typo, 4),

@@ -60,15 +60,21 @@ jobs:
       fail-fast: false
       matrix:
         terraform:
-          - '1.3.9'
-          - '1.4.6'
-          - '1.5.1'
+          - '1.5.7'
+          - '1.15.9'
+          - '1.16.7'
+          - '1.17.2'
     steps:
     - uses: actions/checkout@v7
     - uses: actions/setup-go@v7
       with:
         go-version-file: 'go.mod'
         cache: true
+
+    - uses: hashicorp/setup-terraform@v4
+      with:
+        terraform_version: ${{ matrix.terraform }}
+        terraform_wrapper: false
 
     - name: Get dependencies
       run: go mod download
@@ -77,16 +83,18 @@ jobs:
       timeout-minutes: 10
       env:
         TF_ACC: "1"
-        TF_ACC_TERRAFORM_VERSION: ${{ matrix.terraform }}
         ALGOLIA_APP_ID: ${{ secrets.ALGOLIA_APP_ID }}
         ALGOLIA_API_KEY: ${{ secrets.ALGOLIA_API_KEY }}
 
+      # Use the Terraform installed above instead of letting each parallel test
+      # download its own copy, which races ("text file busy").
       run: |
+        export TF_ACC_TERRAFORM_PATH="$(which terraform)"
         go test -v -coverprofile=coverage.out ./internal/...
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v7
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
-        file: ./coverage.out
+        files: ./coverage.out
         fail_ci_if_error: true
