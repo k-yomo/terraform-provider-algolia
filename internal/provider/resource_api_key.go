@@ -3,6 +3,8 @@ package provider
 import (
 	"context"
 	"fmt"
+	"net/url"
+	"reflect"
 	"strconv"
 	"time"
 
@@ -93,6 +95,20 @@ This parameter can be used to protect you from attempts at retrieving your entir
 				Type:        schema.TypeString,
 				Optional:    true,
 				Description: "Description of the API key.",
+			},
+			"query_parameters": {
+				Type:     schema.TypeString,
+				Optional: true,
+				ValidateFunc: func(v interface{}, k string) ([]string, []error) {
+					if _, err := url.ParseQuery(v.(string)); err != nil {
+						return nil, []error{fmt.Errorf("%q must be a URL-encoded query string: %w", k, err)}
+					}
+					return nil, nil
+				},
+				DiffSuppressFunc: func(_, oldValue, newValue string, _ *schema.ResourceData) bool {
+					return queryParametersEqual(oldValue, newValue)
+				},
+				Description: "Search parameters enforced for every query made with this API key, as a URL-encoded query string. For example, `\"typoTolerance=strict&restrictSources=192.168.1.0/24\"`. Parameters set here can't be overridden by the query.",
 			},
 			"created_at": {
 				Type:        schema.TypeInt,
@@ -215,6 +231,7 @@ func refreshAPIKeyState(ctx context.Context, d *schema.ResourceData, m interface
 		"max_queries_per_ip_per_hour": int(key.GetMaxQueriesPerIPPerHour()),
 		"referers":                    key.Referers,
 		"description":                 key.GetDescription(),
+		"query_parameters":            key.GetQueryParameters(),
 		"indexes":                     key.Indexes,
 		"created_at":                  key.CreatedAt,
 	}
@@ -273,6 +290,7 @@ func apiKeyUpdateApplied(expected *search.ApiKey, actual *search.GetApiKeyRespon
 		stringSetsEqual(expected.Indexes, actual.Indexes) &&
 		stringSetsEqual(expected.Referers, actual.Referers) &&
 		expected.GetDescription() == actual.GetDescription() &&
+		queryParametersEqual(expected.GetQueryParameters(), actual.GetQueryParameters()) &&
 		expected.GetMaxHitsPerQuery() == actual.GetMaxHitsPerQuery() &&
 		expected.GetMaxQueriesPerIPPerHour() == actual.GetMaxQueriesPerIPPerHour()
 }
@@ -298,6 +316,23 @@ func stringSetsEqual(a, b []string) bool {
 	return true
 }
 
+// queryParametersEqual compares two URL-encoded query strings by their decoded parameters,
+// so that parameter order and encoding differences don't cause a diff.
+func queryParametersEqual(a, b string) bool {
+	if a == b {
+		return true
+	}
+	valuesA, errA := url.ParseQuery(a)
+	valuesB, errB := url.ParseQuery(b)
+	if errA != nil || errB != nil {
+		return false
+	}
+	if len(valuesA) == 0 && len(valuesB) == 0 {
+		return true
+	}
+	return reflect.DeepEqual(valuesA, valuesB)
+}
+
 func mapToAPIKey(d *schema.ResourceData) *search.ApiKey {
 	var validity *int32
 	if expiresAtRFC3339, ok := d.GetOk("expires_at"); ok && expiresAtRFC3339 != "" {
@@ -315,6 +350,8 @@ func mapToAPIKey(d *schema.ResourceData) *search.ApiKey {
 	maxHitsPerQuery := int32(d.Get("max_hits_per_query").(int))
 	maxQueriesPerIPPerHour := int32(d.Get("max_queries_per_ip_per_hour").(int))
 	description := d.Get("description").(string)
+	// Always send the value, even when empty, so that removing it from the config clears it.
+	queryParameters := d.Get("query_parameters").(string)
 
 	apiKey := &search.ApiKey{
 		Acl:                    acl,
@@ -322,6 +359,7 @@ func mapToAPIKey(d *schema.ResourceData) *search.ApiKey {
 		Indexes:                castStringSet(d.Get("indexes")),
 		MaxHitsPerQuery:        &maxHitsPerQuery,
 		MaxQueriesPerIPPerHour: &maxQueriesPerIPPerHour,
+		QueryParameters:        &queryParameters,
 		Referers:               castStringSet(d.Get("referers")),
 		Validity:               validity,
 	}

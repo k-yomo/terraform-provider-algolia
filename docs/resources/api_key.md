@@ -21,6 +21,7 @@ resource "algolia_api_key" "example" {
   description                 = "This is a example api key"
   indexes                     = ["*"]
   referers                    = ["https://algolia.com/\\*"]
+  query_parameters            = "typoTolerance=strict&ignorePlurals=false"
 }
 ```
 
@@ -55,6 +56,7 @@ The possible ACLs are:
 - `max_queries_per_ip_per_hour` (Number) Maximum number of API calls allowed from an IP address per hour.Each time an API call is performed with this key, a check is performed. If the IP at the source of the call did more than this number of calls in the last hour, a 429 code is returned.
 
 This parameter can be used to protect you from attempts at retrieving your entire index contents by massively querying the index.
+- `query_parameters` (String) Search parameters enforced for every query made with this API key, as a URL-encoded query string. For example, `"typoTolerance=strict&restrictSources=192.168.1.0/24"`. Parameters set here can't be overridden by the query.
 - `referers` (Set of String) List of referrers that can perform an operation. You can use the "*" (asterisk) character as a wildcard to match subdomains, or all pages of a website. For example, `"https://algolia.com/\*"` matches all referrers starting with `"https://algolia.com/"`, and `"\*.algolia.com"` matches all referrers ending with `".algolia.com"`. If you want to allow all possible referrers from the `algolia.com` domain, you can use `"\*algolia.com/\*"`.
 
 ### Read-Only
