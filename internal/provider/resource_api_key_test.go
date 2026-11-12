@@ -5,6 +5,8 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/algolia/algoliasearch-client-go/v4/algolia/search"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/hashicorp/terraform-provider-algolia/internal/algoliautil"
@@ -96,4 +98,35 @@ func testAccCheckApiKeyDestroy(s *terraform.State) error {
 	}
 
 	return nil
+}
+
+func TestAccResourceAPIKey_disappears(t *testing.T) {
+	name := randResourceID(100)
+	resourceName := fmt.Sprintf("algolia_api_key.%s", name)
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: providerFactories,
+		CheckDestroy:      testAccCheckApiKeyDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccResourceAPIKey(name),
+				Check: func(s *terraform.State) error {
+					rs, ok := s.RootModule().Resources[resourceName]
+					if !ok {
+						return fmt.Errorf("not found: %s", resourceName)
+					}
+					key := rs.Primary.Attributes["key"]
+					apiClient := newTestAPIClient()
+					if _, err := apiClient.searchClient.DeleteApiKey(apiClient.searchClient.NewApiDeleteApiKeyRequest(key)); err != nil {
+						return err
+					}
+					_, err := apiClient.searchClient.WaitForApiKey(key, search.API_KEY_OPERATION_DELETE)
+					return err
+				},
+				// Deleted outside Terraform: refresh must drop it from state and plan a re-create.
+				ExpectNonEmptyPlan: true,
+			},
+		},
+	})
 }

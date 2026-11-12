@@ -62,7 +62,6 @@ func TestAccResourceVirtualIndex(t *testing.T) {
 	})
 }
 
-// nolint:unused
 func testAccResourceVirtualIndex(primaryIndexName string, virtualIndexName string) string {
 	return `
 resource "algolia_index" "` + primaryIndexName + `" {
@@ -91,7 +90,6 @@ resource "algolia_virtual_index" "` + virtualIndexName + `" {
 `
 }
 
-// nolint:unused
 func testAccResourceVirtualIndexUpdate(primaryIndexName string, virtualIndexName string) string {
 	return `
 resource "algolia_index" "` + primaryIndexName + `" {

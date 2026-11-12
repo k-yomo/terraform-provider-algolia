@@ -467,7 +467,7 @@ This parameter is mainly intended to **limit the response size.** For example, i
 
 func dataSourceVirtualIndexRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	d.SetId(d.Get("name").(string))
-	if err := refreshIndexState(ctx, d, m); err != nil {
+	if err := refreshVirtualIndexState(ctx, d, m); err != nil {
 		return diag.FromErr(err)
 	}
 	return nil

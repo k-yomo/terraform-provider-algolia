@@ -425,7 +425,7 @@ func refreshRuleState(ctx context.Context, d *schema.ResourceData, m interface{}
 	consequence := map[string]interface{}{}
 	{
 		if rule.Consequence.Params != nil {
-			if isParamsJSONSet(d) {
+			if !usesDeprecatedParams(d) {
 				paramsJSON, err := json.Marshal(rule.Consequence.Params)
 				if err != nil {
 					return fmt.Errorf("failed to marshal consequence params: %w", err)
@@ -545,15 +545,21 @@ func refreshRuleState(ctx context.Context, d *schema.ResourceData, m interface{}
 	return nil
 }
 
-func isParamsJSONSet(d *schema.ResourceData) bool {
+// usesDeprecatedParams reports whether the rule is configured with the deprecated
+// `params` block instead of `params_json`. Defaults to false (e.g. on import),
+// so params are stored as `params_json` unless the deprecated block is in use.
+func usesDeprecatedParams(d *schema.ResourceData) bool {
 	l, ok := d.Get("consequence").([]interface{})
-	if !ok || len(l) == 0 {
+	if !ok || len(l) == 0 || l[0] == nil {
 		return false
 	}
 
 	consequence := l[0].(map[string]interface{})
-	_, ok = consequence["params_json"]
-	return ok
+	if paramsJSON, _ := consequence["params_json"].(string); paramsJSON != "" {
+		return false
+	}
+	params, _ := consequence["params"].([]interface{})
+	return len(params) > 0
 }
 
 func mapToRule(d *schema.ResourceData) (*search.Rule, error) {
@@ -629,7 +635,9 @@ func unmarshalConsequence(configured interface{}) (search.Consequence, error) {
 	if v, ok := config["params"]; ok {
 		consequence.Params = unmarshalConsequenceParams(v)
 	}
-	if v, ok := config["params_json"]; ok {
+	// params_json is always present in the config map ("" when unset), so only let it
+	// take effect when non-empty; otherwise it would discard the deprecated params block.
+	if v, ok := config["params_json"]; ok && v.(string) != "" {
 		var err error
 		consequence.Params, err = unmarshalConsequenceParamsJSON(v)
 		if err != nil {
@@ -684,7 +692,9 @@ func unmarshalConsequenceParams(configured interface{}) *search.ConsequenceParam
 			params.Query = search.StringAsConsequenceQuery(s)
 		}
 	}
-	if v, ok := paramsData["object_query"]; ok {
+	// object_query is always present ([] when unset); only use it when edits are configured,
+	// otherwise it would overwrite a string `query` with an empty edits object.
+	if v, ok := paramsData["object_query"]; ok && len(v.([]interface{})) > 0 {
 		var edits []search.Edit
 		for _, e := range v.([]interface{}) {
 			editData := e.(map[string]interface{})

@@ -119,3 +119,33 @@ func testAccCheckSynonymsDestroy(s *terraform.State) error {
 
 	return nil
 }
+
+func TestAccResourceSynonyms_disappears(t *testing.T) {
+	indexName := randResourceID(100)
+	resourceName := fmt.Sprintf("algolia_synonyms.%s", indexName)
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: providerFactories,
+		CheckDestroy:      testAccCheckSynonymsDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccResourceSynonyms(indexName),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "synonyms.#", "1"),
+					func(s *terraform.State) error {
+						apiClient := newTestAPIClient()
+						res, err := apiClient.searchClient.ClearSynonyms(apiClient.searchClient.NewApiClearSynonymsRequest(indexName))
+						if err != nil {
+							return err
+						}
+						_, err = apiClient.searchClient.WaitForTask(indexName, res.TaskID)
+						return err
+					},
+				),
+				// Synonyms were cleared outside Terraform: the plan must restore them.
+				ExpectNonEmptyPlan: true,
+			},
+		},
+	})
+}
