@@ -3,8 +3,11 @@ package provider
 import (
 	"context"
 	"fmt"
+	"maps"
 	"strconv"
 	"time"
+
+	"github.com/algolia/algoliasearch-client-go/v4/algolia/utils"
 
 	"github.com/algolia/algoliasearch-client-go/v4/algolia/search"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
@@ -21,6 +24,7 @@ func resourceVirtualIndex() *schema.Resource {
 		ReadContext:          resourceVirtualIndexRead,
 		UpdateWithoutTimeout: resourceVirtualIndexUpdate,
 		DeleteContext:        resourceVirtualIndexDelete,
+		CustomizeDiff:        customizeDiffExtraIndexSettings,
 		Importer: &schema.ResourceImporter{
 			StateContext: resourceVirtualIndexStateContext,
 		},
@@ -29,7 +33,7 @@ func resourceVirtualIndex() *schema.Resource {
 			Default: schema.DefaultTimeout(1 * time.Hour),
 		},
 		// https://www.algolia.com/doc/api-reference/settings-api-parameters/
-		Schema: map[string]*schema.Schema{
+		Schema: withExtraIndexSettings(map[string]*schema.Schema{
 			"name": {
 				Type:        schema.TypeString,
 				Required:    true,
@@ -75,9 +79,9 @@ func resourceVirtualIndex() *schema.Resource {
 							Elem:     &schema.Schema{Type: schema.TypeString},
 							Set:      schema.HashString,
 							Optional: true,
-							DefaultFunc: func() (interface{}, error) {
-								return []string{"*"}, nil
-							},
+							// Computed instead of a default, which SDKv2 ignores on lists and sets.
+							// Algolia's default: ["*"].
+							Computed:    true,
 							Description: "List of attributes to be retrieved at query time.",
 						},
 					},
@@ -448,9 +452,9 @@ List of supported languages are listed on http://nhttps//www.algolia.com/doc/api
 							Elem:     &schema.Schema{Type: schema.TypeString},
 							Set:      schema.HashString,
 							Optional: true,
-							DefaultFunc: func() (interface{}, error) {
-								return []string{"ignorePlurals", "singleWordSynonym"}, nil
-							},
+							// Computed instead of a default, which SDKv2 ignores on lists and sets.
+							// Algolia's default: ["ignorePlurals", "singleWordSynonym"].
+							Computed:    true,
 							Description: "List of alternatives that should be considered an exact match by the exact ranking criterion.",
 						},
 						"advanced_syntax_features": {
@@ -458,9 +462,9 @@ List of supported languages are listed on http://nhttps//www.algolia.com/doc/api
 							Elem:     &schema.Schema{Type: schema.TypeString},
 							Set:      schema.HashString,
 							Optional: true,
-							DefaultFunc: func() (interface{}, error) {
-								return []string{"exactPhrase", "excludeWords"}, nil
-							},
+							// Computed instead of a default, which SDKv2 ignores on lists and sets.
+							// Algolia's default: ["exactPhrase", "excludeWords"].
+							Computed:    true,
 							Description: "Advanced syntax features to be activated when ‘advancedSyntax’ is enabled",
 						},
 					},
@@ -529,9 +533,9 @@ then the N most relevant episodes for every show are kept, with similar conseque
 							Elem:     &schema.Schema{Type: schema.TypeString},
 							Set:      schema.HashString,
 							Optional: true,
-							DefaultFunc: func() (interface{}, error) {
-								return []string{"*"}, nil
-							},
+							// Computed instead of a default, which SDKv2 ignores on lists and sets.
+							// Algolia's default: ["*"].
+							Computed: true,
 							Description: `The fields the response will contain. Applies to search and browse queries.
 This parameter is mainly intended to **limit the response size.** For example, in complex queries, echoing of request parameters in the response’s params field can be undesirable.`,
 						},
@@ -556,7 +560,7 @@ This parameter is mainly intended to **limit the response size.** For example, i
 				Default:     true,
 				Description: "Whether to allow Terraform to destroy the index.  Unless this field is set to false in Terraform state, a terraform destroy or terraform apply command that deletes the instance will fail.",
 			},
-		},
+		}, extraIndexSettingsResourceSchema(true)),
 	}
 }
 
@@ -593,6 +597,9 @@ func resourceVirtualIndexCreate(ctx context.Context, d *schema.ResourceData, m i
 	mutexKV.Unlock(ctx, algoliaIndexMutexKey(apiClient.appID, primaryIndexName))
 
 	settings := mapToVirtualIndexSettings(d)
+	if err := unmarshalExtraIndexSettings(d, &settings); err != nil {
+		return diag.FromErr(err)
+	}
 	res, err := apiClient.searchClient.SetSettings(apiClient.searchClient.NewApiSetSettingsRequest(indexName, &settings), search.WithContext(ctx))
 	if err != nil {
 		return diag.FromErr(err)
@@ -618,6 +625,9 @@ func resourceVirtualIndexUpdate(ctx context.Context, d *schema.ResourceData, m i
 
 	indexName := d.Id()
 	settings := mapToVirtualIndexSettings(d)
+	if err := unmarshalExtraIndexSettings(d, &settings); err != nil {
+		return diag.FromErr(err)
+	}
 	res, err := apiClient.searchClient.SetSettings(apiClient.searchClient.NewApiSetSettingsRequest(indexName, &settings), search.WithContext(ctx))
 	if err != nil {
 		return diag.FromErr(err)
@@ -875,6 +885,11 @@ func refreshVirtualIndexState(ctx context.Context, d *schema.ResourceData, m int
 			"attribute_criteria_computed_by_min_proximity": derefBool(settings.AttributeCriteriaComputedByMinProximity, false),
 		}},
 	}
+	extraValues, err := marshalExtraIndexSettings(settings, true)
+	if err != nil {
+		return err
+	}
+	maps.Copy(values, extraValues)
 	if err := setValues(d, values); err != nil {
 		return err
 	}
@@ -905,14 +920,10 @@ func mapToVirtualIndexSettings(d *schema.ResourceData) search.IndexSettings {
 	if v, ok := d.GetOk("languages_config"); ok {
 		unmarshalLanguagesConfig(v, &settings, true)
 	}
-	if v, ok := d.GetOk("enable_rules"); ok {
-		b := v.(bool)
-		settings.EnableRules = &b
-	}
-	if v, ok := d.GetOk("enable_personalization"); ok {
-		b := v.(bool)
-		settings.EnablePersonalization = &b
-	}
+	// d.GetOk reports false as unset, so read the value directly to be able to disable it.
+	settings.EnableRules = utils.ToPtr(d.Get("enable_rules").(bool))
+	// d.GetOk reports false as unset, so read the value directly to be able to disable it.
+	settings.EnablePersonalization = utils.ToPtr(d.Get("enable_personalization").(bool))
 	if v, ok := d.GetOk("query_strategy_config"); ok {
 		unmarshalQueryStrategyConfig(v, &settings, true)
 	}
@@ -922,6 +933,8 @@ func mapToVirtualIndexSettings(d *schema.ResourceData) search.IndexSettings {
 	if v, ok := d.GetOk("advanced_config"); ok {
 		unmarshalAdvancedConfig(v, &settings, true)
 	}
+
+	dropUnconfiguredComputedListSettings(d, &settings)
 
 	return settings
 }

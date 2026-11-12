@@ -51,6 +51,16 @@ resource "algolia_index" "primary" {
   languages_config {
     remove_stop_words_for = ["en"]
   }
+
+  // Order facets and facet values in the search UI.
+  rendering_content_json = jsonencode({
+    facetOrdering = {
+      facets = { order = ["category"] }
+      values = {
+        category = { order = ["Books", "Movies"], sortRemainingBy = "count" }
+      }
+    }
+  })
 }
 
 resource "algolia_index" "replica" {
@@ -73,17 +83,23 @@ resource "algolia_index" "replica" {
 - `attributes_config` (Block List, Max: 1) The configuration for attributes. (see [below for nested schema](#nestedblock--attributes_config))
 - `deletion_protection` (Boolean) Whether to allow Terraform to destroy the index.  Unless this field is set to false in Terraform state, a terraform destroy or terraform apply command that deletes the instance will fail.
 - `enable_personalization` (Boolean) Whether to enable the Personalization feature.
+- `enable_re_ranking` (Boolean) Whether this search will use [Dynamic Re-Ranking](https://www.algolia.com/doc/guides/algolia-ai/re-ranking/). This setting only has an effect if Dynamic Re-Ranking is enabled for the index in the Algolia dashboard. Removing this attribute from the configuration leaves the current value in Algolia unchanged.
 - `enable_rules` (Boolean) Whether Rules should be globally enabled.
 - `faceting_config` (Block List, Max: 1) The configuration for faceting. (see [below for nested schema](#nestedblock--faceting_config))
 - `highlight_and_snippet_config` (Block List, Max: 1) The configuration for highlight / snippet in index setting. (see [below for nested schema](#nestedblock--highlight_and_snippet_config))
 - `languages_config` (Block List, Max: 1) The configuration for languages in index setting. (see [below for nested schema](#nestedblock--languages_config))
+- `mode` (String) Search mode the index will use to query for results. Possible values are `keywordSearch` and `neuralSearch`. `neuralSearch` requires the NeuralSearch feature to be available on your plan. Removing this attribute from the configuration leaves the current value in Algolia unchanged.
 - `pagination_config` (Block List, Max: 1) The configuration for pagination in index setting. (see [below for nested schema](#nestedblock--pagination_config))
 - `performance_config` (Block List, Max: 1) The configuration for performance in index setting. (see [below for nested schema](#nestedblock--performance_config))
 - `primary_index_name` (String) The name of the existing primary index name. This field is used to create a replica index.
 - `query_strategy_config` (Block List, Max: 1) The configuration for query strategy in index setting. (see [below for nested schema](#nestedblock--query_strategy_config))
 - `ranking_config` (Block List, Max: 1) The configuration for ranking. (see [below for nested schema](#nestedblock--ranking_config))
+- `re_ranking_apply_filter` (String) Restrict [Dynamic Re-Ranking](https://www.algolia.com/doc/guides/algolia-ai/re-ranking/) to records that match these filters, using the [filters](https://www.algolia.com/doc/api-reference/api-parameters/filters/) syntax. Set to an empty string to remove the restriction. Removing this attribute from the configuration leaves the current value in Algolia unchanged.
+- `rendering_content_json` (String) JSON-encoded [renderingContent](https://www.algolia.com/doc/api-reference/api-parameters/renderingContent/): extra data that can be used to render the search UI, such as the order of facets and facet values (`facetOrdering`), a `redirect`, or `widgets`. Use `jsonencode` to build the value. Set to `jsonencode({})` to clear it. Removing this attribute from the configuration leaves the current value in Algolia unchanged.
+- `semantic_search` (Block List, Max: 1) Settings for the semantic search part of NeuralSearch. Only used when `mode` is `neuralSearch`. Removing this attribute from the configuration leaves the current value in Algolia unchanged. (see [below for nested schema](#nestedblock--semantic_search))
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - `typos_config` (Block List, Max: 1) The configuration for typos in index setting. (see [below for nested schema](#nestedblock--typos_config))
+- `user_data_json` (String) JSON-encoded custom data that you can retrieve in the search response. Use `jsonencode` to build the value. Set to `jsonencode({})` to clear it. Removing this attribute from the configuration leaves the current value in Algolia unchanged.
 - `virtual` (Boolean, Deprecated) **Deprecated:** Use `algolia_virtual_index` resource instead. Whether the index is virtual index. If true, applying the params listed in the [doc](https://www.algolia.com/doc/guides/managing-results/refine-results/sorting/in-depth/replicas/#unsupported-parameters) will be ignored.
 
 ### Read-Only
@@ -214,6 +230,14 @@ Optional:
 - `custom_ranking` (List of String) List of attributes for custom ranking criterion.
 - `ranking` (List of String) List of ranking criteria.
 - `relevancy_strictness` (Number) Relevancy threshold below which less relevant results aren’t included in the results
+
+
+<a id="nestedblock--semantic_search"></a>
+### Nested Schema for `semantic_search`
+
+Optional:
+
+- `event_sources` (Set of String) Indices from which to collect click and conversion events. If empty, the current index and all its replicas are used.
 
 
 <a id="nestedblock--timeouts"></a>

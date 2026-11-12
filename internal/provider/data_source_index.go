@@ -12,7 +12,7 @@ func dataSourceIndex() *schema.Resource {
 		Description: "Data source for an index.",
 		ReadContext: dataSourceIndexRead,
 		// https://www.algolia.com/doc/api-reference/settings-api-parameters/
-		Schema: map[string]*schema.Schema{
+		Schema: withExtraIndexSettings(map[string]*schema.Schema{
 			"name": {
 				Type:        schema.TypeString,
 				Required:    true,
@@ -473,7 +473,7 @@ This parameter is mainly intended to **limit the response size.** For example, i
 					},
 				},
 			},
-		},
+		}, extraIndexSettingsDataSourceSchema(false)),
 	}
 }
 

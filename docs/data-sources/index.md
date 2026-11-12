@@ -30,17 +30,23 @@ data "algolia_index" "example" {
 - `advanced_config` (List of Object) The configuration for advanced features in index setting. (see [below for nested schema](#nestedatt--advanced_config))
 - `attributes_config` (List of Object) The configuration for attributes. (see [below for nested schema](#nestedatt--attributes_config))
 - `enable_personalization` (Boolean) Whether to enable the Personalization feature.
+- `enable_re_ranking` (Boolean) Whether this search will use [Dynamic Re-Ranking](https://www.algolia.com/doc/guides/algolia-ai/re-ranking/). This setting only has an effect if Dynamic Re-Ranking is enabled for the index in the Algolia dashboard.
 - `enable_rules` (Boolean) Whether Rules should be globally enabled.
 - `faceting_config` (List of Object) The configuration for faceting. (see [below for nested schema](#nestedatt--faceting_config))
 - `highlight_and_snippet_config` (List of Object) The configuration for highlight / snippet in index setting. (see [below for nested schema](#nestedatt--highlight_and_snippet_config))
 - `id` (String) The ID of this resource.
 - `languages_config` (List of Object) The configuration for languages in index setting. (see [below for nested schema](#nestedatt--languages_config))
+- `mode` (String) Search mode the index will use to query for results. Possible values are `keywordSearch` and `neuralSearch`. `neuralSearch` requires the NeuralSearch feature to be available on your plan.
 - `pagination_config` (Block List) The configuration for pagination in index setting. (see [below for nested schema](#nestedblock--pagination_config))
 - `performance_config` (List of Object) The configuration for performance in index setting. (see [below for nested schema](#nestedatt--performance_config))
 - `primary_index_name` (String) The name of the existing primary index name. This field is filled when the index is a replica index.
 - `query_strategy_config` (List of Object) The configuration for query strategy in index setting. (see [below for nested schema](#nestedatt--query_strategy_config))
 - `ranking_config` (List of Object) The configuration for ranking. (see [below for nested schema](#nestedatt--ranking_config))
+- `re_ranking_apply_filter` (String) Restrict [Dynamic Re-Ranking](https://www.algolia.com/doc/guides/algolia-ai/re-ranking/) to records that match these filters, using the [filters](https://www.algolia.com/doc/api-reference/api-parameters/filters/) syntax. Set to an empty string to remove the restriction.
+- `rendering_content_json` (String) JSON-encoded [renderingContent](https://www.algolia.com/doc/api-reference/api-parameters/renderingContent/): extra data that can be used to render the search UI, such as the order of facets and facet values (`facetOrdering`), a `redirect`, or `widgets`. Use `jsonencode` to build the value. Set to `jsonencode({})` to clear it.
+- `semantic_search` (List of Object) Settings for the semantic search part of NeuralSearch. Only used when `mode` is `neuralSearch`. (see [below for nested schema](#nestedatt--semantic_search))
 - `typos_config` (List of Object) The configuration for typos in index setting. (see [below for nested schema](#nestedatt--typos_config))
+- `user_data_json` (String) JSON-encoded custom data that you can retrieve in the search response. Use `jsonencode` to build the value. Set to `jsonencode({})` to clear it.
 - `virtual` (Boolean) Whether the index is virtual index.
 
 <a id="nestedatt--advanced_config"></a>
@@ -161,6 +167,14 @@ Read-Only:
 - `ranking` (List of String)
 - `relevancy_strictness` (Number)
 - `replicas` (Set of String)
+
+
+<a id="nestedatt--semantic_search"></a>
+### Nested Schema for `semantic_search`
+
+Read-Only:
+
+- `event_sources` (Set of String)
 
 
 <a id="nestedatt--typos_config"></a>

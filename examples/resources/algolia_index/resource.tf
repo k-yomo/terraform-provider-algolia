@@ -36,6 +36,16 @@ resource "algolia_index" "primary" {
   languages_config {
     remove_stop_words_for = ["en"]
   }
+
+  // Order facets and facet values in the search UI.
+  rendering_content_json = jsonencode({
+    facetOrdering = {
+      facets = { order = ["category"] }
+      values = {
+        category = { order = ["Books", "Movies"], sortRemainingBy = "count" }
+      }
+    }
+  })
 }
 
 resource "algolia_index" "replica" {
