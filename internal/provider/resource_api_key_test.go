@@ -30,6 +30,7 @@ func TestAccResourceAPIKey(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "max_queries_per_ip_per_hour", "0"),
 					resource.TestCheckNoResourceAttr(resourceName, "indexes.0"),
 					resource.TestCheckResourceAttr(resourceName, "description", ""),
+					resource.TestCheckResourceAttr(resourceName, "query_parameters", ""),
 				),
 			},
 			{
@@ -43,6 +44,7 @@ func TestAccResourceAPIKey(t *testing.T) {
 					testCheckResourceListAttr(resourceName, "indexes", []string{"dev_*"}),
 					testCheckResourceListAttr(resourceName, "referers", []string{"https://algolia.com/\\*"}),
 					resource.TestCheckResourceAttr(resourceName, "description", "This is a test api key"),
+					resource.TestCheckResourceAttr(resourceName, "query_parameters", "typoTolerance=strict&ignorePlurals=false"),
 				),
 			},
 			{
@@ -53,6 +55,13 @@ func TestAccResourceAPIKey(t *testing.T) {
 				ImportState:             true,
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"expires_at"},
+			},
+			{
+				// Removing query_parameters from the config must clear it on the key.
+				Config: testAccResourceAPIKey(name),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "query_parameters", ""),
+				),
 			},
 		},
 		CheckDestroy: testAccCheckApiKeyDestroy,
@@ -76,7 +85,28 @@ resource "algolia_api_key" "%s" {
   indexes                     = ["dev_*"]
   referers                    = ["https://algolia.com/\\*"]
   description                 = "This is a test api key"
+  query_parameters            = "typoTolerance=strict&ignorePlurals=false"
 }`, name)
+}
+
+func TestQueryParametersEqual(t *testing.T) {
+	tests := []struct {
+		a, b string
+		want bool
+	}{
+		{"", "", true},
+		{"typoTolerance=strict&ignorePlurals=false", "typoTolerance=strict&ignorePlurals=false", true},
+		{"typoTolerance=strict&ignorePlurals=false", "ignorePlurals=false&typoTolerance=strict", true},
+		{"filters=brand%3AApple", "filters=brand:Apple", true},
+		{"typoTolerance=strict", "typoTolerance=min", false},
+		{"typoTolerance=strict", "", false},
+		{"a=1&a=2", "a=2&a=1", false},
+	}
+	for _, tt := range tests {
+		if got := queryParametersEqual(tt.a, tt.b); got != tt.want {
+			t.Errorf("queryParametersEqual(%q, %q) = %v, want %v", tt.a, tt.b, got, tt.want)
+		}
+	}
 }
 
 func testAccCheckApiKeyDestroy(s *terraform.State) error {
