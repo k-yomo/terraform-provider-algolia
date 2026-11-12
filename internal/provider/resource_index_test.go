@@ -226,3 +226,38 @@ func testAccCheckIndexDestroy(s *terraform.State) error {
 
 	return nil
 }
+
+func TestAccResourceIndex_disappears(t *testing.T) {
+	indexName := randResourceID(100)
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: providerFactories,
+		CheckDestroy:      testAccCheckIndexDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccResourceIndexWithoutDeletionProtection(indexName),
+				Check: func(s *terraform.State) error {
+					apiClient := newTestAPIClient()
+					res, err := apiClient.searchClient.DeleteIndex(apiClient.searchClient.NewApiDeleteIndexRequest(indexName))
+					if err != nil {
+						return err
+					}
+					_, err = apiClient.searchClient.WaitForTask(indexName, res.TaskID)
+					return err
+				},
+				// Deleted outside Terraform: refresh must drop it from state and plan a re-create.
+				ExpectNonEmptyPlan: true,
+			},
+		},
+	})
+}
+
+func testAccResourceIndexWithoutDeletionProtection(name string) string {
+	return `
+resource "algolia_index" "` + name + `" {
+  name                = "` + name + `"
+  deletion_protection = false
+}
+`
+}

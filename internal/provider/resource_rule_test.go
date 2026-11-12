@@ -1,6 +1,7 @@
 package provider
 
 import (
+	"encoding/json"
 	"fmt"
 	"testing"
 
@@ -145,4 +146,158 @@ func testAccCheckRuleDestroy(s *terraform.State) error {
 	}
 
 	return nil
+}
+
+// TestAccResourceRuleWithDeprecatedParams covers the deprecated `consequence.params` block,
+// which must keep working (and round-trip without a diff) until it is removed.
+func TestAccResourceRuleWithDeprecatedParams(t *testing.T) {
+	indexName := randResourceID(100)
+	objectID := randResourceID(64)
+	resourceName := fmt.Sprintf("algolia_rule.%s", objectID)
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: providerFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccResourceRuleWithDeprecatedParams(indexName, objectID),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckRuleParams(indexName, objectID, `{"query":{"edits":[{"type":"replace","delete":"cheap","insert":"budget"}]},"automaticFacetFilters":[{"facet":"brand","score":2,"disjunctive":true}],"automaticOptionalFacetFilters":[{"facet":"color","score":1,"disjunctive":false}]}`),
+					resource.TestCheckResourceAttr(resourceName, "consequence.0.params.0.object_query.0.type", "replace"),
+					resource.TestCheckResourceAttr(resourceName, "consequence.0.params.0.object_query.0.delete", "cheap"),
+					resource.TestCheckResourceAttr(resourceName, "consequence.0.params.0.object_query.0.insert", "budget"),
+					resource.TestCheckResourceAttr(resourceName, "consequence.0.params.0.automatic_facet_filters.0.facet", "brand"),
+					resource.TestCheckResourceAttr(resourceName, "consequence.0.params.0.automatic_facet_filters.0.score", "2"),
+					resource.TestCheckResourceAttr(resourceName, "consequence.0.params.0.automatic_facet_filters.0.disjunctive", "true"),
+					resource.TestCheckResourceAttr(resourceName, "consequence.0.params.0.automatic_optional_facet_filters.0.facet", "color"),
+					resource.TestCheckResourceAttr(resourceName, "consequence.0.params_json", ""),
+				),
+			},
+			{
+				Config: testAccResourceRuleWithDeprecatedParamsUpdate(indexName, objectID),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckRuleParams(indexName, objectID, `{"query":"budget shoes"}`),
+					resource.TestCheckResourceAttr(resourceName, "consequence.0.params.0.query", "budget shoes"),
+					resource.TestCheckResourceAttr(resourceName, "consequence.0.params.0.object_query.#", "0"),
+				),
+			},
+		},
+		CheckDestroy: testAccCheckRuleDestroy,
+	})
+}
+
+func TestAccResourceRule_disappears(t *testing.T) {
+	indexName := randResourceID(100)
+	objectID := randResourceID(64)
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: providerFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccResourceRule(indexName, objectID),
+				Check: func(s *terraform.State) error {
+					apiClient := newTestAPIClient()
+					res, err := apiClient.searchClient.DeleteRule(apiClient.searchClient.NewApiDeleteRuleRequest(indexName, objectID))
+					if err != nil {
+						return err
+					}
+					_, err = apiClient.searchClient.WaitForTask(indexName, res.TaskID)
+					return err
+				},
+				// The rule was deleted outside Terraform, so the refresh must drop it from state
+				// and the plan must propose re-creating it.
+				ExpectNonEmptyPlan: true,
+			},
+		},
+		CheckDestroy: testAccCheckRuleDestroy,
+	})
+}
+
+// testAccCheckRuleParams verifies the params actually stored in Algolia, not just Terraform state.
+func testAccCheckRuleParams(indexName, objectID, expectedJSON string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		apiClient := newTestAPIClient()
+		rule, err := apiClient.searchClient.GetRule(apiClient.searchClient.NewApiGetRuleRequest(indexName, objectID))
+		if err != nil {
+			return err
+		}
+		if rule.Consequence.Params == nil {
+			return fmt.Errorf("rule %s has no consequence params in Algolia", objectID)
+		}
+		actual, err := json.Marshal(rule.Consequence.Params)
+		if err != nil {
+			return err
+		}
+		equal, err := jsonBytesEqual([]byte(expectedJSON), actual)
+		if err != nil {
+			return err
+		}
+		if !equal {
+			return fmt.Errorf("rule %s params: expected %s, got %s", objectID, expectedJSON, actual)
+		}
+		return nil
+	}
+}
+
+func testAccResourceRuleWithDeprecatedParams(indexName, objectID string) string {
+	return `
+resource "algolia_index" "` + indexName + `" {
+  name = "` + indexName + `"
+  deletion_protection = false
+}
+
+resource "algolia_rule" "` + objectID + `" {
+  index_name = algolia_index.` + indexName + `.name
+  object_id  = "` + objectID + `"
+
+  conditions {
+    pattern   = "{facet:brand} {facet:color} cheap"
+    anchoring = "contains"
+  }
+
+  consequence {
+    params {
+      object_query {
+        type   = "replace"
+        delete = "cheap"
+        insert = "budget"
+      }
+      automatic_facet_filters {
+        facet       = "brand"
+        score       = 2
+        disjunctive = true
+      }
+      automatic_optional_facet_filters {
+        facet = "color"
+      }
+    }
+  }
+}
+`
+}
+
+func testAccResourceRuleWithDeprecatedParamsUpdate(indexName, objectID string) string {
+	return `
+resource "algolia_index" "` + indexName + `" {
+  name = "` + indexName + `"
+  deletion_protection = false
+}
+
+resource "algolia_rule" "` + objectID + `" {
+  index_name = algolia_index.` + indexName + `.name
+  object_id  = "` + objectID + `"
+
+  conditions {
+    pattern   = "cheap shoes"
+    anchoring = "is"
+  }
+
+  consequence {
+    params {
+      query = "budget shoes"
+    }
+  }
+}
+`
 }
