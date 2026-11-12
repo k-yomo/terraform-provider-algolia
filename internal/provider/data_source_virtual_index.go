@@ -12,7 +12,7 @@ func dataSourceVirtualIndex() *schema.Resource {
 		Description: "Data source for a virtual index.",
 		ReadContext: dataSourceVirtualIndexRead,
 		// https://www.algolia.com/doc/api-reference/settings-api-parameters/
-		Schema: map[string]*schema.Schema{
+		Schema: withExtraIndexSettings(map[string]*schema.Schema{
 			"name": {
 				Type:        schema.TypeString,
 				Required:    true,
@@ -461,7 +461,7 @@ This parameter is mainly intended to **limit the response size.** For example, i
 					},
 				},
 			},
-		},
+		}, extraIndexSettingsDataSourceSchema(true)),
 	}
 }
 
