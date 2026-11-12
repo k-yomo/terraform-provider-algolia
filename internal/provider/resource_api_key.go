@@ -230,21 +230,21 @@ func refreshAPIKeyState(ctx context.Context, d *schema.ResourceData, m interface
 	return nil
 }
 
-// waitForAPIKeyUpdate polls until the API key's non-Validity fields match the expected values.
-// This is needed because the built-in WaitForApiKey compares Validity (seconds-until-expiry)
-// which changes every second, causing the comparison to never succeed.
+// waitForAPIKeyUpdate polls until the API key reflects the update, with a bounded number of retries.
+//
+// The client's built-in waiters compare the whole key exactly. That never succeeds when Algolia
+// normalizes a field (e.g. reorders `indexes` or returns [] for an unset list), and older versions
+// of this provider hung forever because of it (#158, #278). Here only the fields this provider
+// manages are compared, order-insensitively, and Validity (seconds until expiry, which changes
+// every second) is ignored.
 func waitForAPIKeyUpdate(ctx context.Context, client *search.APIClient, key string, expected *search.ApiKey) error {
-	maxRetries := 50
+	const maxRetries = 50
 	for i := 0; i < maxRetries; i++ {
 		resp, err := client.GetApiKey(client.NewApiGetApiKeyRequest(key), search.WithContext(ctx))
 		if err != nil {
 			return err
 		}
-
-		if resp.GetDescription() == expected.GetDescription() &&
-			resp.GetQueryParameters() == expected.GetQueryParameters() &&
-			resp.GetMaxHitsPerQuery() == expected.GetMaxHitsPerQuery() &&
-			resp.GetMaxQueriesPerIPPerHour() == expected.GetMaxQueriesPerIPPerHour() {
+		if apiKeyUpdateApplied(expected, resp) {
 			return nil
 		}
 
@@ -255,7 +255,47 @@ func waitForAPIKeyUpdate(ctx context.Context, client *search.APIClient, key stri
 		case <-time.After(delay):
 		}
 	}
-	return fmt.Errorf("timeout waiting for API key update after %d retries", maxRetries)
+	return fmt.Errorf("timed out waiting for API key update to be applied after %d retries; run `terraform refresh` to sync the state with the actual key", maxRetries)
+}
+
+// apiKeyUpdateApplied reports whether actual reflects every field of expected that this provider manages.
+func apiKeyUpdateApplied(expected *search.ApiKey, actual *search.GetApiKeyResponse) bool {
+	expectedACL := make([]string, len(expected.Acl))
+	for i, a := range expected.Acl {
+		expectedACL[i] = string(a)
+	}
+	actualACL := make([]string, len(actual.Acl))
+	for i, a := range actual.Acl {
+		actualACL[i] = string(a)
+	}
+
+	return stringSetsEqual(expectedACL, actualACL) &&
+		stringSetsEqual(expected.Indexes, actual.Indexes) &&
+		stringSetsEqual(expected.Referers, actual.Referers) &&
+		expected.GetDescription() == actual.GetDescription() &&
+		expected.GetMaxHitsPerQuery() == actual.GetMaxHitsPerQuery() &&
+		expected.GetMaxQueriesPerIPPerHour() == actual.GetMaxQueriesPerIPPerHour()
+}
+
+// stringSetsEqual compares two string slices as sets; nil and empty are equal.
+func stringSetsEqual(a, b []string) bool {
+	setA := make(map[string]struct{}, len(a))
+	for _, v := range a {
+		setA[v] = struct{}{}
+	}
+	setB := make(map[string]struct{}, len(b))
+	for _, v := range b {
+		setB[v] = struct{}{}
+	}
+	if len(setA) != len(setB) {
+		return false
+	}
+	for v := range setA {
+		if _, ok := setB[v]; !ok {
+			return false
+		}
+	}
+	return true
 }
 
 func mapToAPIKey(d *schema.ResourceData) *search.ApiKey {

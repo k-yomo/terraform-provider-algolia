@@ -130,3 +130,55 @@ func TestAccResourceAPIKey_disappears(t *testing.T) {
 		},
 	})
 }
+
+// Regression test for #278 (adding wildcard index patterns on update hung forever) and
+// #158 (ACL-only update hung forever).
+func TestAccResourceAPIKey_updateIndexesAndACL(t *testing.T) {
+	indexName := randResourceID(60)
+	name := randResourceID(100)
+	resourceName := fmt.Sprintf("algolia_api_key.%s", name)
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: providerFactories,
+		CheckDestroy:      testAccCheckApiKeyDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccResourceAPIKeyWithIndexes(name, indexName, `["addObject", "deleteIndex"]`, false),
+				Check: resource.ComposeTestCheckFunc(
+					testCheckResourceListAttr(resourceName, "indexes", []string{indexName + "_events", indexName + "_feeds"}),
+				),
+			},
+			{
+				// #278: add wildcard patterns next to the existing index names.
+				Config: testAccResourceAPIKeyWithIndexes(name, indexName, `["addObject", "deleteIndex"]`, true),
+				Check: resource.ComposeTestCheckFunc(
+					testCheckResourceListAttr(resourceName, "indexes", []string{
+						indexName + "_events", indexName + "_events_tmp_*",
+						indexName + "_feeds", indexName + "_feeds_tmp_*",
+					}),
+				),
+			},
+			{
+				// #158: change only the ACL.
+				Config: testAccResourceAPIKeyWithIndexes(name, indexName, `["addObject", "browse", "deleteIndex"]`, true),
+				Check: resource.ComposeTestCheckFunc(
+					testCheckResourceListAttr(resourceName, "acl", []string{"addObject", "browse", "deleteIndex"}),
+				),
+			},
+		},
+	})
+}
+
+func testAccResourceAPIKeyWithIndexes(name, indexName, acl string, withWildcards bool) string {
+	indexes := fmt.Sprintf(`["%[1]s_events", "%[1]s_feeds"]`, indexName)
+	if withWildcards {
+		indexes = fmt.Sprintf(`["%[1]s_events", "%[1]s_feeds", "%[1]s_events_tmp_*", "%[1]s_feeds_tmp_*"]`, indexName)
+	}
+	return fmt.Sprintf(`
+resource "algolia_api_key" "%s" {
+  acl         = %s
+  indexes     = %s
+  description = "test key"
+}`, name, acl, indexes)
+}
