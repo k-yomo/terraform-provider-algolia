@@ -130,7 +130,7 @@ func TestIsForbiddenError(t *testing.T) {
 		},
 		{
 			name: "returns true for wrapped forbidden error",
-			err:  fmt.Errorf("delete index: %w", &search.APIError{Message: "forbidden", Status: http.StatusForbidden}),
+			err:  fmt.Errorf("delete index: %w", error(&search.APIError{Message: "forbidden", Status: http.StatusForbidden})),
 			want: true,
 		},
 		{
@@ -165,7 +165,7 @@ func TestIsNotFoundError_QuerySuggestionsAndWrapped(t *testing.T) {
 	if !IsNotFoundError(&suggestions.APIError{Message: "not found", Status: http.StatusNotFound}) {
 		t.Error("IsNotFoundError() = false for query suggestions 404, want true")
 	}
-	if !IsNotFoundError(fmt.Errorf("get config: %w", &suggestions.APIError{Status: http.StatusNotFound})) {
+	if !IsNotFoundError(fmt.Errorf("get config: %w", error(&suggestions.APIError{Status: http.StatusNotFound}))) {
 		t.Error("IsNotFoundError() = false for wrapped 404, want true")
 	}
 }
