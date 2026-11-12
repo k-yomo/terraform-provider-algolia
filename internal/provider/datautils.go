@@ -79,6 +79,14 @@ func derefInt32(p *int32, def int32) int {
 	return int(def)
 }
 
+// derefInt64 returns the value of a *int64 or a default if nil.
+func derefInt64(p *int64, def int64) int {
+	if p != nil {
+		return int(*p)
+	}
+	return int(def)
+}
+
 // derefBool returns the value of a *bool or a default if nil.
 func derefBool(p *bool, def bool) bool {
 	if p != nil {

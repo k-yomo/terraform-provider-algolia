@@ -755,7 +755,7 @@ func mapToIndexResourceValues(d *schema.ResourceData, settings *search.SettingsR
 		}},
 		"pagination_config": []interface{}{map[string]interface{}{
 			"hits_per_page":         derefInt32(settings.HitsPerPage, 200),
-			"pagination_limited_to": derefInt32(settings.PaginationLimitedTo, 1000),
+			"pagination_limited_to": derefInt64(settings.PaginationLimitedTo, 1000),
 		}},
 		"typos_config":           marshalTyposConfig(settings, isVirtualIndex),
 		"languages_config":       marshalLanguageConfig(settings, isVirtualIndex),
@@ -1094,7 +1094,7 @@ func unmarshalPaginationConfig(configured interface{}, settings *search.IndexSet
 		settings.HitsPerPage = &i
 	}
 	if v, ok := config["pagination_limited_to"]; ok {
-		i := int32(v.(int))
+		i := int64(v.(int))
 		settings.PaginationLimitedTo = &i
 	}
 }
